@@ -14,7 +14,8 @@ class ACBFBook:
 		"""
 		docstring
 		"""
-		def __init__(self, author, book_title, genre, annotation, cover_page, languages=None, text_layer=None, characters=None, keywords=None, sequence=None, content_rating=None, database_ref=None):
+		def __init__(self, author, book_title, genre, annotation, cover_page, languages=None, text_layer=None,
+					characters=None, keywords=None, sequence=None, content_rating=None, database_ref=None):
 			"""
 			docstring
 			"""
@@ -36,7 +37,8 @@ class ACBFBook:
 		"""
 		docstring
 		"""
-		def __init__(self, publisher: str, publish_date: date, publish_city: str =None, isbn: str =None, license: str =None):
+		def __init__(self, publisher: str, publish_date: date, publish_city: str =None, isbn: str =None,
+					license: str =None):
 			"""
 			docstring
 			"""
@@ -50,7 +52,8 @@ class ACBFBook:
 		"""
 		docstring
 		"""
-		def __init__(self, author, creation_date: date, source=None, document_id: str =None, document_version: str =None, document_history=None):
+		def __init__(self, author, creation_date: date, source=None, document_id: str =None,
+					document_version: str =None, document_history=None):
 			"""
 			docstring
 			"""
