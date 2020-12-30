@@ -18,6 +18,7 @@ class ACBFBook:
 			"""
 			docstring
 			"""
+
 			self.author = author
 			self.book_title = book_title
 			self.genre = genre
