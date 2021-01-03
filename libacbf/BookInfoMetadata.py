@@ -55,8 +55,6 @@ class BookInfo:
 
 		self.languages = None # TBD
 
-		self.text_layer = None # TBD
-
 		# Optional props
 		self.characters = []
 		if type(info["characters"]["name"]) is list:
