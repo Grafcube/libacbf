@@ -7,6 +7,7 @@ ctr = 0
 def test_streaming(path, item):
 	global ctr
 	if ctr == 0:
+		print(path[1][0])
 		with open(f"tests/results/path{ctr}.json", "w", encoding="utf-8", newline="\n") as p:
 			p.write(json.dumps(path))
 		with open(f"tests/results/item{ctr}.json", "w", encoding="utf-8", newline="\n") as p:
@@ -14,6 +15,7 @@ def test_streaming(path, item):
 		ctr += 1
 		return True
 	elif ctr == 1:
+		print(path[1][0])
 		with open(f"tests/results/path{ctr}.json", "w", encoding="utf-8", newline="\n") as p:
 			p.write(json.dumps(path))
 		with open(f"tests/results/item{ctr}.json", "w", encoding="utf-8", newline="\n") as p:
@@ -21,6 +23,7 @@ def test_streaming(path, item):
 		ctr += 1
 		return True
 	elif ctr == 2:
+		print(path[1][0])
 		with open(f"tests/results/path{ctr}.json", "w", encoding="utf-8", newline="\n") as p:
 			p.write(json.dumps(path))
 		with open(f"tests/results/item{ctr}.json", "w", encoding="utf-8", newline="\n") as p:
@@ -28,6 +31,7 @@ def test_streaming(path, item):
 		ctr += 1
 		return True
 	elif ctr == 3:
+		print(path[1][0])
 		with open(f"tests/results/path{ctr}.json", "w", encoding="utf-8", newline="\n") as p:
 			p.write(json.dumps(path))
 		with open(f"tests/results/item{ctr}.json", "w", encoding="utf-8", newline="\n") as p:
@@ -35,6 +39,7 @@ def test_streaming(path, item):
 		ctr += 1
 		return True
 	elif ctr == 4:
+		print(path[1][0])
 		with open(f"tests/results/path{ctr}.json", "w", encoding="utf-8", newline="\n") as p:
 			p.write(json.dumps(path))
 		with open(f"tests/results/item{ctr}.json", "w", encoding="utf-8", newline="\n") as p:
