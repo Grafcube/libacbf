@@ -13,6 +13,10 @@ class ACBFMetadata:
 		"""
 		self.book_path = file_path
 
+		self.book_info = None
+		self.publisher_info = None
+		self.document_info = None
+
 		if pathlib.Path(file_path).suffix != ".acbf":
 			raise ValueError("File is not an ACBF Ebook")
 		else:

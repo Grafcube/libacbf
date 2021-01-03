@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from re import split
 
 class BookInfo:
 	"""
@@ -50,11 +51,27 @@ class BookInfo:
 					p = "\n".join(item["p"])
 				self.annotations.append({item["@lang"]: p})
 
-		self.cover_page
-		self.languages
-		self.text_layer
-		self.characters
-		self.keywords
-		self.sequence
-		self.content_rating
-		self.database_ref
+		self.cover_page = None # TBD
+
+		self.languages = None # TBD
+
+		self.text_layer = None # TBD
+
+		# Optional props
+		self.characters = []
+		if type(info["characters"]["name"]) is list:
+			self.characters = info["characters"]["name"]
+		elif type(info["characters"]["name"]) is str:
+			self.characters = [info["characters"]["name"]]
+
+		self.keywords = split(",|, ", info["keywords"])
+
+		self.series = []
+		if type(info["sequence"]) is list:
+			self.series = [info["sequence"]]
+		elif type(info["sequence"]) is OrderedDict:
+			self.series = [info["sequence"]]
+
+		self.content_rating = None # TBD
+
+		self.database_ref = None # TBD
