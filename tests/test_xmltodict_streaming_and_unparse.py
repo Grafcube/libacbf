@@ -8,44 +8,54 @@ def test_streaming(path, item):
 	global ctr
 	if ctr == 0:
 		print(path[1][0])
-		with open(f"tests/results/path{ctr}.json", "w", encoding="utf-8", newline="\n") as p:
-			p.write(json.dumps(path))
-		with open(f"tests/results/item{ctr}.json", "w", encoding="utf-8", newline="\n") as p:
-			p.write(json.dumps(item))
+		with open(f"tests/results/path{ctr}.txt", "w", encoding="utf-8", newline="\n") as p:
+			# p.write(json.dumps(path))
+			p.write(str(path))
+		with open(f"tests/results/item{ctr}.txt", "w", encoding="utf-8", newline="\n") as p:
+			# p.write(json.dumps(item))
+			p.write(str(item))
 		ctr += 1
 		return True
 	elif ctr == 1:
 		print(path[1][0])
-		with open(f"tests/results/path{ctr}.json", "w", encoding="utf-8", newline="\n") as p:
-			p.write(json.dumps(path))
-		with open(f"tests/results/item{ctr}.json", "w", encoding="utf-8", newline="\n") as p:
-			p.write(json.dumps(item))
+		with open(f"tests/results/path{ctr}.txt", "w", encoding="utf-8", newline="\n") as p:
+			# p.write(json.dumps(path))
+			p.write(str(path))
+		with open(f"tests/results/item{ctr}.txt", "w", encoding="utf-8", newline="\n") as p:
+			# p.write(json.dumps(item))
+			p.write(str(item))
 		ctr += 1
 		return True
 	elif ctr == 2:
 		print(path[1][0])
-		with open(f"tests/results/path{ctr}.json", "w", encoding="utf-8", newline="\n") as p:
-			p.write(json.dumps(path))
-		with open(f"tests/results/item{ctr}.json", "w", encoding="utf-8", newline="\n") as p:
-			p.write(json.dumps(item))
+		with open(f"tests/results/path{ctr}.txt", "w", encoding="utf-8", newline="\n") as p:
+			# p.write(json.dumps(path))
+			p.write(str(path))
+		with open(f"tests/results/item{ctr}.txt", "w", encoding="utf-8", newline="\n") as p:
+			# p.write(json.dumps(item))
+			p.write(str(item))
 		ctr += 1
 		return True
 	elif ctr == 3:
 		print(path[1][0])
-		with open(f"tests/results/path{ctr}.json", "w", encoding="utf-8", newline="\n") as p:
-			p.write(json.dumps(path))
-		with open(f"tests/results/item{ctr}.json", "w", encoding="utf-8", newline="\n") as p:
-			p.write(json.dumps(item))
+		with open(f"tests/results/path{ctr}.txt", "w", encoding="utf-8", newline="\n") as p:
+			# p.write(json.dumps(path))
+			p.write(str(path))
+		with open(f"tests/results/item{ctr}.txt", "w", encoding="utf-8", newline="\n") as p:
+			# p.write(json.dumps(item))
+			p.write(str(item))
 		ctr += 1
 		return True
 	elif ctr == 4:
 		print(path[1][0])
-		with open(f"tests/results/path{ctr}.json", "w", encoding="utf-8", newline="\n") as p:
-			p.write(json.dumps(path))
-		with open(f"tests/results/item{ctr}.json", "w", encoding="utf-8", newline="\n") as p:
-			p.write(json.dumps(item))
+		with open(f"tests/results/path{ctr}.txt", "w", encoding="utf-8", newline="\n") as p:
+			# p.write(json.dumps(path))
+			p.write(str(path))
+		with open(f"tests/results/item{ctr}.txt", "w", encoding="utf-8", newline="\n") as p:
+			# p.write(json.dumps(item))
+			p.write(str(item))
 		ctr += 1
-		return False
+	return False
 
 with open("tests/samples/Doctorow, Cory - Craphound.acbf", encoding="utf-8") as book:
 	if os.path.exists("demofile.txt"):
