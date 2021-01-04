@@ -57,7 +57,7 @@ def test_streaming(path, item):
 		ctr += 1
 	return False
 
-with open("tests/samples/Doctorow, Cory - Craphound.acbf", encoding="utf-8") as book:
+with open("tests/samples/Doctorow, Cory - Craphound-1.1.acbf", encoding="utf-8") as book:
 	if os.path.exists("demofile.txt"):
 		os.remove("tests/samples/unparse.acbf")
 	try:
