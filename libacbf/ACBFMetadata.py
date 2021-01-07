@@ -1,6 +1,6 @@
 import pathlib
 from datetime import date
-import xmltodict
+from lxml import etree
 from libacbf import BookInfoMetadata, PublishInfoMetadata, DocumentInfoMetadata
 
 class ACBFMetadata:
@@ -17,20 +17,12 @@ class ACBFMetadata:
 		self.publisher_info = None
 		self.document_info = None
 
-		if pathlib.Path(file_path).suffix != ".acbf":
+		if pathlib.Path(file_path).suffix != ".acbf": # TODO cbz handling
 			raise ValueError("File is not an ACBF Ebook")
 		else:
+			ACBFns = r"{http://www.fictionbook-lib.org/xml/acbf/1.0}"
 			with open(file_path, encoding="utf-8") as book:
-				try:
-					xmltodict.parse(book.read(), item_depth=3, item_callback=get_metadata)
-				except xmltodict.ParsingInterrupted:
-					print("Finished parsing metadata")
-
-		def get_metadata(path, item):
-			if path[1][0] == "meta-data":
-				self.book_info = BookInfoMetadata(item["book-info"])
-				self.publisher_info = PublishInfoMetadata(item["publish-info"])
-				self.document_info = DocumentInfoMetadata(item["document-info"])
-				return False
-			else:
-				return True
+				root = etree.fromstring(bytes(book.read(), encoding="utf-8"))
+				self.book_info = BookInfoMetadata(root.find(f"{ACBFns}meta-data/book-info"))
+				self.publisher_info = PublishInfoMetadata(root.find(f"{ACBFns}meta-data/publish-info"))
+				self.document_info = DocumentInfoMetadata(root.find(f"{ACBFns}meta-data/document-info"))

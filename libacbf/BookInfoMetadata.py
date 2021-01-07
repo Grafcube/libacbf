@@ -1,20 +1,31 @@
 from collections import OrderedDict
 from re import split
+from lxml import etree
 
 class BookInfo:
 	"""
 	docstring
 	"""
-	def __init__(self, info: dict):
+	def __init__(self, info: etree._Element):
 		"""
 		docstring
 		"""
 
+		ACBFns = r"{http://www.fictionbook-lib.org/xml/acbf/1.0}"
+
 		self.authors = []
-		if type(info["author"]) is OrderedDict:
-			self.authors = [info["author"]]
-		elif type(info["author"]) is list:
-			self.authors = info["author"]
+		author_tree = info.findall(f"{ACBFns}author")
+		for au in author_tree:
+			self.authors.append({
+				"activity": au.attrib["activity"],
+				"first-name": au.find(f"{ACBFns}first-name"),
+				# "middle-name": au.find(f"{ACBFns}middle-name"),
+				"last-name": au.find(f"{ACBFns}last-name")
+			})
+		# if type(info["author"]) is OrderedDict:
+		# 	self.authors = [info["author"]]
+		# elif type(info["author"]) is list:
+		# 	self.authors = info["author"]
 
 		self.book_title = OrderedDict()
 		if type(info["book-title"]) is OrderedDict:
