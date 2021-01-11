@@ -19,10 +19,11 @@ with open(sample, "r") as book:
 
 	meta = root.findall(f"{ACBFns}meta-data/{ACBFns}book-info/{ACBFns}author")
 	for i in meta:
-		if i.find(f"{ACBFns}middle-name") is not None:
-			print(i.find(f"{ACBFns}middle-name").text)
-		if i.find(f"{ACBFns}last-name") is not None:
-			print(i.find(f"{ACBFns}last-name").text)
+		print(i.keys())
+		# if i.find(f"{ACBFns}middle-name") is not None:
+		# 	print(i.find(f"{ACBFns}middle-name").text)
+		# if i.find(f"{ACBFns}last-name") is not None:
+		# 	print(i.find(f"{ACBFns}last-name").text)
 		# print(i.attrib["activity"].upper())
 		# for j in list(i):
 		# 	print(j.tag.replace(ACBFns, ""), ":", j.text)

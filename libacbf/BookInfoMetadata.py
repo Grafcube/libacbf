@@ -17,15 +17,29 @@ class BookInfo:
 		author_tree = info.findall(f"{ACBFns}author")
 		for au in author_tree:
 			self.authors.append({
-				"activity": au.attrib["activity"],
+				"activity": None,
+				"lang": None,
 				"first-name": au.find(f"{ACBFns}first-name"),
-				# "middle-name": au.find(f"{ACBFns}middle-name"),
-				"last-name": au.find(f"{ACBFns}last-name")
+				"last-name": au.find(f"{ACBFns}last-name"),
+				"middle-name": None,
+				"nickname": None,
+				"home-page": None,
+				"email": None
 			})
-		# if type(info["author"]) is OrderedDict:
-		# 	self.authors = [info["author"]]
-		# elif type(info["author"]) is list:
-		# 	self.authors = info["author"]
+
+			if "activity" in au.keys():
+				self.authors[-1]["activity"] = au.attrib["activity"]
+			if "lang" in au.keys():
+				self.authors[-1]["lang"] = au.attrib["lang"]
+
+			if au.find(f"{ACBFns}middle-name") is not None:
+				self.authors[-1]["middle-name"] = au.find(f"{ACBFns}middle-name")
+			if au.find(f"{ACBFns}nickname") is not None:
+				self.authors[-1]["nickname"] = au.find(f"{ACBFns}nickname")
+			if au.find(f"{ACBFns}home-page") is not None:
+				self.authors[-1]["home-page"] = au.find(f"{ACBFns}home-page")
+			if au.find(f"{ACBFns}email") is not None:
+				self.authors[-1]["email"] = au.find(f"{ACBFns}email")
 
 		self.book_title = OrderedDict()
 		if type(info["book-title"]) is OrderedDict:
