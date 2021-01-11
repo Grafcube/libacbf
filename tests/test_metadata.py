@@ -19,6 +19,12 @@ def test_bookinfo_genres():
 	with open("tests/results/metadata/test_bookinfo_genres.json", "w", encoding="utf-8", newline="\n") as result:
 		result.write(json.dumps(book_metadata.book_info.genres, ensure_ascii=False))
 
+def test_bookinfo_annotations():
+	print(book_metadata.book_info.annotations)
+	with open("tests/results/metadata/test_bookinfo_annotations.json", "w", encoding="utf-8", newline="\n") as result:
+		result.write(json.dumps(book_metadata.book_info.annotations, ensure_ascii=False))
+
 # test_bookinfo_authors()
 # test_bookinfo_titles()
 # test_bookinfo_genres()
+# test_bookinfo_annotations()

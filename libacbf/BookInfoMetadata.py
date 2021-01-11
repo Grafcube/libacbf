@@ -64,24 +64,18 @@ class BookInfo:
 
 			self.genres.append(new_genre)
 
-		self.annotations = []
-		# p = ""
-		# if type(info["annotation"]) is OrderedDict:
-		# 	if type(info["annotation"]["p"]) is str:
-		# 		p = info["annotation"]["p"]
-		# 	elif type(info["annotation"]["p"]) is list:
-		# 		p = "\n".join(info["annotation"]["p"])
-		# 	if "@lang" in info["annotation"]:
-		# 		self.annotations[info["annotation"]["@lang"]] = p
-		# 	else:
-		# 		self.annotations["_"] = p
-		# elif type(info["annotation"]) is list:
-		# 	for item in info["annotation"]:
-		# 		if type(item["p"]) is str:
-		# 			p = item["p"]
-		# 		elif type(item["p"]) is list:
-		# 			p = "\n".join(item["p"])
-		# 		self.annotations.append({item["@lang"]: p})
+		self.annotations = {}
+		annotation_tree = info.findall(f"{ACBFns}annotation")
+		for an in annotation_tree:
+			p = []
+			for i in an.findall(f"{ACBFns}p"):
+				p.append(i.text)
+			p = "\n".join(p)
+
+			if "lang" in an.keys():
+				self.annotations[an.attrib["lang"]] = p
+			else:
+				self.annotations["_"] = p
 
 		self.cover_page = None # TBD
 
