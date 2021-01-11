@@ -16,7 +16,7 @@ class BookInfo:
 		self.authors = []
 		author_tree = info.findall(f"{ACBFns}author")
 		for au in author_tree:
-			self.authors.append({
+			new_author = {
 				"activity": None,
 				"lang": None,
 				"first-name": au.find(f"{ACBFns}first-name").text,
@@ -25,23 +25,25 @@ class BookInfo:
 				"nickname": None,
 				"home-page": None,
 				"email": None
-			})
+			}
 
 			if "activity" in au.keys():
-				self.authors[-1]["activity"] = au.attrib["activity"]
+				new_author["activity"] = au.attrib["activity"]
 			if "lang" in au.keys():
-				self.authors[-1]["lang"] = au.attrib["lang"]
+				new_author["lang"] = au.attrib["lang"]
 
 			if au.find(f"{ACBFns}middle-name") is not None:
-				self.authors[-1]["middle-name"] = au.find(f"{ACBFns}middle-name").text
+				new_author["middle-name"] = au.find(f"{ACBFns}middle-name").text
 			if au.find(f"{ACBFns}nickname") is not None:
-				self.authors[-1]["nickname"] = au.find(f"{ACBFns}nickname").text
+				new_author["nickname"] = au.find(f"{ACBFns}nickname").text
 			if au.find(f"{ACBFns}home-page") is not None:
-				self.authors[-1]["home-page"] = au.find(f"{ACBFns}home-page").text
+				new_author["home-page"] = au.find(f"{ACBFns}home-page").text
 			if au.find(f"{ACBFns}email") is not None:
-				self.authors[-1]["email"] = au.find(f"{ACBFns}email").text
+				new_author["email"] = au.find(f"{ACBFns}email").text
 
-		self.book_title = OrderedDict()
+			self.authors.append(new_author)
+
+		self.book_title = {}
 		book_tree = info.findall(f"{ACBFns}book-title")
 		for title in book_tree:
 			if "lang" in title.keys():
@@ -50,10 +52,17 @@ class BookInfo:
 				self.book_title["_"] = title.text
 
 		self.genres = []
-		# if type(info["genre"]) is OrderedDict:
-		# 	self.genres = [info["genre"]]
-		# elif type(info["genre"]) is list:
-		# 	self.genres = info["genre"]
+		genre_tree = info.findall(f"{ACBFns}genre")
+		for genre in genre_tree:
+			new_genre = {
+				"genre": genre.text,
+				"match": None
+			}
+
+			if "match" in genre.keys():
+				new_genre["match"] = genre.attrib["match"]
+
+			self.genres.append(new_genre)
 
 		self.annotations = []
 		# p = ""
