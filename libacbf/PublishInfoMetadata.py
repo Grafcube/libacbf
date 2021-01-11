@@ -6,8 +6,8 @@ class PublishInfo:
 		"""
 		docstring
 		"""
-		self.publisher
-		self.publish_date
-		self.publish_city
-		self.isbn
-		self.license
+		self.publisher = None
+		self.publish_date = None
+		self.publish_city = None
+		self.isbn = None
+		self.license = None
