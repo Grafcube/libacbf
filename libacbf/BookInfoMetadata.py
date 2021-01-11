@@ -42,14 +42,12 @@ class BookInfo:
 				self.authors[-1]["email"] = au.find(f"{ACBFns}email").text
 
 		self.book_title = OrderedDict()
-		# if type(info["book-title"]) is OrderedDict:
-		# 	if "@lang" in info["book-title"]:
-		# 		self.book_title[info["book-title"]["@lang"]] = info["book-title"]["#text"]
-		# 	else:
-		# 		self.book_title["_"] = info["book-title"]["#text"]
-		# elif type(info["book-title"]) is list:
-		# 	for title in info["book-title"]:
-		# 		self.book_title[title["@lang"]] = title["#text"]
+		book_tree = info.findall(f"{ACBFns}book-title")
+		for title in book_tree:
+			if "lang" in title.keys():
+				self.book_title[title.attrib["lang"]] = title.text
+			else:
+				self.book_title["_"] = title.text
 
 		self.genres = []
 		# if type(info["genre"]) is OrderedDict:
