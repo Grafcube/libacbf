@@ -14,8 +14,8 @@ class BookInfo:
 		ACBFns = r"{http://www.fictionbook-lib.org/xml/acbf/1.0}"
 
 		self.authors = []
-		author_tree = info.findall(f"{ACBFns}author")
-		for au in author_tree:
+		author_items = info.findall(f"{ACBFns}author")
+		for au in author_items:
 			new_author = {
 				"activity": None,
 				"lang": None,
@@ -44,16 +44,16 @@ class BookInfo:
 			self.authors.append(new_author)
 
 		self.book_title = {}
-		book_tree = info.findall(f"{ACBFns}book-title")
-		for title in book_tree:
+		book_items = info.findall(f"{ACBFns}book-title")
+		for title in book_items:
 			if "lang" in title.keys():
 				self.book_title[title.attrib["lang"]] = title.text
 			else:
 				self.book_title["_"] = title.text
 
 		self.genres = []
-		genre_tree = info.findall(f"{ACBFns}genre")
-		for genre in genre_tree:
+		genre_items = info.findall(f"{ACBFns}genre")
+		for genre in genre_items:
 			new_genre = {
 				"genre": genre.text,
 				"match": None
@@ -65,8 +65,8 @@ class BookInfo:
 			self.genres.append(new_genre)
 
 		self.annotations = {}
-		annotation_tree = info.findall(f"{ACBFns}annotation")
-		for an in annotation_tree:
+		annotation_items = info.findall(f"{ACBFns}annotation")
+		for an in annotation_items:
 			p = []
 			for i in an.findall(f"{ACBFns}p"):
 				p.append(i.text)
@@ -83,18 +83,35 @@ class BookInfo:
 
 		# Optional props
 		self.characters = []
-		# if type(info["characters"]["name"]) is list:
-		# 	self.characters = info["characters"]["name"]
-		# elif type(info["characters"]["name"]) is str:
-		# 	self.characters = [info["characters"]["name"]]
+		character_item = info.find(f"{ACBFns}characters")
+		for c in character_item.findall(f"{ACBFns}name"):
+			self.characters.append(c.text)
 
-		self.keywords = None#split(",|, ", info["keywords"])
+		self.keywords = []
+		keyword_items = info.findall(f"{ACBFns}keywords")
+		for k in keyword_items:
+			new_k = {}
+			if "lang" in k.keys():
+				new_k[k.attrib["lang"]] = split(", |,", k.text)
+			else:
+				new_k["_"] = split(", |,", k.text)
 
-		self.series = []
-		# if type(info["sequence"]) is list:
-		# 	self.series = [info["sequence"]]
-		# elif type(info["sequence"]) is OrderedDict:
-		# 	self.series = [info["sequence"]]
+			self.keywords.append(new_k)
+
+		self.series = {}
+		series_items = info.findall(f"{ACBFns}sequence")
+		for se in series_items:
+			new_se = {
+				"volume": None,
+				"lang": None,
+				"sequence": se.text
+			}
+			if "volume" in se.keys():
+				new_se["volume"] = se.attrib["volume"]
+			if "lang" in se.keys():
+				new_se["lang"] = se.attrib["lang"]
+
+			self.series[se.attrib["title"]] = new_se
 
 		self.content_rating = None # TBD
 

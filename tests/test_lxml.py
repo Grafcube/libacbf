@@ -17,9 +17,10 @@ with open(sample, "r") as book:
 	# for i in list(root.findall(f"{ACBFns}meta-data/{ACBFns}book-info/{ACBFns}author")):
 	# 	print(i.tag)
 
-	meta = root.findall(f"{ACBFns}meta-data/{ACBFns}book-info/{ACBFns}genre")
-	for i in meta:
-		print(i.tag)
+	meta = root.find(f"{ACBFns}meta-data/{ACBFns}book-info/{ACBFns}characters")
+	print(type(meta))
+	# for i in meta:
+	# 	print(i.tag)
 		# if i.find(f"{ACBFns}middle-name") is not None:
 		# 	print(i.find(f"{ACBFns}middle-name").text)
 		# if i.find(f"{ACBFns}last-name") is not None:

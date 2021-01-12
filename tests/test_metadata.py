@@ -24,7 +24,25 @@ def test_bookinfo_annotations():
 	with open("tests/results/metadata/test_bookinfo_annotations.json", "w", encoding="utf-8", newline="\n") as result:
 		result.write(json.dumps(book_metadata.book_info.annotations, ensure_ascii=False))
 
+def test_bookinfo_characters():
+	print(book_metadata.book_info.characters)
+	with open("tests/results/metadata/test_bookinfo_characters.json", "w", encoding="utf-8", newline="\n") as result:
+		result.write(json.dumps(book_metadata.book_info.characters, ensure_ascii=False))
+
+def test_bookinfo_keywords():
+	print(book_metadata.book_info.keywords)
+	with open("tests/results/metadata/test_bookinfo_keywords.json", "w", encoding="utf-8", newline="\n") as result:
+		result.write(json.dumps(book_metadata.book_info.keywords, ensure_ascii=False))
+
+def test_bookinfo_series():
+	print(book_metadata.book_info.series)
+	with open("tests/results/metadata/test_bookinfo_series.json", "w", encoding="utf-8", newline="\n") as result:
+		result.write(json.dumps(book_metadata.book_info.series, ensure_ascii=False))
+
 # test_bookinfo_authors()
 # test_bookinfo_titles()
 # test_bookinfo_genres()
 # test_bookinfo_annotations()
+# test_bookinfo_characters()
+# test_bookinfo_keywords()
+# test_bookinfo_series()
