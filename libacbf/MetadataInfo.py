@@ -1,17 +1,13 @@
-from collections import OrderedDict
 from re import split
-from lxml.etree import _Element
 
 class BookInfo:
 	"""
 	docstring
 	"""
-	def __init__(self, info):
+	def __init__(self, info, ACBFns):
 		"""
 		docstring
 		"""
-
-		ACBFns = r"{http://www.fictionbook-lib.org/xml/acbf/1.0}"
 
 		self.authors = []
 		author_items = info.findall(f"{ACBFns}author")
@@ -116,3 +112,32 @@ class BookInfo:
 		self.content_rating = None # TBD
 
 		self.database_ref = None # TBD
+
+class DocumentInfo:
+	"""
+	docstring
+	"""
+	def __init__(self, info: dict, ACBFns):
+		"""
+		docstring
+		"""
+		self.author = None
+		self.creation_date = None
+		self.source = None
+		self.document_id = None
+		self.document_version = None
+		self.document_history = None
+
+class PublishInfo:
+	"""
+	docstring
+	"""
+	def __init__(self, info: dict, ACBFns):
+		"""
+		docstring
+		"""
+		self.publisher = None
+		self.publish_date = None
+		self.publish_city = None
+		self.isbn = None
+		self.license = None

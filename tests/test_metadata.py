@@ -45,4 +45,4 @@ def test_bookinfo_series():
 # test_bookinfo_annotations()
 # test_bookinfo_characters()
 # test_bookinfo_keywords()
-# test_bookinfo_series()
+test_bookinfo_series()
