@@ -1,4 +1,3 @@
-from _typeshed import NoneType
 from re import split
 from datetime import date
 
@@ -108,12 +107,15 @@ class PublishInfo:
 		self.publish_date = date.fromisoformat(info.find(f"{ACBFns}publish-date").attrib["value"])
 
 		# Optional
+		self.publish_city = ""
 		if type(info.find(f"{ACBFns}city")) is not None:
 			self.publish_city = info.find(f"{ACBFns}city").text
 
+		self.isbn = ""
 		if type(info.find(f"{ACBFns}isbn")) is not None:
 			self.isbn = info.find(f"{ACBFns}isbn").text
 
+		self.license = ""
 		if type(info.find(f"{ACBFns}license")) is not None:
 			self.license = info.find(f"{ACBFns}license").text
 
@@ -125,6 +127,7 @@ class DocumentInfo:
 		"""
 		docstring
 		"""
+		print(info.findall(f"{ACBFns}author"))
 		self.author = get_authors(info.findall(f"{ACBFns}author"), ACBFns)
 
 		self.creation_date_string = info.find(f"{ACBFns}creation-date").text
