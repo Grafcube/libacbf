@@ -22,8 +22,7 @@ class ACBFMetadata:
 		else:
 			with open(file_path, encoding="utf-8") as book:
 				root = etree.fromstring(bytes(book.read(), encoding="utf-8"))
-				# if not validate_acbf(root):
-				# 	raise ValueError("ACBF XML is not valid")
+				validate_acbf(root)
 
 				ACBFns = r"{" + root.nsmap[None] + r"}"
 				print(ACBFns)
@@ -45,4 +44,4 @@ def validate_acbf(root):
 			acbf_tree = acbf_root.getroottree()
 			acbf_schema = etree.XMLSchema(acbf_tree)
 
-		return acbf_schema.validate(tree)
+		acbf_schema.assertValid(tree)
