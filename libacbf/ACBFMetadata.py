@@ -25,7 +25,6 @@ class ACBFMetadata:
 				validate_acbf(root)
 
 				ACBFns = r"{" + root.nsmap[None] + r"}"
-				print(ACBFns)
 
 				self.book_info = BookInfo(root.find(f"{ACBFns}meta-data/{ACBFns}book-info"), ACBFns)
 				self.publisher_info = PublishInfo(root.find(f"{ACBFns}meta-data/{ACBFns}publish-info"), ACBFns)
@@ -47,4 +46,4 @@ def validate_acbf(root):
 		try:
 			acbf_schema.assertValid(tree)
 		except etree.DocumentInvalid:
-			print("Validation failed. File may be valid (bug)")
+			print("Validation failed. File may be valid (bug)") # TODO fix whatever

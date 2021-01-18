@@ -1,4 +1,6 @@
+from _typeshed import NoneType
 from re import split
+from datetime import date
 
 class BookInfo:
 	"""
@@ -8,37 +10,7 @@ class BookInfo:
 		"""
 		docstring
 		"""
-
-		self.authors = []
-
-		author_items = info.findall(f"{ACBFns}author")
-		for au in author_items:
-			new_author = {
-				"activity": None,
-				"lang": None,
-				"first-name": au.find(f"{ACBFns}first-name").text,
-				"last-name": au.find(f"{ACBFns}last-name").text,
-				"middle-name": None,
-				"nickname": None,
-				"home-page": None,
-				"email": None
-			}
-
-			if "activity" in au.keys():
-				new_author["activity"] = au.attrib["activity"]
-			if "lang" in au.keys():
-				new_author["lang"] = au.attrib["lang"]
-
-			if au.find(f"{ACBFns}middle-name") is not None:
-				new_author["middle-name"] = au.find(f"{ACBFns}middle-name").text
-			if au.find(f"{ACBFns}nickname") is not None:
-				new_author["nickname"] = au.find(f"{ACBFns}nickname").text
-			if au.find(f"{ACBFns}home-page") is not None:
-				new_author["home-page"] = au.find(f"{ACBFns}home-page").text
-			if au.find(f"{ACBFns}email") is not None:
-				new_author["email"] = au.find(f"{ACBFns}email").text
-
-			self.authors.append(new_author)
+		self.authors = get_authors(info.findall(f"{ACBFns}author"), ACBFns)
 
 		self.book_title = {}
 
@@ -81,12 +53,13 @@ class BookInfo:
 
 		self.languages = None # TBD
 
-		# Optional props
+		# Optional
 		self.characters = []
 
 		character_item = info.find(f"{ACBFns}characters")
-		for c in character_item.findall(f"{ACBFns}name"):
-			self.characters.append(c.text)
+		if type(character_item) is not None:
+			for c in character_item.findall(f"{ACBFns}name"):
+				self.characters.append(c.text)
 
 		self.keywords = []
 
@@ -120,21 +93,6 @@ class BookInfo:
 
 		self.database_ref = None # TBD
 
-class DocumentInfo:
-	"""
-	docstring
-	"""
-	def __init__(self, info: dict, ACBFns):
-		"""
-		docstring
-		"""
-		self.author = None
-		self.creation_date = None
-		self.source = None
-		self.document_id = None
-		self.document_version = None
-		self.document_history = None
-
 class PublishInfo:
 	"""
 	docstring
@@ -143,8 +101,87 @@ class PublishInfo:
 		"""
 		docstring
 		"""
-		self.publisher = None
-		self.publish_date = None
-		self.publish_city = None
-		self.isbn = None
-		self.license = None
+		self.publisher = info.find(f"{ACBFns}publisher").text
+
+		self.publish_date_string = info.find(f"{ACBFns}publish-date").text
+
+		self.publish_date = date.fromisoformat(info.find(f"{ACBFns}publish-date").attrib["value"])
+
+		# Optional
+		if type(info.find(f"{ACBFns}city")) is not None:
+			self.publish_city = info.find(f"{ACBFns}city").text
+
+		if type(info.find(f"{ACBFns}isbn")) is not None:
+			self.isbn = info.find(f"{ACBFns}isbn").text
+
+		if type(info.find(f"{ACBFns}license")) is not None:
+			self.license = info.find(f"{ACBFns}license").text
+
+class DocumentInfo:
+	"""
+	docstring
+	"""
+	def __init__(self, info: dict, ACBFns):
+		"""
+		docstring
+		"""
+		self.author = get_authors(info.findall(f"{ACBFns}author"), ACBFns)
+
+		self.creation_date_string = info.find(f"{ACBFns}creation-date").text
+
+		self.creation_date = date.fromisoformat(info.find(f"{ACBFns}creation-date").attrib["value"])
+
+		# Optional
+		p = []
+		for line in info.findall(f"{ACBFns}source/{ACBFns}p"):
+			p.append(line.text)
+		self.source = "\n".join(p)
+
+		self.document_id = ""
+		if type(info.find(f"{ACBFns}id")) is not None:
+			self.document_id = info.find(f"{ACBFns}id").text
+
+		self.document_version = ""
+		if type(info.find(f"{ACBFns}version")) is not None:
+			self.document_version = info.find(f"{ACBFns}version").text
+
+		self.document_history = []
+		if type(info.find(f"{ACBFns}history")) is not None:
+			for item in info.findall(f"{ACBFns}history/{ACBFns}p"):
+				self.document_history.append(item.text)
+
+def get_authors(author_items, ACBFns):
+	"""
+	docstring
+	"""
+	authors = []
+
+	for au in author_items:
+		new_author = {
+			"activity": None,
+			"lang": None,
+			"first-name": au.find(f"{ACBFns}first-name").text,
+			"last-name": au.find(f"{ACBFns}last-name").text,
+			"middle-name": None,
+			"nickname": None,
+			"home-page": None,
+			"email": None
+		}
+
+		if "activity" in au.keys():
+			new_author["activity"] = au.attrib["activity"]
+		if "lang" in au.keys():
+			new_author["lang"] = au.attrib["lang"]
+
+		if au.find(f"{ACBFns}middle-name") is not None:
+			new_author["middle-name"] = au.find(f"{ACBFns}middle-name").text
+		if au.find(f"{ACBFns}nickname") is not None:
+			new_author["nickname"] = au.find(f"{ACBFns}nickname").text
+		if au.find(f"{ACBFns}home-page") is not None:
+			new_author["home-page"] = au.find(f"{ACBFns}home-page").text
+		if au.find(f"{ACBFns}email") is not None:
+			new_author["email"] = au.find(f"{ACBFns}email").text
+
+		authors.append(new_author)
+
+	return authors

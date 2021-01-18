@@ -1,7 +1,7 @@
 import json
 from libacbf.ACBFMetadata import ACBFMetadata
 
-sample_path = "tests/samples/Doctorow, Cory - Craphound-1.0.acbf"
+sample_path = "tests/samples/Doctorow, Cory - Craphound-1.1.acbf"
 book_metadata = ACBFMetadata(sample_path)
 
 def test_bookinfo_authors():
@@ -45,4 +45,4 @@ def test_bookinfo_series():
 # test_bookinfo_annotations()
 # test_bookinfo_characters()
 # test_bookinfo_keywords()
-test_bookinfo_series()
+# test_bookinfo_series()
