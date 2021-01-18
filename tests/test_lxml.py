@@ -3,12 +3,12 @@ from lxml import etree
 
 sample = "tests/samples/Doctorow, Cory - Craphound-1.0.acbf"
 
-ACBFns = r"{http://www.fictionbook-lib.org/xml/acbf/1.0}"
-
 with open(sample, "r") as book:
 	root = etree.fromstring(bytes(book.read(), encoding="utf-8"))
-	# for i in list(root.find(f"{ACBFns}meta-data")):
-	# 	print(i.tag.replace(ACBFns, ""))
+	ACBFns = r"{" + root.nsmap[None] + r"}"
+	print(root.nsmap)
+	for i in list(root.find(f"{ACBFns}meta-data")):
+		print(i.tag.replace(ACBFns, ""))
 	# 	print(type(i))
 	# for i in list(root.find(f"{ACBFns}meta-data/{ACBFns}book-info")):
 	# 	print(i.tag.replace(ACBFns, ""))
@@ -17,8 +17,8 @@ with open(sample, "r") as book:
 	# for i in list(root.findall(f"{ACBFns}meta-data/{ACBFns}book-info/{ACBFns}author")):
 	# 	print(i.tag)
 
-	meta = root.find(f"{ACBFns}meta-data/{ACBFns}book-info/{ACBFns}characters")
-	print(type(meta))
+	# meta = root.find(f"{ACBFns}meta-data/{ACBFns}book-info/{ACBFns}characters")
+	# print(type(meta))
 	# for i in meta:
 	# 	print(i.tag)
 		# if i.find(f"{ACBFns}middle-name") is not None:

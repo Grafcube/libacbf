@@ -1,7 +1,6 @@
 import pathlib
 from lxml import etree
 from libacbf.MetadataInfo import BookInfo, PublishInfo, DocumentInfo
-from libacbf.Constants import SchemaNamespaces
 
 class ACBFMetadata:
 	"""
@@ -23,21 +22,21 @@ class ACBFMetadata:
 		else:
 			with open(file_path, encoding="utf-8") as book:
 				root = etree.fromstring(bytes(book.read(), encoding="utf-8"))
-				tree = root.getroottree()
-				# if not validate_acbf(tree):
+				# if not validate_acbf(root):
 				# 	raise ValueError("ACBF XML is not valid")
 
-				version = tree.docinfo.xml_version
-				ACBFns = r"{" + SchemaNamespaces[version] + r"}"
+				ACBFns = r"{" + root.nsmap[None] + r"}"
+				print(ACBFns)
 
 				self.book_info = BookInfo(root.find(f"{ACBFns}meta-data/{ACBFns}book-info"), ACBFns)
 				self.publisher_info = PublishInfo(root.find(f"{ACBFns}meta-data/{ACBFns}publish-info"), ACBFns)
 				self.document_info = DocumentInfo(root.find(f"{ACBFns}meta-data/{ACBFns}document-info"), ACBFns)
 
-def validate_acbf(tree):
+def validate_acbf(root):
 		"""
 		docstring
 		"""
+		tree = root.getroottree()
 		version = tree.docinfo.xml_version
 		xsd_path = f"libacbf/schema/acbf-{version}.xsd"
 

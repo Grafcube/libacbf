@@ -10,6 +10,7 @@ class BookInfo:
 		"""
 
 		self.authors = []
+
 		author_items = info.findall(f"{ACBFns}author")
 		for au in author_items:
 			new_author = {
@@ -40,6 +41,7 @@ class BookInfo:
 			self.authors.append(new_author)
 
 		self.book_title = {}
+
 		book_items = info.findall(f"{ACBFns}book-title")
 		for title in book_items:
 			if "lang" in title.keys():
@@ -48,6 +50,7 @@ class BookInfo:
 				self.book_title["_"] = title.text
 
 		self.genres = []
+
 		genre_items = info.findall(f"{ACBFns}genre")
 		for genre in genre_items:
 			new_genre = {
@@ -61,6 +64,7 @@ class BookInfo:
 			self.genres.append(new_genre)
 
 		self.annotations = {}
+
 		annotation_items = info.findall(f"{ACBFns}annotation")
 		for an in annotation_items:
 			p = []
@@ -79,11 +83,13 @@ class BookInfo:
 
 		# Optional props
 		self.characters = []
+
 		character_item = info.find(f"{ACBFns}characters")
 		for c in character_item.findall(f"{ACBFns}name"):
 			self.characters.append(c.text)
 
 		self.keywords = []
+
 		keyword_items = info.findall(f"{ACBFns}keywords")
 		for k in keyword_items:
 			new_k = {}
@@ -95,6 +101,7 @@ class BookInfo:
 			self.keywords.append(new_k)
 
 		self.series = {}
+
 		series_items = info.findall(f"{ACBFns}sequence")
 		for se in series_items:
 			new_se = {
