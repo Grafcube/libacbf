@@ -24,6 +24,11 @@ def test_annotations():
 	with open("tests/results/metadata/book_info/test_bookinfo_annotations.json", "w", encoding="utf-8", newline="\n") as result:
 		result.write(json.dumps(book_metadata.book_info.annotations, ensure_ascii=False))
 
+def test_languages():
+	print(book_metadata.book_info.languages)
+	with open("tests/results/metadata/book_info/test_bookinfo_languages.json", "w", encoding="utf-8", newline="\n") as result:
+		result.write(json.dumps(book_metadata.book_info.languages, ensure_ascii=False))
+
 def test_characters():
 	print(book_metadata.book_info.characters)
 	with open("tests/results/metadata/book_info/test_bookinfo_characters.json", "w", encoding="utf-8", newline="\n") as result:

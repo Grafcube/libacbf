@@ -48,11 +48,19 @@ class BookInfo:
 			else:
 				self.annotations["_"] = p
 
-		self.cover_page = None # TBD
-
-		self.languages = None # TBD
+		self.cover_page = None # TBD when book body is started
 
 		# Optional
+		self.languages = []
+
+		if type(info.find(f"{ACBFns}languages")) is not None:
+			text_layers = info.find(f"{ACBFns}languages").findall(f"{ACBFns}text-layer")
+			for layer in text_layers:
+				self.languages.append({
+					"lang": layer.attrib["lang"],
+					"show": layer.attrib["show"]
+					})
+
 		self.characters = []
 
 		character_item = info.find(f"{ACBFns}characters")
