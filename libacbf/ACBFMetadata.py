@@ -31,19 +31,20 @@ class ACBFMetadata:
 				self.document_info = DocumentInfo(root.find(f"{ACBFns}meta-data/{ACBFns}document-info"), ACBFns)
 
 def validate_acbf(root):
-		"""
-		docstring
-		"""
-		tree = root.getroottree()
-		version = tree.docinfo.xml_version
-		xsd_path = f"libacbf/schema/acbf-{version}.xsd"
+	"""
+	docstring
+	"""
+	tree = root.getroottree()
+	version = tree.docinfo.xml_version
+	xsd_path = f"libacbf/schema/acbf-{version}.xsd"
 
-		with open(xsd_path, encoding="utf-8") as file:
-			acbf_root = etree.XML(bytes(file.read(), encoding="utf-8"))
-			acbf_tree = acbf_root.getroottree()
-			acbf_schema = etree.XMLSchema(acbf_tree)
+	with open(xsd_path, encoding="utf-8") as file:
+		acbf_root = etree.XML(bytes(file.read(), encoding="utf-8"))
+		acbf_tree = acbf_root.getroottree()
+		acbf_schema = etree.XMLSchema(acbf_tree)
 
-		try:
-			acbf_schema.assertValid(tree)
-		except etree.DocumentInvalid:
-			print("Validation failed. File may be valid (bug)") # TODO fix whatever
+	# TODO fix schema error. When fixed, remove try/except
+	try:
+		acbf_schema.assertValid(tree)
+	except etree.DocumentInvalid:
+		print("Validation failed. File may be valid (bug)")
