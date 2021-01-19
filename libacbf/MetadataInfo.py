@@ -104,9 +104,10 @@ class PublishInfo:
 
 		self.publish_date_string = info.find(f"{ACBFns}publish-date").text
 
-		self.publish_date = date.fromisoformat(info.find(f"{ACBFns}publish-date").attrib["value"])
-
 		# Optional
+		if "value" in info.find(f"{ACBFns}publish-date").keys():
+			self.publish_date = date.fromisoformat(info.find(f"{ACBFns}publish-date").attrib["value"])
+
 		self.publish_city = ""
 		if type(info.find(f"{ACBFns}city")) is not None:
 			self.publish_city = info.find(f"{ACBFns}city").text
@@ -128,13 +129,14 @@ class DocumentInfo:
 		docstring
 		"""
 		print(info.findall(f"{ACBFns}author"))
-		self.author = get_authors(info.findall(f"{ACBFns}author"), ACBFns)
+		self.authors = get_authors(info.findall(f"{ACBFns}author"), ACBFns)
 
 		self.creation_date_string = info.find(f"{ACBFns}creation-date").text
 
-		self.creation_date = date.fromisoformat(info.find(f"{ACBFns}creation-date").attrib["value"])
-
 		# Optional
+		if "value" in info.find(f"{ACBFns}creation-date").keys():
+			self.creation_date = date.fromisoformat(info.find(f"{ACBFns}creation-date").attrib["value"])
+
 		p = []
 		for line in info.findall(f"{ACBFns}source/{ACBFns}p"):
 			p.append(line.text)
