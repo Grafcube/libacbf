@@ -163,8 +163,8 @@ def get_authors(author_items, ACBFns):
 		new_author = {
 			"activity": None,
 			"lang": None,
-			"first-name": au.find(f"{ACBFns}first-name").text,
-			"last-name": au.find(f"{ACBFns}last-name").text,
+			"first-name": None,
+			"last-name": None,
 			"middle-name": None,
 			"nickname": None,
 			"home-page": None,
@@ -176,10 +176,19 @@ def get_authors(author_items, ACBFns):
 		if "lang" in au.keys():
 			new_author["lang"] = au.attrib["lang"]
 
+		if (au.find(f"{ACBFns}first-name") is not None and au.find(f"{ACBFns}last-name") is not None) or au.find(f"{ACBFns}nickname") is not None:
+			if au.find(f"{ACBFns}first-name") is not None:
+				new_author["first-name"] = au.find(f"{ACBFns}first-name").text
+			if au.find(f"{ACBFns}last-name") is not None:
+				new_author["last-name"] = au.find(f"{ACBFns}last-name").text
+			if au.find(f"{ACBFns}nickname") is not None:
+				new_author["nickname"] = au.find(f"{ACBFns}nickname").text
+		else:
+			raise ValueError("Author must have either First Name and Last Name or Nickname")
+
+		# Optional
 		if au.find(f"{ACBFns}middle-name") is not None:
 			new_author["middle-name"] = au.find(f"{ACBFns}middle-name").text
-		if au.find(f"{ACBFns}nickname") is not None:
-			new_author["nickname"] = au.find(f"{ACBFns}nickname").text
 		if au.find(f"{ACBFns}home-page") is not None:
 			new_author["home-page"] = au.find(f"{ACBFns}home-page").text
 		if au.find(f"{ACBFns}email") is not None:

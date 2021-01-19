@@ -61,7 +61,7 @@ def test_publishinfo_publish_date_string():
 def test_publishinfo_publish_date():
 	print(book_metadata.publisher_info.publish_date)
 	with open("tests/results/metadata/publish_info/test_bookinfo_publish_date.json", "w", encoding="utf-8", newline="\n") as result:
-		result.write(json.dumps(book_metadata.publisher_info.publish_date, ensure_ascii=False))
+		result.write(json.dumps(str(book_metadata.publisher_info.publish_date), ensure_ascii=False))
 
 def test_publishinfo_publish_city():
 	print(book_metadata.publisher_info.publish_city)
@@ -85,5 +85,3 @@ def test_publishinfo():
 	test_publishinfo_publish_city()
 	test_publishinfo_isbn()
 	test_publishinfo_license()
-
-test_publishinfo()
