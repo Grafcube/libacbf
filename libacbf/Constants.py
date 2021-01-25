@@ -27,29 +27,47 @@ class Genres(Enum):
 	"""
 	docstring
 	"""
-	Adult = 1
-	Adventure = 2
-	Alternative = 3
-	Biography = 4
-	Caricature = 5
-	Children = 6
-	Computer = 7
-	Crime = 8
-	Education = 9
-	Fantasy = 10
-	History = 11
-	Horror = 12
-	Humor = 13
-	Manga = 14
-	Military = 15
-	Mystery = 16
-	NonFiction = 17
-	Politics = 18
-	RealLife = 19
-	Religion = 20
-	Romance = 21
-	ScienceFiction = 22
-	Sports = 23
-	Superhero = 24
-	Western = 25
+	Adult = 0
+	Adventure = 1
+	Alternative = 2
+	Biography = 3
+	Caricature = 4
+	Children = 5
+	Computer = 6
+	Crime = 7
+	Education = 8
+	Fantasy = 9
+	History = 10
+	Horror = 11
+	Humor = 12
+	Manga = 13
+	Military = 14
+	Mystery = 15
+	NonFiction = 16
+	Politics = 17
+	RealLife = 18
+	Religion = 19
+	Romance = 20
+	ScienceFiction = 21
+	Sports = 22
+	Superhero = 23
+	Western = 24
 	Other = 100
+
+class TextAreas(Enum):
+	Speech = 0
+	Commentary = 1
+	Formal = 2
+	Letter = 3
+	Code = 4
+	Heading = 5
+	Audio = 6
+	Thought = 7
+	Sign = 8
+
+class PageTransitions(Enum):
+	fade = 0
+	blend = 1
+	scroll_right = 2
+	scroll_down = 3
+	none = 100
