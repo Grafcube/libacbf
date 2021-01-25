@@ -43,3 +43,13 @@ def test_series():
 	print(book_metadata.book_info.series)
 	with open("tests/results/metadata/book_info/test_bookinfo_series.json", "w", encoding="utf-8", newline="\n") as result:
 		result.write(json.dumps(book_metadata.book_info.series, ensure_ascii=False))
+
+def test_content_rating():
+	print(book_metadata.book_info.content_rating)
+	with open("tests/results/metadata/book_info/test_bookinfo_content_rating.json", "w", encoding="utf-8", newline="\n") as result:
+		result.write(json.dumps(book_metadata.book_info.content_rating, ensure_ascii=False))
+
+def test_database_ref():
+	print(book_metadata.book_info.database_ref)
+	with open("tests/results/metadata/book_info/test_bookinfo_database_ref.json", "w", encoding="utf-8", newline="\n") as result:
+		result.write(json.dumps(book_metadata.book_info.database_ref, ensure_ascii=False))

@@ -96,9 +96,28 @@ class BookInfo:
 
 			self.series[se.attrib["title"]] = new_se
 
-		self.content_rating = None # TBD
+		self.content_rating = {}
 
-		self.database_ref = None # TBD
+		rating_items = info.findall(f"{ACBFns}content-rating")
+		for rt in rating_items:
+			if "type" in rt.keys():
+				self.content_rating[rt.attrib["type"]] = rt.text
+			else:
+				self.content_rating["_"] = rt.text
+
+		self.database_ref = []
+
+		db_items = info.findall(f"{ACBFns}databaseref")
+		for db in db_items:
+			new_db = {
+				"dbname": db.attrib["dbname"],
+				"type": "",
+				"value": db.text
+			}
+			if "type" in db.keys():
+				new_db["type"] = db.attrib["type"]
+
+			self.database_ref.append(new_db)
 
 class PublishInfo:
 	"""
