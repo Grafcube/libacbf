@@ -1,5 +1,6 @@
 from re import split
 from datetime import date
+from libacbf.BodyInfo import get_textlayers, get_frames, get_jumps
 
 class BookInfo:
 	"""
@@ -48,7 +49,13 @@ class BookInfo:
 			else:
 				self.annotations["_"] = p
 
-		self.cover_page = None # TBD when book body is started
+		coverpage_item = info.find(f"{ACBFns}coverpage")
+		self.cover_page = {
+			"image_ref": coverpage_item.find(f"{ACBFns}image").attrib["href"],
+			"text_layers": get_textlayers(coverpage_item, ACBFns),
+			"frames": get_frames(coverpage_item, ACBFns),
+			"jumps": get_jumps(coverpage_item, ACBFns)
+		}
 
 		# Optional
 		self.languages = []
