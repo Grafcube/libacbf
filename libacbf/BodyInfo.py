@@ -18,16 +18,22 @@ class Page:
 			self.bg_colour = PageTransitions[page.attrib["bgcolor"]]
 
 		# Sub
-		self.image_ref = ""
+		self.image_ref = page.find(f"{ACBFns}image").attrib["href"]
 
 		## Optional
 		self.title = {}
+		title_items = page.findall(f"{ACBFns}title")
+		for t in title_items:
+			if "lang" in t.keys():
+				self.title[t.attrib["lang"]] = t.text
+			else:
+				self.title["_"] = t.text
 
-		self.text_layers = get_textlayers()
+		self.text_layers = get_textlayers(page, ACBFns)
 
-		self.frames = []
+		self.frames = get_frames(page, ACBFns)
 
-		self.jumps = []
+		self.jumps = get_jumps(page, ACBFns)
 
 class TextLayer:
 	"""
@@ -123,5 +129,5 @@ def get_points(pts_str: str):
 	for pt in pts_l:
 		ls = split(",", pt)
 		vec2 = namedtuple("Vector2", "x y")
-		pts.append( vec2( int(ls[0]), int(ls[1]) ) )
+		pts.append(vec2(int(ls[0]), int(ls[1])))
 	return pts

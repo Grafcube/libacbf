@@ -7,8 +7,6 @@ class ACBFMetadata:
 	docstring
 	"""
 	def __init__(self, file_path: str):
-		self.book_path = file_path
-
 		self.book_info = None
 		self.publisher_info = None
 		self.document_info = None
