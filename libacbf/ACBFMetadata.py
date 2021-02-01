@@ -6,23 +6,16 @@ class ACBFMetadata:
 	"""
 	docstring
 	"""
-	def __init__(self, file_path: str):
+	def __init__(self, meta_root: etree._Element, ACBFns: str):
 		self.book_info = None
 		self.publisher_info = None
 		self.document_info = None
 
-		if pathlib.Path(file_path).suffix != ".acbf": # TODO cbz handling
-			raise ValueError("File is not an ACBF Ebook")
-		else:
-			with open(file_path, encoding="utf-8") as book:
-				root = etree.fromstring(bytes(book.read(), encoding="utf-8"))
-				validate_acbf(root)
+		validate_acbf(meta_root)
 
-				ACBFns = r"{" + root.nsmap[None] + r"}"
-
-				self.book_info = BookInfo(root.find(f"{ACBFns}meta-data/{ACBFns}book-info"), ACBFns)
-				self.publisher_info = PublishInfo(root.find(f"{ACBFns}meta-data/{ACBFns}publish-info"), ACBFns)
-				self.document_info = DocumentInfo(root.find(f"{ACBFns}meta-data/{ACBFns}document-info"), ACBFns)
+		self.book_info = BookInfo(meta_root.find(f"{ACBFns}book-info"), ACBFns)
+		self.publisher_info = PublishInfo(meta_root.find(f"{ACBFns}publish-info"), ACBFns)
+		self.document_info = DocumentInfo(meta_root.find(f"{ACBFns}document-info"), ACBFns)
 
 def validate_acbf(root):
 	"""

@@ -1,8 +1,9 @@
 import json
-from libacbf.ACBFMetadata import ACBFMetadata
+from libacbf.ACBFBook import ACBFBook
 
 sample_path = "tests/samples/Doctorow, Cory - Craphound-1.1.acbf"
-book_metadata = ACBFMetadata(sample_path)
+book = ACBFBook(sample_path)
+book_metadata = book.Metadata
 
 def test_publisher():
 	print(book_metadata.publisher_info.publisher)
