@@ -153,7 +153,6 @@ class DocumentInfo:
 	docstring
 	"""
 	def __init__(self, info: dict, ACBFns):
-		print(info.findall(f"{ACBFns}author"))
 		self.authors = get_authors(info.findall(f"{ACBFns}author"), ACBFns)
 
 		self.creation_date_string = info.find(f"{ACBFns}creation-date").text

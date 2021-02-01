@@ -1,5 +1,6 @@
 from collections import namedtuple
 from re import split
+from typing import List, Dict
 from lxml import etree
 from libacbf.Constants import PageTransitions, TextAreas
 
@@ -11,11 +12,11 @@ class Page:
 		# Optional
 		self.bg_color = None
 		if "bgcolor" in page.keys():
-			self.bg_colour = page.attrib["bgcolor"]
+			self.bg_color = page.attrib["bgcolor"]
 
 		self.transition = PageTransitions.fade
 		if "transition" in page.keys():
-			self.bg_colour = PageTransitions[page.attrib["bgcolor"]]
+			self.transition = PageTransitions[page.attrib["transition"]]
 
 		# Sub
 		self.image_ref = page.find(f"{ACBFns}image").attrib["href"]
@@ -29,7 +30,7 @@ class Page:
 			else:
 				self.title["_"] = t.text
 
-		self.text_layers = get_textlayers(page, ACBFns)
+		self.text_layers: Dict[str, TextLayer] = get_textlayers(page, ACBFns)
 
 		self.frames = get_frames(page, ACBFns)
 
@@ -42,11 +43,11 @@ class TextLayer:
 	def __init__(self, layer: etree._Element, ACBFns: str):
 		self.language = layer.attrib["lang"]
 
-		self.bg_colour = None
+		self.bg_color = None
 		if "bgcolor" in layer.keys():
-			self.bg_colour = layer.attrib["bgcolor"]
+			self.bg_color = layer.attrib["bgcolor"]
 
-		self.text_areas = []
+		self.text_areas: List[TextArea] = []
 		areas = layer.findall(f"{ACBFns}text-area")
 		for ar in areas:
 			self.text_areas.append(TextArea(ar, ACBFns))
@@ -63,9 +64,9 @@ class TextArea:
 			self.paragraph.append(str(etree.tostring(p, encoding="utf-8"), encoding="utf-8").strip())
 
 		# Optional
-		self.bg_colour = None
+		self.bg_color = None
 		if "bgcolor" in area.keys():
-			self.bg_colour = area.attrib["bgcolor"]
+			self.bg_color = area.attrib["bgcolor"]
 
 		self.rotation = 0
 		if "text-rotation" in area.keys():
@@ -87,7 +88,7 @@ def get_textlayers(item, ACBFns):
 	text_layers = {}
 	textlayer_items = item.findall(f"{ACBFns}text-layer")
 	for lr in textlayer_items:
-		new_lr = TextLayer(lr)
+		new_lr = TextLayer(lr, ACBFns)
 		text_layers[new_lr.language] = new_lr
 	return text_layers
 

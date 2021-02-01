@@ -24,4 +24,4 @@ class ACBFBook:
 
 		self.Metadata: ACBFMetadata = ACBFMetadata(self.root.find(f"{self.namespace}meta-data"), self.namespace)
 
-		self.Body: ACBFBody = None # TBD
+		self.Body: ACBFBody = ACBFBody(self.root.find(f"{self.namespace}body"), self.namespace)
