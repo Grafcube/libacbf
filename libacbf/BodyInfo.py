@@ -7,31 +7,27 @@ class Page:
 	"""
 	docstring
 	"""
-	def __init__(self):
+	def __init__(self, page: etree._Element, ACBFns: str):
+		# Optional
 		self.bg_color = None
+		if "bgcolor" in page.keys():
+			self.bg_colour = page.attrib["bgcolor"]
 
 		self.transition = PageTransitions.fade
+		if "transition" in page.keys():
+			self.bg_colour = PageTransitions[page.attrib["bgcolor"]]
 
-		self.title = {}
-
+		# Sub
 		self.image_ref = ""
 
-		self.text_layers = {}
+		## Optional
+		self.title = {}
+
+		self.text_layers = get_textlayers()
 
 		self.frames = []
 
 		self.jumps = []
-
-	def dict(self):
-		return {
-			"bg_color": self.bg_color,
-			"transition": str(self.transition),
-			"title": self.title,
-			"image_ref": self.image_ref,
-			"text_layers": self.text_layers,
-			"frames": self.frames,
-			"jumps": self.jumps
-		}
 
 class TextLayer:
 	"""
@@ -40,6 +36,7 @@ class TextLayer:
 	def __init__(self, layer: etree._Element, ACBFns: str):
 		self.language = layer.attrib["lang"]
 
+		self.bg_colour = None
 		if "bgcolor" in layer.keys():
 			self.bg_colour = layer.attrib["bgcolor"]
 
@@ -57,7 +54,7 @@ class TextArea:
 
 		self.paragraph = []
 		for p in area.findall(f"{ACBFns}p"):
-			self.paragraph.append(etree.tostring(p, encoding="utf-8"))
+			self.paragraph.append(str(etree.tostring(p, encoding="utf-8"), encoding="utf-8").strip())
 
 		# Optional
 		self.bg_colour = None

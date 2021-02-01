@@ -7,9 +7,6 @@ class BookInfo:
 	docstring
 	"""
 	def __init__(self, info, ACBFns):
-		"""
-		docstring
-		"""
 		self.authors = get_authors(info.findall(f"{ACBFns}author"), ACBFns)
 
 		self.book_title = {}
@@ -131,9 +128,6 @@ class PublishInfo:
 	docstring
 	"""
 	def __init__(self, info: dict, ACBFns):
-		"""
-		docstring
-		"""
 		self.publisher = info.find(f"{ACBFns}publisher").text
 
 		self.publish_date_string = info.find(f"{ACBFns}publish-date").text
@@ -159,9 +153,6 @@ class DocumentInfo:
 	docstring
 	"""
 	def __init__(self, info: dict, ACBFns):
-		"""
-		docstring
-		"""
 		print(info.findall(f"{ACBFns}author"))
 		self.authors = get_authors(info.findall(f"{ACBFns}author"), ACBFns)
 

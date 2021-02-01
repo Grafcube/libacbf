@@ -1,3 +1,4 @@
+import json
 from lxml import etree
 from libacbf.BodyInfo import TextArea
 
@@ -9,4 +10,5 @@ with open(sample, "r") as book:
 
 	tx_area = root.find(f"{ACBFns}body/{ACBFns}page/{ACBFns}text-layer/{ACBFns}text-area")
 
-	print(TextArea(tx_area, ACBFns).paragraph)
+	for p in TextArea(tx_area, ACBFns).paragraph:
+		print(p)

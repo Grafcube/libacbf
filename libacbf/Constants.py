@@ -1,10 +1,5 @@
 from enum import Enum
 
-SchemaNamespaces = {
-	r"http://www.fictionbook-lib.org/xml/acbf/1.0": "1.0",
-	r"http://www.acbf.info/xml/acbf/1.1": "1.1"
-}
-
 class AuthorActivities(Enum):
 	"""
 	docstring
