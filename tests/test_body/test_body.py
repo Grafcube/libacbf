@@ -14,6 +14,7 @@ def test_body_info():
 
 def test_body_pages():
 	output = []
+	textlayer_output = {}
 	for pg in book_pages:
 		new_entry = {
 			"bgcolour": pg.bg_color,
@@ -56,8 +57,11 @@ def test_body_pages():
 					"transparent": ta.transparent
 				}
 				new_tl["text_area"]["text_areas"].append(new_ta)
-			new_entry["text_layer"]["text_layers"][tl] = new_tl
+			textlayer_output[new_entry["image"]["href"]] = new_tl
 		output.append(new_entry)
 	print(output)
+	print(textlayer_output)
 	with open("tests/results/body/test_body_pages.json", "w", encoding="utf-8", newline="\n") as result:
 		result.write(json.dumps(output, ensure_ascii=False))
+	with open("tests/results/body/test_body_textlayers.json", "w", encoding="utf-8", newline="\n") as result:
+		result.write(json.dumps(textlayer_output, ensure_ascii=False))
