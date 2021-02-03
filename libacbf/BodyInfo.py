@@ -1,6 +1,6 @@
 from collections import namedtuple
-from re import split
-from typing import List, Dict
+from re import split, sub
+from typing import List, Dict, AnyStr
 from lxml import etree
 from libacbf.Constants import PageTransitions, TextAreas
 
@@ -59,9 +59,12 @@ class TextArea:
 	def __init__(self, area: etree._Element, ACBFns: str):
 		self.points = get_points(area.attrib["points"])
 
-		self.paragraph = []
+		self.paragraph: AnyStr = ""
+		pa = []
 		for p in area.findall(f"{ACBFns}p"):
-			self.paragraph.append(str(etree.tostring(p, encoding="utf-8"), encoding="utf-8").strip())
+			text = sub(r"<\/?p[^>]*>", "", str(etree.tostring(p, encoding="utf-8"), encoding="utf-8").strip())
+			pa.append(text)
+		self.paragraph = "\n".join(pa)
 
 		# Optional
 		self.bg_color = None

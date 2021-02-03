@@ -8,4 +8,5 @@ with open(sample, "r", encoding="utf-8") as book:
 	root = etree.fromstring(bytes(contents, encoding="utf-8"))
 	ACBFns = r"{" + root.nsmap[None] + r"}"
 
-	print(root.find(f"{ACBFns}style").text.strip())
+	for i in root.findall(f"{ACBFns}references/{ACBFns}reference"):
+		print(i.attrib["id"])

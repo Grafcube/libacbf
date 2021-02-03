@@ -1,6 +1,6 @@
 import pathlib
-from typing import List, AnyStr
-from re import findall, IGNORECASE
+from typing import Any, List, Dict, AnyStr
+from re import sub, findall, IGNORECASE
 from lxml import etree
 from libacbf.ACBFMetadata import ACBFMetadata
 from libacbf.ACBFBody import ACBFBody
@@ -31,3 +31,16 @@ class ACBFBook:
 		self.Body: ACBFBody = ACBFBody(self.root.find(f"{self.namespace}body"), self.namespace)
 
 		self.Stylesheet: AnyStr = self.root.find(f"{self.namespace}style").text.strip()
+
+		self.References: Dict[AnyStr, Dict[AnyStr, AnyStr]] = get_references(self.root.find(f"{self.namespace}references"), self.namespace)
+
+def get_references(ref_root, ACBFns) -> Dict[AnyStr, Dict[AnyStr, AnyStr]]:
+		references = {}
+		reference_items = ref_root.findall(f"{ACBFns}reference")
+		for ref in reference_items:
+			pa = []
+			for p in ref.findall(f"{ACBFns}p"):
+				text = sub(r"<\/?p[^>]*>", "", str(etree.tostring(p, encoding="utf-8"), encoding="utf-8").strip())
+				pa.append(text)
+			references[ref.attrib["id"]] = {"paragraph": "\n".join(pa)}
+		return references
