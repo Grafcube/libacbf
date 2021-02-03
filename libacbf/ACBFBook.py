@@ -4,6 +4,7 @@ from re import sub, findall, IGNORECASE
 from lxml import etree
 from libacbf.ACBFMetadata import ACBFMetadata
 from libacbf.ACBFBody import ACBFBody
+from libacbf.ACBFData import ACBFData
 
 class ACBFBook:
 	"""
@@ -33,6 +34,8 @@ class ACBFBook:
 		self.Stylesheet: AnyStr = self.root.find(f"{self.namespace}style").text.strip()
 
 		self.References: Dict[AnyStr, Dict[AnyStr, AnyStr]] = get_references(self.root.find(f"{self.namespace}references"), self.namespace)
+
+		self.Data: ACBFData = ACBFData()
 
 def get_references(ref_root, ACBFns) -> Dict[AnyStr, Dict[AnyStr, AnyStr]]:
 		references = {}
