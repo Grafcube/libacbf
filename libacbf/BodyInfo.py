@@ -1,6 +1,6 @@
 from collections import namedtuple
 from re import split, sub
-from typing import List, Dict, AnyStr
+from typing import List, Dict, AnyStr, Optional
 from lxml import etree
 from libacbf.Constants import PageTransitions, TextAreas
 from libacbf.ACBFBook import BookNamespace
@@ -11,19 +11,19 @@ class Page:
 	"""
 	def __init__(self, page: etree._Element, ns: BookNamespace):
 		# Optional
-		self.bg_color = None
+		self.bg_color: Optional[AnyStr] = None
 		if "bgcolor" in page.keys():
 			self.bg_color = page.attrib["bgcolor"]
 
-		self.transition = PageTransitions.fade
+		self.transition: Optional[PageTransitions] = None
 		if "transition" in page.keys():
 			self.transition = PageTransitions[page.attrib["transition"]]
 
 		# Sub
-		self.image_ref = page.find(f"{ns.ACBFns}image").attrib["href"]
+		self.image_ref: AnyStr = page.find(f"{ns.ACBFns}image").attrib["href"]
 
 		## Optional
-		self.title = {}
+		self.title: Dict[AnyStr, AnyStr] = {}
 		title_items = page.findall(f"{ns.ACBFns}title")
 		for t in title_items:
 			if "lang" in t.keys():
@@ -31,7 +31,7 @@ class Page:
 			else:
 				self.title["_"] = t.text
 
-		self.text_layers: Dict[str, TextLayer] = get_textlayers(page, ns)
+		self.text_layers: Dict[AnyStr, TextLayer] = get_textlayers(page, ns)
 
 		self.frames = get_frames(page, ns)
 
