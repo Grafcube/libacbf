@@ -1,5 +1,5 @@
 import pathlib
-from typing import Any, List, Dict, AnyStr
+from typing import List, Dict, AnyStr
 from re import sub, findall, IGNORECASE
 from lxml import etree
 from libacbf.ACBFMetadata import ACBFMetadata
@@ -24,18 +24,22 @@ class ACBFBook:
 				self.root = etree.fromstring(bytes(contents, encoding="utf-8"))
 				self.tree = self.root.getroottree()
 
-		self.namespace: AnyStr = r"{" + self.root.nsmap[None] + r"}"
+		self.Namespace: BookNamespace = BookNamespace(r"{" + self.root.nsmap[None] + r"}")
 		self.styles: List[AnyStr] = findall(r'<\?xml-stylesheet type="text\/css" href="(.+)"\?>', contents, IGNORECASE)
 
-		self.Metadata: ACBFMetadata = ACBFMetadata(self.root.find(f"{self.namespace}meta-data"), self.namespace)
+		self.Metadata: ACBFMetadata = ACBFMetadata(self.root.find(f"{self.Namespace}meta-data"), self.Namespace)
 
-		self.Body: ACBFBody = ACBFBody(self.root.find(f"{self.namespace}body"), self.namespace)
+		self.Body: ACBFBody = ACBFBody(self.root.find(f"{self.Namespace}body"), self.Namespace)
 
-		self.Stylesheet: AnyStr = self.root.find(f"{self.namespace}style").text.strip()
+		self.Stylesheet: AnyStr = self.root.find(f"{self.Namespace}style").text.strip()
 
-		self.References: Dict[AnyStr, Dict[AnyStr, AnyStr]] = get_references(self.root.find(f"{self.namespace}references"), self.namespace)
+		self.References: Dict[AnyStr, Dict[AnyStr, AnyStr]] = get_references(self.root.find(f"{self.Namespace}references"), self.Namespace)
 
 		self.Data: ACBFData = ACBFData()
+
+class BookNamespace:
+	def __init__(self, ns: str):
+		self.ACBFns = ""
 
 def get_references(ref_root, ACBFns) -> Dict[AnyStr, Dict[AnyStr, AnyStr]]:
 		references = {}

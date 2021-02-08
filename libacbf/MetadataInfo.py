@@ -1,17 +1,18 @@
 from re import split
 from datetime import date
+from libacbf.ACBFBook import BookNamespace
 from libacbf.BodyInfo import get_textlayers, get_frames, get_jumps
 
 class BookInfo:
 	"""
 	docstring
 	"""
-	def __init__(self, info, ACBFns):
-		self.authors = get_authors(info.findall(f"{ACBFns}author"), ACBFns)
+	def __init__(self, info, ns: BookNamespace):
+		self.authors = get_authors(info.findall(f"{ns.ACBFns}author"), ns)
 
 		self.book_title = {}
 
-		book_items = info.findall(f"{ACBFns}book-title")
+		book_items = info.findall(f"{ns.ACBFns}book-title")
 		for title in book_items:
 			if "lang" in title.keys():
 				self.book_title[title.attrib["lang"]] = title.text
@@ -20,7 +21,7 @@ class BookInfo:
 
 		self.genres = []
 
-		genre_items = info.findall(f"{ACBFns}genre")
+		genre_items = info.findall(f"{ns.ACBFns}genre")
 		for genre in genre_items:
 			new_genre = {
 				"genre": genre.text,
@@ -34,10 +35,10 @@ class BookInfo:
 
 		self.annotations = {}
 
-		annotation_items = info.findall(f"{ACBFns}annotation")
+		annotation_items = info.findall(f"{ns.ACBFns}annotation")
 		for an in annotation_items:
 			p = []
-			for i in an.findall(f"{ACBFns}p"):
+			for i in an.findall(f"{ns.ACBFns}p"):
 				p.append(i.text)
 			p = "\n".join(p)
 
@@ -46,19 +47,19 @@ class BookInfo:
 			else:
 				self.annotations["_"] = p
 
-		coverpage_item = info.find(f"{ACBFns}coverpage")
+		coverpage_item = info.find(f"{ns.ACBFns}coverpage")
 		self.cover_page = {
-			"image_ref": coverpage_item.find(f"{ACBFns}image").attrib["href"],
-			"text_layers": get_textlayers(coverpage_item, ACBFns),
-			"frames": get_frames(coverpage_item, ACBFns),
-			"jumps": get_jumps(coverpage_item, ACBFns)
+			"image_ref": coverpage_item.find(f"{ns.ACBFns}image").attrib["href"],
+			"text_layers": get_textlayers(coverpage_item, ns),
+			"frames": get_frames(coverpage_item, ns),
+			"jumps": get_jumps(coverpage_item, ns)
 		}
 
 		# Optional
 		self.languages = []
 
-		if type(info.find(f"{ACBFns}languages")) is not None:
-			text_layers = info.find(f"{ACBFns}languages").findall(f"{ACBFns}text-layer")
+		if type(info.find(f"{ns.ACBFns}languages")) is not None:
+			text_layers = info.find(f"{ns.ACBFns}languages").findall(f"{ns.ACBFns}text-layer")
 			for layer in text_layers:
 				self.languages.append({
 					"lang": layer.attrib["lang"],
@@ -67,14 +68,14 @@ class BookInfo:
 
 		self.characters = []
 
-		character_item = info.find(f"{ACBFns}characters")
+		character_item = info.find(f"{ns.ACBFns}characters")
 		if type(character_item) is not None:
-			for c in character_item.findall(f"{ACBFns}name"):
+			for c in character_item.findall(f"{ns.ACBFns}name"):
 				self.characters.append(c.text)
 
 		self.keywords = []
 
-		keyword_items = info.findall(f"{ACBFns}keywords")
+		keyword_items = info.findall(f"{ns.ACBFns}keywords")
 		for k in keyword_items:
 			new_k = {}
 			if "lang" in k.keys():
@@ -86,7 +87,7 @@ class BookInfo:
 
 		self.series = {}
 
-		series_items = info.findall(f"{ACBFns}sequence")
+		series_items = info.findall(f"{ns.ACBFns}sequence")
 		for se in series_items:
 			new_se = {
 				"volume": None,
@@ -102,7 +103,7 @@ class BookInfo:
 
 		self.content_rating = {}
 
-		rating_items = info.findall(f"{ACBFns}content-rating")
+		rating_items = info.findall(f"{ns.ACBFns}content-rating")
 		for rt in rating_items:
 			if "type" in rt.keys():
 				self.content_rating[rt.attrib["type"]] = rt.text
@@ -111,7 +112,7 @@ class BookInfo:
 
 		self.database_ref = []
 
-		db_items = info.findall(f"{ACBFns}databaseref")
+		db_items = info.findall(f"{ns.ACBFns}databaseref")
 		for db in db_items:
 			new_db = {
 				"dbname": db.attrib["dbname"],
@@ -127,59 +128,59 @@ class PublishInfo:
 	"""
 	docstring
 	"""
-	def __init__(self, info: dict, ACBFns):
-		self.publisher = info.find(f"{ACBFns}publisher").text
+	def __init__(self, info: dict, ns: BookNamespace):
+		self.publisher = info.find(f"{ns.ACBFns}publisher").text
 
-		self.publish_date_string = info.find(f"{ACBFns}publish-date").text
+		self.publish_date_string = info.find(f"{ns.ACBFns}publish-date").text
 
 		# Optional
-		if "value" in info.find(f"{ACBFns}publish-date").keys():
-			self.publish_date = date.fromisoformat(info.find(f"{ACBFns}publish-date").attrib["value"])
+		if "value" in info.find(f"{ns.ACBFns}publish-date").keys():
+			self.publish_date = date.fromisoformat(info.find(f"{ns.ACBFns}publish-date").attrib["value"])
 
 		self.publish_city = ""
-		if type(info.find(f"{ACBFns}city")) is not None:
-			self.publish_city = info.find(f"{ACBFns}city").text
+		if type(info.find(f"{ns.ACBFns}city")) is not None:
+			self.publish_city = info.find(f"{ns.ACBFns}city").text
 
 		self.isbn = ""
-		if type(info.find(f"{ACBFns}isbn")) is not None:
-			self.isbn = info.find(f"{ACBFns}isbn").text
+		if type(info.find(f"{ns.ACBFns}isbn")) is not None:
+			self.isbn = info.find(f"{ns.ACBFns}isbn").text
 
 		self.license = ""
-		if type(info.find(f"{ACBFns}license")) is not None:
-			self.license = info.find(f"{ACBFns}license").text
+		if type(info.find(f"{ns.ACBFns}license")) is not None:
+			self.license = info.find(f"{ns.ACBFns}license").text
 
 class DocumentInfo:
 	"""
 	docstring
 	"""
-	def __init__(self, info: dict, ACBFns):
-		self.authors = get_authors(info.findall(f"{ACBFns}author"), ACBFns)
+	def __init__(self, info: dict, ns: BookNamespace):
+		self.authors = get_authors(info.findall(f"{ns.ACBFns}author"), ns)
 
-		self.creation_date_string = info.find(f"{ACBFns}creation-date").text
+		self.creation_date_string = info.find(f"{ns.ACBFns}creation-date").text
 
 		# Optional
-		if "value" in info.find(f"{ACBFns}creation-date").keys():
-			self.creation_date = date.fromisoformat(info.find(f"{ACBFns}creation-date").attrib["value"])
+		if "value" in info.find(f"{ns.ACBFns}creation-date").keys():
+			self.creation_date = date.fromisoformat(info.find(f"{ns.ACBFns}creation-date").attrib["value"])
 
 		p = []
-		for line in info.findall(f"{ACBFns}source/{ACBFns}p"):
+		for line in info.findall(f"{ns.ACBFns}source/{ns.ACBFns}p"):
 			p.append(line.text)
 		self.source = "\n".join(p)
 
 		self.document_id = ""
-		if type(info.find(f"{ACBFns}id")) is not None:
-			self.document_id = info.find(f"{ACBFns}id").text
+		if type(info.find(f"{ns.ACBFns}id")) is not None:
+			self.document_id = info.find(f"{ns.ACBFns}id").text
 
 		self.document_version = ""
-		if type(info.find(f"{ACBFns}version")) is not None:
-			self.document_version = info.find(f"{ACBFns}version").text
+		if type(info.find(f"{ns.ACBFns}version")) is not None:
+			self.document_version = info.find(f"{ns.ACBFns}version").text
 
 		self.document_history = []
-		if type(info.find(f"{ACBFns}history")) is not None:
-			for item in info.findall(f"{ACBFns}history/{ACBFns}p"):
+		if type(info.find(f"{ns.ACBFns}history")) is not None:
+			for item in info.findall(f"{ns.ACBFns}history/{ns.ACBFns}p"):
 				self.document_history.append(item.text)
 
-def get_authors(author_items, ACBFns):
+def get_authors(author_items, ns: BookNamespace):
 	"""
 	docstring
 	"""
@@ -202,23 +203,23 @@ def get_authors(author_items, ACBFns):
 		if "lang" in au.keys():
 			new_author["lang"] = au.attrib["lang"]
 
-		if (au.find(f"{ACBFns}first-name") is not None and au.find(f"{ACBFns}last-name") is not None) or au.find(f"{ACBFns}nickname") is not None:
-			if au.find(f"{ACBFns}first-name") is not None:
-				new_author["first-name"] = au.find(f"{ACBFns}first-name").text
-			if au.find(f"{ACBFns}last-name") is not None:
-				new_author["last-name"] = au.find(f"{ACBFns}last-name").text
-			if au.find(f"{ACBFns}nickname") is not None:
-				new_author["nickname"] = au.find(f"{ACBFns}nickname").text
+		if (au.find(f"{ns.ACBFns}first-name") is not None and au.find(f"{ns.ACBFns}last-name") is not None) or au.find(f"{ns.ACBFns}nickname") is not None:
+			if au.find(f"{ns.ACBFns}first-name") is not None:
+				new_author["first-name"] = au.find(f"{ns.ACBFns}first-name").text
+			if au.find(f"{ns.ACBFns}last-name") is not None:
+				new_author["last-name"] = au.find(f"{ns.ACBFns}last-name").text
+			if au.find(f"{ns.ACBFns}nickname") is not None:
+				new_author["nickname"] = au.find(f"{ns.ACBFns}nickname").text
 		else:
 			raise ValueError("Author must have either First Name and Last Name or Nickname")
 
 		# Optional
-		if au.find(f"{ACBFns}middle-name") is not None:
-			new_author["middle-name"] = au.find(f"{ACBFns}middle-name").text
-		if au.find(f"{ACBFns}home-page") is not None:
-			new_author["home-page"] = au.find(f"{ACBFns}home-page").text
-		if au.find(f"{ACBFns}email") is not None:
-			new_author["email"] = au.find(f"{ACBFns}email").text
+		if au.find(f"{ns.ACBFns}middle-name") is not None:
+			new_author["middle-name"] = au.find(f"{ns.ACBFns}middle-name").text
+		if au.find(f"{ns.ACBFns}home-page") is not None:
+			new_author["home-page"] = au.find(f"{ns.ACBFns}home-page").text
+		if au.find(f"{ns.ACBFns}email") is not None:
+			new_author["email"] = au.find(f"{ns.ACBFns}email").text
 
 		authors.append(new_author)
 

@@ -1,21 +1,21 @@
-import pathlib
 from lxml import etree
+from libacbf.ACBFBook import BookNamespace
 from libacbf.MetadataInfo import BookInfo, PublishInfo, DocumentInfo
 
 class ACBFMetadata:
 	"""
 	docstring
 	"""
-	def __init__(self, meta_root: etree._Element, ACBFns: str):
+	def __init__(self, meta_root: etree._Element, ns: BookNamespace):
 		self.book_info = None
 		self.publisher_info = None
 		self.document_info = None
 
 		validate_acbf(meta_root)
 
-		self.book_info = BookInfo(meta_root.find(f"{ACBFns}book-info"), ACBFns)
-		self.publisher_info = PublishInfo(meta_root.find(f"{ACBFns}publish-info"), ACBFns)
-		self.document_info = DocumentInfo(meta_root.find(f"{ACBFns}document-info"), ACBFns)
+		self.book_info = BookInfo(meta_root.find(f"{ns.ACBFns}book-info"), ns)
+		self.publisher_info = PublishInfo(meta_root.find(f"{ns.ACBFns}publish-info"), ns)
+		self.document_info = DocumentInfo(meta_root.find(f"{ns.ACBFns}document-info"), ns)
 
 def validate_acbf(root):
 	"""
