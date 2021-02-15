@@ -1,5 +1,5 @@
 from typing import AnyStr, Dict, List, Optional
-from libacbf.BodyInfo import TextLayer
+import libacbf.BodyInfo as body
 
 class Author:
 	"""
@@ -29,7 +29,7 @@ class CoverPage:
 	"""
 	def __init__(self):
 		self.image_ref: AnyStr = ""
-		self.text_layers: Dict[AnyStr, TextLayer] = {}
+		self.text_layers: Dict[AnyStr, body.TextLayer] = {}
 		self.frames: List[Frame] = []
 		self.jumps: List[Jump] = []
 

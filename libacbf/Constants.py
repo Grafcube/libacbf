@@ -1,5 +1,9 @@
 from enum import Enum
 
+class BookNamespace:
+	def __init__(self, ns: str):
+		self.ACBFns = ns
+
 class AuthorActivities(Enum):
 	"""
 	docstring

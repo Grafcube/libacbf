@@ -3,7 +3,7 @@ from datetime import date
 from typing import AnyStr, Dict, List, Optional
 from libacbf.ACBFBook import BookNamespace
 from libacbf.Structs import Author, DBRef, Genre, CoverPage, LanguageLayer, Series
-from libacbf.BodyInfo import get_textlayers, get_frames, get_jumps
+from libacbf.BodyInfo import TextArea, get_textlayers, get_frames, get_jumps
 
 class BookInfo:
 	"""
@@ -29,7 +29,7 @@ class BookInfo:
 			new_genre.Genre = genre.text
 
 			if "match" in genre.keys():
-				new_genre["match"] = int(genre.attrib["match"])
+				new_genre.Match = int(genre.attrib["match"])
 
 			self.genres.append(new_genre)
 

@@ -2,9 +2,8 @@ from collections import namedtuple
 from re import split, sub
 from typing import List, Dict, AnyStr, Optional
 from lxml import etree
-from libacbf.Constants import PageTransitions, TextAreas
-from libacbf.Structs import Frame, Jump
-from libacbf.ACBFBook import BookNamespace
+from libacbf.Constants import BookNamespace, PageTransitions, TextAreas
+import libacbf.Structs as structs
 
 Vec2 = namedtuple("Vector2", "x y")
 
@@ -12,7 +11,7 @@ class Page:
 	"""
 	docstring
 	"""
-	def __init__(self, page: etree._Element, ns: BookNamespace):
+	def __init__(self, page, ns: BookNamespace):
 		# Optional
 		self.bg_color: Optional[AnyStr] = None
 		if "bgcolor" in page.keys():
@@ -36,15 +35,15 @@ class Page:
 
 		self.text_layers: Dict[AnyStr, TextLayer] = get_textlayers(page, ns)
 
-		self.frames: List[Frame] = get_frames(page, ns)
+		self.frames: List[structs.Frame] = get_frames(page, ns)
 
-		self.jumps: List[Jump] = get_jumps(page, ns)
+		self.jumps: List[structs.Jump] = get_jumps(page, ns)
 
 class TextLayer:
 	"""
 	docstring
 	"""
-	def __init__(self, layer: etree._Element, ns: BookNamespace):
+	def __init__(self, layer, ns: BookNamespace):
 		self.language = layer.attrib["lang"]
 
 		self.bg_color = None
@@ -60,7 +59,7 @@ class TextArea:
 	"""
 	docstring
 	"""
-	def __init__(self, area: etree._Element, ns: BookNamespace):
+	def __init__(self, area, ns: BookNamespace):
 		self.points = get_points(area.attrib["points"])
 
 		self.paragraph: AnyStr = ""
@@ -92,10 +91,10 @@ class TextArea:
 			self.rotation = area.attrib["transparent"]
 
 def get_textlayers(item, ns: BookNamespace):
-	text_layers = {}
+	text_layers: Dict[AnyStr, TextArea] = {}
 	textlayer_items = item.findall(f"{ns.ACBFns}text-layer")
 	for lr in textlayer_items:
-		new_lr = TextLayer(lr)
+		new_lr = TextLayer(lr, ns)
 		text_layers[new_lr.language] = new_lr
 	return text_layers
 
@@ -103,7 +102,7 @@ def get_frames(item, ns: BookNamespace):
 	frames = []
 	frame_items = item.findall(f"{ns.ACBFns}frame")
 	for fr in frame_items:
-		frame = Frame()
+		frame = structs.Frame()
 		frame.points = get_points(fr.attrib["points"])
 
 		if "bgcolor" in fr.keys():
@@ -117,7 +116,7 @@ def get_jumps(item, ns: BookNamespace):
 	jumps = []
 	jump_items = item.findall(f"{ns.ACBFns}jump")
 	for jp in jump_items:
-		jump = Jump()
+		jump = structs.Jump()
 		jump.points = get_points(jp.attrib["points"])
 		jump.page = jp.attrib["page"]
 

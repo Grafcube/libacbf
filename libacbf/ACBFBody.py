@@ -1,13 +1,12 @@
 from typing import List
-from lxml import etree
-from libacbf.ACBFBook import BookNamespace
+from libacbf.Constants import BookNamespace
 from libacbf.BodyInfo import Page
 
 class ACBFBody:
 	"""
 	docstring
 	"""
-	def __init__(self, body: etree._Element, ns: BookNamespace):
+	def __init__(self, body, ns: BookNamespace):
 		self.pages: List[Page] = []
 		page_items = body.findall(f"{ns.ACBFns}page")
 		for pg in page_items:
