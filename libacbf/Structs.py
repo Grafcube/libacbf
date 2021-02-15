@@ -1,4 +1,4 @@
-from typing import Any, AnyStr, Dict, List, Optional
+from typing import AnyStr, Dict, List, Optional
 from libacbf.BodyInfo import TextLayer
 
 class Author:
@@ -65,11 +65,13 @@ class Frame:
 	docstring
 	"""
 	def __init__(self):
-		pass
+		self.points: List = []
+		self.bgcolor: Optional[AnyStr] = None
 
 class Jump:
 	"""
 	docstring
 	"""
 	def __init__(self):
-		pass
+		self.page: Optional[int] = None
+		self.points: List = []

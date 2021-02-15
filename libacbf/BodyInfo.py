@@ -3,7 +3,10 @@ from re import split, sub
 from typing import List, Dict, AnyStr, Optional
 from lxml import etree
 from libacbf.Constants import PageTransitions, TextAreas
+from libacbf.Structs import Frame, Jump
 from libacbf.ACBFBook import BookNamespace
+
+Vec2 = namedtuple("Vector2", "x y")
 
 class Page:
 	"""
@@ -33,9 +36,9 @@ class Page:
 
 		self.text_layers: Dict[AnyStr, TextLayer] = get_textlayers(page, ns)
 
-		self.frames = get_frames(page, ns)
+		self.frames: List[Frame] = get_frames(page, ns)
 
-		self.jumps = get_jumps(page, ns)
+		self.jumps: List[Jump] = get_jumps(page, ns)
 
 class TextLayer:
 	"""
@@ -100,16 +103,12 @@ def get_frames(item, ns: BookNamespace):
 	frames = []
 	frame_items = item.findall(f"{ns.ACBFns}frame")
 	for fr in frame_items:
-		pts = get_points(fr.attrib["points"])
+		frame = Frame()
+		frame.points = get_points(fr.attrib["points"])
 
-		bg = None
 		if "bgcolor" in fr.keys():
-			bg = fr.attrib["bgcolor"]
+			frame.bgcolor = fr.attrib["bgcolor"]
 
-		frame = {
-			"points": pts,
-			"bgcolor": bg
-		}
 		frames.append(frame)
 
 	return frames
@@ -118,12 +117,10 @@ def get_jumps(item, ns: BookNamespace):
 	jumps = []
 	jump_items = item.findall(f"{ns.ACBFns}jump")
 	for jp in jump_items:
-		pts = get_points(jp.attrib["points"])
+		jump = Jump()
+		jump.points = get_points(jp.attrib["points"])
+		jump.page = jp.attrib["page"]
 
-		jump = {
-			"page": jp.attrib["page"],
-			"points": pts
-		}
 		jumps.append(jump)
 
 	return jumps
@@ -133,6 +130,5 @@ def get_points(pts_str: str):
 	pts_l = split(" ", pts_str)
 	for pt in pts_l:
 		ls = split(",", pt)
-		vec2 = namedtuple("Vector2", "x y")
-		pts.append(vec2(int(ls[0]), int(ls[1])))
+		pts.append(Vec2(int(ls[0]), int(ls[1])))
 	return pts
