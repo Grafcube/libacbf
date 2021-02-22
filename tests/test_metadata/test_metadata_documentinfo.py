@@ -1,14 +1,28 @@
 import json
+from libacbf.ACBFMetadata import ACBFMetadata
 from libacbf.ACBFBook import ACBFBook
 
 sample_path = "tests/samples/Doctorow, Cory - Craphound-1.1.acbf"
 book = ACBFBook(sample_path)
-book_metadata = book.Metadata
+book_metadata: ACBFMetadata = book.Metadata
 
 def test_authors():
-	print(book_metadata.document_info.authors)
+	op = []
+	for i in book_metadata.document_info.authors:
+		new_op = {
+			"activity": i.activity,
+			"lang": i.lang,
+			"first_name": i.first_name,
+			"last_name": i.last_name,
+			"middle_name": i.middle_name,
+			"nickname": i.nickname,
+			"home_page": i.home_page,
+			"email": i.email
+		}
+		op.append(new_op)
+	print(op)
 	with open("tests/results/metadata/document_info/test_documentinfo_authors.json", "w", encoding="utf-8", newline="\n") as result:
-		result.write(json.dumps(book_metadata.document_info.authors, ensure_ascii=False))
+		result.write(json.dumps(op, ensure_ascii=False))
 
 def test_creation_date_string():
 	print(book_metadata.document_info.creation_date_string)

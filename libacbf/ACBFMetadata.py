@@ -11,7 +11,7 @@ class ACBFMetadata:
 
 		self.book_info: BookInfo = BookInfo(meta_root.find(f"{ns.ACBFns}book-info"), ns)
 		self.publisher_info: PublishInfo = PublishInfo(meta_root.find(f"{ns.ACBFns}publish-info"), ns)
-		self.document_info: PublishInfo = DocumentInfo(meta_root.find(f"{ns.ACBFns}document-info"), ns)
+		self.document_info: DocumentInfo = DocumentInfo(meta_root.find(f"{ns.ACBFns}document-info"), ns)
 
 def validate_acbf(root):
 	"""

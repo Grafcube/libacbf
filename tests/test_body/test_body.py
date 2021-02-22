@@ -19,45 +19,45 @@ def test_body_pages():
 		new_entry = {
 			"bgcolour": pg.bg_color,
 			"transition": str(pg.transition),
-			"image": {
-				"href": pg.image_ref
-			},
-			"title": {
-				"titles": pg.title
-			},
-			"text_layer": {
-				"text_layers": {}
-			},
-			"frame": {
-				"frame": pg.frames
-			},
-			"jump": {
-				"jumps": pg.jumps
-			}
+			"image": pg.image_ref,
+			"titles": pg.title,
+			"text_layers": {},
+			"frames": [],
+			"jumps": []
 		}
+
+		for fr in pg.frames:
+			new_fr = {
+				"bgcolor": fr.bgcolor,
+				"points": fr.points
+			}
+			new_entry["frames"].append(new_fr)
+
+		for jm in pg.jumps:
+			new_jm = {
+				"page": jm.page,
+				"points": jm.points
+			}
+			new_entry["jumps"].append(new_jm)
 
 		for tl in pg.text_layers.keys():
 			new_tl = {
 				"lang": pg.text_layers[tl].language,
 				"bgcolour": pg.text_layers[tl].bg_color,
-				"text_area": {
-					"text_areas": []
-				}
+				"text_areas": []
 			}
 			for ta in pg.text_layers[tl].text_areas:
 				new_ta = {
 					"points": ta.points,
-					"p": {
-						"paragraphs": ta.paragraph
-					},
+					"p": ta.paragraph,
 					"bgcolour": ta.bg_color,
 					"rotation": ta.rotation,
 					"type": str(ta.type),
 					"inverted": ta.inverted,
 					"transparent": ta.transparent
 				}
-				new_tl["text_area"]["text_areas"].append(new_ta)
-			textlayer_output[new_entry["image"]["href"]] = new_tl
+				new_tl["text_areas"].append(new_ta)
+			textlayer_output[new_entry["image"]] = new_tl
 		output.append(new_entry)
 	print(output)
 	print(textlayer_output)
