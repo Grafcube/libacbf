@@ -49,9 +49,9 @@ class BookInfo:
 
 		self.cover_page: CoverPage = CoverPage()
 		coverpage_item = info.find(f"{ns.ACBFns}coverpage")
-		self.cover_page.image_ref = coverpage_item.find(f"{ns.ACBFns}image").attrib["href"],
-		self.cover_page.text_layers = get_textlayers(coverpage_item, ns),
-		self.cover_page.frames = get_frames(coverpage_item, ns),
+		self.cover_page.image_ref = coverpage_item.find(f"{ns.ACBFns}image").attrib["href"]
+		self.cover_page.text_layers = get_textlayers(coverpage_item, ns)
+		self.cover_page.frames = get_frames(coverpage_item, ns)
 		self.cover_page.jumps = get_jumps(coverpage_item, ns)
 
 		# Optional

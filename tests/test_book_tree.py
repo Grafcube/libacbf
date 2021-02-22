@@ -5,4 +5,4 @@ sample = "tests/samples/Doctorow, Cory - Craphound-1.1.acbf"
 book = ACBFBook(sample)
 book_metadata: ACBFMetadata = book.Metadata
 
-print(type(book_metadata.book_info.cover_page.text_layers))
+print(book_metadata.book_info.cover_page.text_layers)

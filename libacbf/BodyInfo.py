@@ -91,7 +91,7 @@ class TextArea:
 			self.rotation = area.attrib["transparent"]
 
 def get_textlayers(item, ns: BookNamespace):
-	text_layers: Dict[AnyStr, TextArea] = {}
+	text_layers = {}
 	textlayer_items = item.findall(f"{ns.ACBFns}text-layer")
 	for lr in textlayer_items:
 		new_lr = TextLayer(lr, ns)
