@@ -38,18 +38,7 @@ class ACBFBook:
 
 		self.References: Dict[AnyStr, Dict[AnyStr, AnyStr]] = get_references(self.root.find(f"{self.Namespace.ACBFns}references"), self.Namespace)
 
-		self.Data: ACBFData = ACBFData()
-
-def get_references(ref_root, ns: BookNamespace) -> Dict[AnyStr, Dict[AnyStr, AnyStr]]:
-		references = {}
-		reference_items = ref_root.findall(f"{ns.ACBFns}reference")
-		for ref in reference_items:
-			pa = []
-			for p in ref.findall(f"{ns.ACBFns}p"):
-				text = sub(r"<\/?p[^>]*>", "", str(etree.tostring(p, encoding="utf-8"), encoding="utf-8").strip())
-				pa.append(text)
-			references[ref.attrib["id"]] = {"paragraph": "\n".join(pa)}
-		return references
+		self.Data: Dict[AnyStr, ACBFData] = get_ACBF_data(self.root, self.Namespace)
 
 def validate_acbf(root):
 	"""
@@ -70,3 +59,27 @@ def validate_acbf(root):
 	except etree.DocumentInvalid as err:
 		print("Validation failed. File may be valid (bug)")
 		print(err)
+
+def get_references(ref_root, ns: BookNamespace) -> Dict[AnyStr, Dict[AnyStr, AnyStr]]:
+		references = {}
+		reference_items = ref_root.findall(f"{ns.ACBFns}reference")
+		for ref in reference_items:
+			pa = []
+			for p in ref.findall(f"{ns.ACBFns}p"):
+				text = sub(r"<\/?p[^>]*>", "", str(etree.tostring(p, encoding="utf-8"), encoding="utf-8").strip())
+				pa.append(text)
+			references[ref.attrib["id"]] = {"paragraph": "\n".join(pa)}
+		return references
+
+def get_ACBF_data(root, ns: BookNamespace):
+	data = {}
+	if root.find(f"{ns.ACBFns}data") is not None:
+		base = root.find(f"{ns.ACBFns}data")
+		data_items = base.findall(f"{ns.ACBFns}binary")
+		for b in data_items:
+			new_data = ACBFData()
+			new_data.id = b.attrib["id"]
+			new_data.type = b.attrib["content-type"]
+			new_data.data = b.text
+			data[new_data.id] = new_data
+	return data
