@@ -25,10 +25,10 @@ class ACBFBook:
 				self.root = etree.fromstring(bytes(contents, encoding="utf-8"))
 				self.tree = self.root.getroottree()
 
+		validate_acbf(self.root)
+
 		self.Namespace: BookNamespace = BookNamespace(r"{" + self.root.nsmap[None] + r"}")
 		self.styles: List[AnyStr] = findall(r'<\?xml-stylesheet type="text\/css" href="(.+)"\?>', contents, IGNORECASE)
-
-		print(self.Namespace.ACBFns)
 
 		self.Metadata: metadata = metadata.ACBFMetadata(self.root.find(f"{self.Namespace.ACBFns}meta-data"), self.Namespace)
 
@@ -50,3 +50,23 @@ def get_references(ref_root, ns: BookNamespace) -> Dict[AnyStr, Dict[AnyStr, Any
 				pa.append(text)
 			references[ref.attrib["id"]] = {"paragraph": "\n".join(pa)}
 		return references
+
+def validate_acbf(root):
+	"""
+	docstring
+	"""
+	tree = root.getroottree()
+	version = tree.docinfo.xml_version
+	xsd_path = f"libacbf/schema/acbf-{version}.xsd"
+
+	with open(xsd_path, encoding="utf-8") as file:
+		acbf_root = etree.XML(bytes(file.read(), encoding="utf-8"))
+		acbf_tree = acbf_root.getroottree()
+		acbf_schema = etree.XMLSchema(acbf_tree)
+
+	# TODO fix schema error. When fixed, remove try/except
+	try:
+		acbf_schema.assertValid(tree)
+	except etree.DocumentInvalid as err:
+		print("Validation failed. File may be valid (bug)")
+		print(err)
