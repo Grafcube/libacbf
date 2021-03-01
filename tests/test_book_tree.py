@@ -1,5 +1,4 @@
 from libacbf.ACBFBook import ACBFBook
-from libacbf.ACBFMetadata import ACBFMetadata
 
-sample = "tests/samples/AndasGame.acbf"
+sample = "libacbf/templates/base_template_1.1.acbf"
 book = ACBFBook(sample)
