@@ -83,7 +83,8 @@ class BookInfo:
 			if "lang" in k.keys():
 				new_k[k.attrib["lang"]] = split(", |,", k.text)
 			else:
-				new_k["_"] = split(", |,", k.text)
+				if k.text is not None:
+					new_k["_"] = split(r", |,", k.text)
 
 			self.keywords.append(new_k)
 

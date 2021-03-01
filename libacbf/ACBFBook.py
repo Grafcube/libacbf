@@ -49,7 +49,7 @@ def validate_acbf(root):
 	xsd_path = f"libacbf/schema/acbf-{version}.xsd"
 
 	with open(xsd_path, encoding="utf-8") as file:
-		acbf_root = etree.XML(bytes(file.read(), encoding="utf-8"))
+		acbf_root = etree.fromstring(bytes(file.read(), encoding="utf-8"))
 		acbf_tree = acbf_root.getroottree()
 		acbf_schema = etree.XMLSchema(acbf_tree)
 
@@ -62,6 +62,8 @@ def validate_acbf(root):
 
 def get_references(ref_root, ns: BookNamespace) -> Dict[AnyStr, Dict[AnyStr, AnyStr]]:
 		references = {}
+		if ref_root is None:
+			return references
 		reference_items = ref_root.findall(f"{ns.ACBFns}reference")
 		for ref in reference_items:
 			pa = []
