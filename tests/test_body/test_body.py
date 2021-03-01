@@ -8,14 +8,15 @@ book_pages = book_body.pages
 
 def test_body_info():
 	print(book_body.bgcolor)
-	print("Number of Pages: ", len(book_pages))
+	print("Number of Pages: ", book_body.total_pages)
 	with open("tests/results/body/test_body_info.json", "w", encoding="utf-8", newline="\n") as result:
-		result.write(json.dumps({"bgcolour": book_body.bgcolor, "pages": len(book_pages)}, ensure_ascii=False))
+		result.write(json.dumps({"bgcolour": book_body.bgcolor, "pages": book_body.total_pages}, ensure_ascii=False))
 
 def test_body_pages():
 	output = []
 	textlayer_output = {}
-	for pg in book_pages:
+	print(len(list(book_body)))
+	for pg in book_pages.values():
 		new_entry = {
 			"bgcolour": pg.bg_color,
 			"transition": str(pg.transition),
