@@ -1,4 +1,4 @@
 from libacbf.ACBFBook import ACBFBook
 
-sample = "libacbf/templates/base_template_1.1.acbf"
+sample = "tests/samples/Doctorow, Cory - Craphound-1.1.acbf"
 book = ACBFBook()

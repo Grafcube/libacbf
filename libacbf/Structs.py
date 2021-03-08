@@ -1,19 +1,32 @@
 from typing import AnyStr, Dict, List, Optional
 import libacbf.BodyInfo as body
+from libacbf.Constants import AuthorActivities
 
 class Author:
 	"""
 	docstring
 	"""
-	def __init__(self):
-		self.activity: Optional[AnyStr] = None
-		self.lang: Optional[AnyStr] = None
+	def __init__(self, first_name = None, last_name = None, nickname = None):
 		self.first_name: Optional[AnyStr] = None
 		self.last_name: Optional[AnyStr] = None
-		self.middle_name: Optional[AnyStr] = None
 		self.nickname: Optional[AnyStr] = None
+
+		if (first_name is not None and last_name is not None) or nickname is not None:
+			self.first_name: Optional[AnyStr] = first_name
+			self.last_name: Optional[AnyStr] = last_name
+			self.nickname: Optional[AnyStr] = nickname
+		else:
+			raise ValueError("Author must have either First Name and Last Name or Nickname")
+
+		self._activity: Optional[AnyStr] = None
+		self.lang: Optional[AnyStr] = None
+		self.middle_name: Optional[AnyStr] = None
 		self.home_page: Optional[AnyStr] = None
 		self.email: Optional[AnyStr] = None
+
+	@property
+	def activity(self) -> Optional[AuthorActivities]:
+		return self._activity
 
 class Genre:
 	"""
@@ -27,8 +40,8 @@ class CoverPage:
 	"""
 	docstring
 	"""
-	def __init__(self):
-		self.image_ref: AnyStr = ""
+	def __init__(self, href: AnyStr):
+		self.image_ref: AnyStr = href
 		self.text_layers: Dict[AnyStr, body.TextLayer] = {}
 		self.frames: List[Frame] = []
 		self.jumps: List[Jump] = []

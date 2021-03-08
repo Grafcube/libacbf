@@ -78,7 +78,7 @@ class TextArea:
 		if "text-rotation" in area.keys():
 			self.rotation = area.attrib["text-rotation"]
 
-		self.type = TextAreas.Speech
+		self.type = None
 		if "type" in area.keys():
 			self.rotation = area.attrib["type"]
 
