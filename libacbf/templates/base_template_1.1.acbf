@@ -1,3 +1,36 @@
 <?xml version='1.0' encoding='utf-8'?>
 <ACBF xmlns="http://www.acbf.info/xml/acbf/1.1">
+	<meta-data>
+		<book-info>
+			<author>
+				<first-name>First</first-name>
+				<last-name>Last</last-name>
+				<nickname>Nickname</nickname>
+			</author>
+			<book-title></book-title>
+			<genre>Other</genre>
+			<annotation></annotation>
+			<coverpage>
+				<image href="cover.jpg" />
+			</coverpage>
+		</book-info>
+		<publish-info>
+			<publisher></publisher>
+			<publish-date></publish-date>
+		</publish-info>
+		<document-info>
+			<author>
+				<first-name>First</first-name>
+				<last-name>Last</last-name>
+				<nickname>Nickname</nickname>
+			</author>
+			<creation-date></creation-date>
+		</document-info>
+	</meta-data>
+
+	<body>
+		<page>
+			<image href="page01.jpg" />
+		</page>
+	</body>
 </ACBF>

@@ -57,7 +57,7 @@ class BookInfo:
 		# Optional
 		self.languages: List[LanguageLayer] = []
 
-		if type(info.find(f"{ns.ACBFns}languages")) is not None:
+		if info.find(f"{ns.ACBFns}languages") is not None:
 			text_layers = info.find(f"{ns.ACBFns}languages").findall(f"{ns.ACBFns}text-layer")
 			for layer in text_layers:
 				new_lang = LanguageLayer()
@@ -71,7 +71,7 @@ class BookInfo:
 		self.characters: List[AnyStr] = []
 
 		character_item = info.find(f"{ns.ACBFns}characters")
-		if type(character_item) is not None:
+		if character_item is not None:
 			for c in character_item.findall(f"{ns.ACBFns}name"):
 				self.characters.append(c.text)
 
@@ -140,15 +140,15 @@ class PublishInfo:
 			self.publish_date = date.fromisoformat(info.find(f"{ns.ACBFns}publish-date").attrib["value"])
 
 		self.publish_city: Optional[AnyStr] = None
-		if type(info.find(f"{ns.ACBFns}city")) is not None:
+		if info.find(f"{ns.ACBFns}city") is not None:
 			self.publish_city = info.find(f"{ns.ACBFns}city").text
 
 		self.isbn: Optional[AnyStr] = None
-		if type(info.find(f"{ns.ACBFns}isbn")) is not None:
+		if info.find(f"{ns.ACBFns}isbn") is not None:
 			self.isbn = info.find(f"{ns.ACBFns}isbn").text
 
 		self.license: Optional[AnyStr] = None
-		if type(info.find(f"{ns.ACBFns}license")) is not None:
+		if info.find(f"{ns.ACBFns}license") is not None:
 			self.license = info.find(f"{ns.ACBFns}license").text
 
 class DocumentInfo:
@@ -166,22 +166,22 @@ class DocumentInfo:
 			self.creation_date = date.fromisoformat(info.find(f"{ns.ACBFns}creation-date").attrib["value"])
 
 		self.source: Optional[AnyStr] = None
-		if type(info.find(f"{ns.ACBFns}source")) is not None:
+		if info.find(f"{ns.ACBFns}source") is not None:
 			p = []
 			for line in info.findall(f"{ns.ACBFns}source/{ns.ACBFns}p"):
 				p.append(line.text)
 			self.source = "\n".join(p)
 
 		self.document_id: Optional[AnyStr] = None
-		if type(info.find(f"{ns.ACBFns}id")) is not None:
+		if info.find(f"{ns.ACBFns}id") is not None:
 			self.document_id = info.find(f"{ns.ACBFns}id").text
 
 		self.document_version: Optional[AnyStr] = None
-		if type(info.find(f"{ns.ACBFns}version")) is not None:
+		if info.find(f"{ns.ACBFns}version") is not None:
 			self.document_version = info.find(f"{ns.ACBFns}version").text
 
 		self.document_history: List[AnyStr] = []
-		if type(info.find(f"{ns.ACBFns}history")) is not None:
+		if info.find(f"{ns.ACBFns}history") is not None:
 			for item in info.findall(f"{ns.ACBFns}history/{ns.ACBFns}p"):
 				self.document_history.append(item.text)
 

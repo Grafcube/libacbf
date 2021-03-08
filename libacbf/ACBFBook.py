@@ -1,5 +1,5 @@
 import pathlib
-from typing import List, Dict, AnyStr
+from typing import List, Dict, AnyStr, Optional
 from re import sub, findall, IGNORECASE
 from lxml import etree
 from libacbf.Constants import BookNamespace
@@ -11,7 +11,7 @@ class ACBFBook:
 	"""
 	docstring
 	"""
-	def __init__(self, file_path):
+	def __init__(self, file_path: AnyStr = "libacbf/templates/base_template_1.1.acbf"):
 		self.book_path = file_path
 
 		self.tree = None
@@ -34,7 +34,9 @@ class ACBFBook:
 
 		self.Body: ACBFBody = ACBFBody(self.root.find(f"{self.Namespace.ACBFns}body"), self.Namespace)
 
-		self.Stylesheet: AnyStr = self.root.find(f"{self.Namespace.ACBFns}style").text.strip()
+		self.Stylesheet: Optional[AnyStr] = None
+		if self.root.find(f"{self.Namespace.ACBFns}style") is not None:
+			self.Stylesheet = self.root.find(f"{self.Namespace.ACBFns}style").text.strip()
 
 		self.References: Dict[AnyStr, Dict[AnyStr, AnyStr]] = get_references(self.root.find(f"{self.Namespace.ACBFns}references"), self.Namespace)
 
