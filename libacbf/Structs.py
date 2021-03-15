@@ -1,4 +1,4 @@
-from typing import AnyStr, Dict, List, Optional
+from typing import AnyStr, Dict, List, Optional, Union
 import libacbf.BodyInfo as body
 from libacbf.Constants import AuthorActivities
 
@@ -27,6 +27,15 @@ class Author:
 	@property
 	def activity(self) -> Optional[AuthorActivities]:
 		return self._activity
+
+	@activity.setter
+	def activity(self, val: Union[AuthorActivities, int, AnyStr]):
+		if type(val) is AuthorActivities:
+			self._activity = val
+		elif type(val) is str:
+			self._activity = AuthorActivities[val]
+		elif type(val) is int:
+			self._activity = AuthorActivities(val)
 
 class Genre:
 	"""

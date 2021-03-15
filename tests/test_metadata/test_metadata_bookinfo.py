@@ -10,7 +10,7 @@ def test_authors():
 	op = []
 	for i in book_metadata.book_info.authors:
 		new_op = {
-			"activity": i.activity,
+			"activity": i.activity.name,
 			"lang": i.lang,
 			"first_name": i.first_name,
 			"last_name": i.last_name,
