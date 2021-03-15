@@ -1,4 +1,5 @@
 from typing import AnyStr, Dict, List, Optional, Union
+from langcodes import Language, standardize_tag
 import libacbf.BodyInfo as body
 from libacbf.Constants import AuthorActivities
 
@@ -18,8 +19,8 @@ class Author:
 		else:
 			raise ValueError("Author must have either First Name and Last Name or Nickname")
 
-		self._activity: Optional[AnyStr] = None
-		self.lang: Optional[AnyStr] = None
+		self._activity: Optional[AuthorActivities] = None
+		self._lang: Optional[Language] = None
 		self.middle_name: Optional[AnyStr] = None
 		self.home_page: Optional[AnyStr] = None
 		self.email: Optional[AnyStr] = None
@@ -29,13 +30,28 @@ class Author:
 		return self._activity
 
 	@activity.setter
-	def activity(self, val: Union[AuthorActivities, int, AnyStr]):
-		if type(val) is AuthorActivities:
+	def activity(self, val: Optional[Union[AuthorActivities, int, AnyStr]]):
+		if val is None:
+			self._activity = None
+		elif type(val) is AuthorActivities:
 			self._activity = val
 		elif type(val) is str:
 			self._activity = AuthorActivities[val]
 		elif type(val) is int:
 			self._activity = AuthorActivities(val)
+
+	@property
+	def lang(self) -> Optional[Language]:
+		return self._lang
+
+	@lang.setter
+	def lang(self, val: Optional[Union[AnyStr, Language]]):
+		if val is None:
+			self._lang = None
+		elif type(val) is Language:
+			self._lang = val
+		elif type(val) is str:
+			self._lang = Language.get(standardize_tag(val))
 
 class Genre:
 	"""

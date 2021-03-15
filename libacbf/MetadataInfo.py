@@ -1,6 +1,7 @@
 from re import split
 from datetime import date
 from typing import AnyStr, Dict, List, Optional
+from lxml import etree
 from libacbf.ACBFBook import BookNamespace
 from libacbf.Structs import Author, DBRef, Genre, CoverPage, LanguageLayer, Series
 from libacbf.BodyInfo import TextArea, get_textlayers, get_frames, get_jumps
@@ -163,7 +164,49 @@ class BookInfo:
 	@authors.setter
 	def authors(self, val: List[Author]):
 		if len(val) > 0:
-			pass
+			for el in self._info.findall(f"{self._ns.ACBFns}author"):
+				el.clear()
+				self._info.remove(el)
+			for au in val:
+				self.add_author(au)
+		else:
+			raise ValueError("Book must have at least one Author")
+
+	def add_author(self, au: Author):
+		au_element = etree.Element("author")
+
+		if au.activity is not None:
+			au_element.set("activity", au.activity.name)
+		if au.lang is not None:
+			au_element.set("lang", str(au.lang))
+
+		if au.first_name is not None:
+			element = etree.Element("first-name")
+			element.text = au.first_name
+			au_element.append(element)
+		if au.last_name is not None:
+			element = etree.Element("last-name")
+			element.text = au.last_name
+			au_element.append(element)
+		if au.nickname is not None:
+			element = etree.Element("nickname")
+			element.text = au.nickname
+			au_element.append(element)
+		if au.middle_name is not None:
+			element = etree.Element("middle-name")
+			element.text = au.middle_name
+			au_element.append(element)
+		if au.home_page is not None:
+			element = etree.Element("home-page")
+			element.text = au.home_page
+			au_element.append(element)
+		if au.email is not None:
+			element = etree.Element("email")
+			element.text = au.email
+			au_element.append(element)
+
+		self._info.findall(f"{self._ns.ACBFns}author")[-1].addnext(au_element)
+		self.sync_authors()
 
 class PublishInfo:
 	"""

@@ -11,7 +11,7 @@ def test_authors():
 	for i in book_metadata.book_info.authors:
 		new_op = {
 			"activity": i.activity.name,
-			"lang": i.lang,
+			"lang": str(i.lang) if i.lang is not None else None,
 			"first_name": i.first_name,
 			"last_name": i.last_name,
 			"middle_name": i.middle_name,
