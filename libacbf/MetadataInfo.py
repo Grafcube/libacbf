@@ -164,9 +164,9 @@ class BookInfo:
 	@authors.setter
 	def authors(self, val: List[Author]):
 		if len(val) > 0:
-			for el in self._info.findall(f"{self._ns.ACBFns}author"):
-				el.clear()
-				self._info.remove(el)
+			for elem in self._info.findall(f"{self._ns.ACBFns}author"):
+				elem.clear()
+				self._info.remove(elem)
 			for au in val:
 				self.add_author(au)
 		else:
@@ -205,7 +205,9 @@ class BookInfo:
 			element.text = au.email
 			au_element.append(element)
 
-		last_au_idx = self._info.index(self._info.findall(f"{self._ns.ACBFns}author")[-1])
+		last_au_idx = 0
+		if len(self._info.findall(f"{self._ns.ACBFns}author")) > 0:
+			last_au_idx = self._info.index(self._info.findall(f"{self._ns.ACBFns}author")[-1])
 		self._info.insert(last_au_idx+1, au_element)
 		self.sync_authors()
 
