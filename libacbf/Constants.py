@@ -1,8 +1,14 @@
 from enum import Enum, auto
+from re import sub
+from typing import AnyStr
 
 class BookNamespace:
 	def __init__(self, ns: str):
-		self.ACBFns = ns
+		self.ACBFns: AnyStr = ns
+
+	@property
+	def ACBFns_raw(self) -> AnyStr:
+		return sub(r'\{|\}', "", self.ACBFns)
 
 class AuthorActivities(Enum):
 	"""

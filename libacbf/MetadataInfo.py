@@ -173,7 +173,7 @@ class BookInfo:
 			raise ValueError("Book must have at least one Author")
 
 	def add_author(self, au: Author):
-		au_element = etree.Element("author")
+		au_element = etree.Element(f"{self._ns.ACBFns}author")
 
 		if au.activity is not None:
 			au_element.set("activity", au.activity.name)
@@ -181,31 +181,32 @@ class BookInfo:
 			au_element.set("lang", str(au.lang))
 
 		if au.first_name is not None:
-			element = etree.Element("first-name")
+			element = etree.Element(f"{self._ns.ACBFns}first-name")
 			element.text = au.first_name
 			au_element.append(element)
 		if au.last_name is not None:
-			element = etree.Element("last-name")
+			element = etree.Element(f"{self._ns.ACBFns}last-name")
 			element.text = au.last_name
 			au_element.append(element)
 		if au.nickname is not None:
-			element = etree.Element("nickname")
+			element = etree.Element(f"{self._ns.ACBFns}nickname")
 			element.text = au.nickname
 			au_element.append(element)
 		if au.middle_name is not None:
-			element = etree.Element("middle-name")
+			element = etree.Element(f"{self._ns.ACBFns}middle-name")
 			element.text = au.middle_name
 			au_element.append(element)
 		if au.home_page is not None:
-			element = etree.Element("home-page")
+			element = etree.Element(f"{self._ns.ACBFns}home-page")
 			element.text = au.home_page
 			au_element.append(element)
 		if au.email is not None:
-			element = etree.Element("email")
+			element = etree.Element(f"{self._ns.ACBFns}email")
 			element.text = au.email
 			au_element.append(element)
 
-		self._info.findall(f"{self._ns.ACBFns}author")[-1].addnext(au_element)
+		last_au_idx = self._info.index(self._info.findall(f"{self._ns.ACBFns}author")[-1])
+		self._info.insert(last_au_idx+1, au_element)
 		self.sync_authors()
 
 class PublishInfo:
