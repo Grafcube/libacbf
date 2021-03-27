@@ -9,7 +9,8 @@ meta: ACBFMetadata = book.Metadata
 meta.book_info.authors = [
 	Author("Person", "A"),
 	Author("Friend", "B"),
-	Author(nickname="InsertBadJokeHere")
+	Author("InsertBadJokeHere"),
+	Author("Mr.", "X", "Guy")
 ]
 
 for i in meta.book_info.authors:

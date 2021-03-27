@@ -211,6 +211,8 @@ class BookInfo:
 		self._info.insert(last_au_idx+1, au_element)
 		self.sync_authors()
 
+
+
 class PublishInfo:
 	"""
 	docstring

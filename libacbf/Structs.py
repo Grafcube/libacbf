@@ -7,10 +7,20 @@ class Author:
 	"""
 	docstring
 	"""
-	def __init__(self, first_name = None, last_name = None, nickname = None):
+	def __init__(self, *names: AnyStr, first_name = None, last_name = None, nickname = None):
 		self.first_name: Optional[AnyStr] = None
 		self.last_name: Optional[AnyStr] = None
 		self.nickname: Optional[AnyStr] = None
+
+		if len(names) == 1:
+			nickname = names[0]
+		elif len(names) == 2:
+			first_name = names[0]
+			last_name = names[1]
+		elif len(names) >= 3:
+			first_name = names[0]
+			last_name = names[1]
+			nickname = names[2]
 
 		if (first_name is not None and last_name is not None) or nickname is not None:
 			self.first_name: Optional[AnyStr] = first_name
