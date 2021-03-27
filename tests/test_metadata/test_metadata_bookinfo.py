@@ -1,4 +1,6 @@
 import json
+
+from langcodes import Language
 from libacbf.ACBFMetadata import ACBFMetadata
 from libacbf.ACBFBook import ACBFBook
 
@@ -25,26 +27,30 @@ def test_authors():
 		result.write(json.dumps(op, ensure_ascii=False))
 
 def test_titles():
-	print(book_metadata.book_info.book_title)
+	op = {}
+	for i in book_metadata.book_info.book_title.keys():
+		key = str(i) if type(i) is Language else i
+		op[key] = book_metadata.book_info.book_title[i]
+	print(op)
 	with open("tests/results/metadata/book_info/test_bookinfo_titles.json", "w", encoding="utf-8", newline="\n") as result:
-		result.write(json.dumps(book_metadata.book_info.book_title, ensure_ascii=False))
+		result.write(json.dumps(op, ensure_ascii=False))
 
 def test_genres():
-	op = []
-	for i in book_metadata.book_info.genres:
-		new_op = {
-			"genre": i.Genre,
-			"match": i.Match
-		}
-		op.append(new_op)
+	op = {}
+	for i in book_metadata.book_info.genres.keys():
+		op[book_metadata.book_info.genres[i].Genre.name] = book_metadata.book_info.genres[i].Match
 	print(op)
 	with open("tests/results/metadata/book_info/test_bookinfo_genres.json", "w", encoding="utf-8", newline="\n") as result:
 		result.write(json.dumps(op, ensure_ascii=False))
 
 def test_annotations():
-	print(book_metadata.book_info.annotations)
+	op = {}
+	for i in book_metadata.book_info.annotations.keys():
+		key = str(i) if type(i) is Language else i
+		op[key] = book_metadata.book_info.annotations[i]
+	print(op)
 	with open("tests/results/metadata/book_info/test_bookinfo_annotations.json", "w", encoding="utf-8", newline="\n") as result:
-		result.write(json.dumps(book_metadata.book_info.annotations, ensure_ascii=False))
+		result.write(json.dumps(op, ensure_ascii=False))
 
 def test_languages():
 	op = []

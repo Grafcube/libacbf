@@ -1,7 +1,9 @@
+from libacbf.Constants import Genres
 from re import split
 from datetime import date
-from typing import AnyStr, Dict, List, Optional
+from typing import AnyStr, Dict, List, Optional, Union
 from lxml import etree
+from langcodes import Language, standardize_tag
 from libacbf.ACBFBook import BookNamespace
 from libacbf.Structs import Author, DBRef, Genre, CoverPage, LanguageLayer, Series
 from libacbf.BodyInfo import TextArea, get_textlayers, get_frames, get_jumps
@@ -33,30 +35,30 @@ class BookInfo:
 		self._authors: List[Author] = update_authors(self._info.findall(f"{self._ns.ACBFns}author"), self._ns)
 
 	def sync_book_titles(self):
-		self.book_title: Dict[AnyStr, AnyStr] = {}
+		self._book_title: Dict[Union[AnyStr, Language], AnyStr] = {}
 
 		book_items = self._info.findall(f"{self._ns.ACBFns}book-title")
 		for title in book_items:
 			if "lang" in title.keys():
-				self.book_title[title.attrib["lang"]] = title.text
+				lang = Language.get(standardize_tag(title.attrib["lang"]))
+				self._book_title[lang] = title.text
 			else:
-				self.book_title["_"] = title.text
+				self._book_title["_"] = title.text
 
 	def sync_genres(self):
-		self.genres: List[Genre] = []
+		self._genres: Dict[AnyStr, Genre] = {}
 
 		genre_items = self._info.findall(f"{self._ns.ACBFns}genre")
 		for genre in genre_items:
-			new_genre = Genre()
-			new_genre.Genre = genre.text
+			new_genre = Genre(genre.text)
 
 			if "match" in genre.keys():
 				new_genre.Match = int(genre.attrib["match"])
 
-			self.genres.append(new_genre)
+			self._genres[new_genre.Genre.name] = new_genre
 
 	def sync_annotations(self):
-		self.annotations: Dict[AnyStr, AnyStr] = {}
+		self._annotations: Dict[Union[AnyStr, Language], AnyStr] = {}
 
 		annotation_items = self._info.findall(f"{self._ns.ACBFns}annotation")
 		for an in annotation_items:
@@ -66,9 +68,10 @@ class BookInfo:
 			p = "\n".join(p)
 
 			if "lang" in an.keys():
-				self.annotations[an.attrib["lang"]] = p
+				lang = Language.get(standardize_tag(an.attrib["lang"]))
+				self._annotations[lang] = p
 			else:
-				self.annotations["_"] = p
+				self._annotations["_"] = p
 
 	def sync_coverpage(self):
 		cpage = self._info.find(f"{self._ns.ACBFns}coverpage")
@@ -211,7 +214,67 @@ class BookInfo:
 		self._info.insert(last_au_idx+1, au_element)
 		self.sync_authors()
 
+	def remove_author(self, val: Optional[Author] = None, idx: Optional[int] = None):
+		pass
 
+	def replace_author(self, val: Optional[Author] = None, idx: Optional[int] = None):
+		pass
+
+	@property
+	def book_title(self) -> Dict[Union[AnyStr, Language], AnyStr]:
+		return self._book_title
+
+	@book_title.setter
+	def book_title(self, val: Dict[Union[AnyStr, Language], AnyStr]):
+		pass
+
+	def add_title(self, tt: AnyStr, lang: Union[AnyStr, Language] = "_"):
+		pass
+
+	def remove_title(self, idx: int):
+		pass
+
+	@property
+	def genres(self) -> Dict[AnyStr, Genre]:
+		return self._genres
+
+	@genres.setter
+	def genres(self, val: Dict[AnyStr, Genre]):
+		pass
+
+	def add_genre(self, gn: Genres, match: Optional[int] = None):
+		pass
+
+	def remove_genre(self, idx: int):
+		pass
+
+	@property
+	def annotations(self) -> Dict[Union[AnyStr, Language], AnyStr]:
+		return self._annotations
+
+	@annotations.setter
+	def annotations(self, val: Dict[Union[AnyStr, Language], AnyStr]):
+		pass
+
+	def add_annotation(self, an: AnyStr, lang: Union[AnyStr, Language] = "_"):
+		pass
+
+	def remove_annotation(self, idx: int):
+		pass
+
+	# Coverpage
+
+	# Languages
+
+	# Characters
+
+	# Keywords
+
+	# Series
+
+	# Content Rating
+
+	# Database Ref
 
 class PublishInfo:
 	"""

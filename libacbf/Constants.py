@@ -32,32 +32,32 @@ class Genres(Enum):
 	"""
 	docstring
 	"""
-	Adult = 0
-	Adventure = auto()
-	Alternative = auto()
-	Biography = auto()
-	Caricature = auto()
-	Children = auto()
-	Computer = auto()
-	Crime = auto()
-	Education = auto()
-	Fantasy = auto()
-	History = auto()
-	Horror = auto()
-	Humor = auto()
-	Manga = auto()
-	Military = auto()
-	Mystery = auto()
-	NonFiction = auto()
-	Politics = auto()
-	RealLife = auto()
-	Religion = auto()
-	Romance = auto()
-	ScienceFiction = auto()
-	Sports = auto()
-	Superhero = auto()
-	Western = auto()
-	Other = 100
+	adult = 0
+	adventure = auto()
+	alternative = auto()
+	biography = auto()
+	caricature = auto()
+	children = auto()
+	computer = auto()
+	crime = auto()
+	education = auto()
+	fantasy = auto()
+	history = auto()
+	horror = auto()
+	humor = auto()
+	manga = auto()
+	military = auto()
+	mystery = auto()
+	non_fiction = auto()
+	politics = auto()
+	real_life = auto()
+	religion = auto()
+	romance = auto()
+	science_fiction = auto()
+	sports = auto()
+	superhero = auto()
+	western = auto()
+	other = 100
 
 class TextAreas(Enum):
 	Speech = 0

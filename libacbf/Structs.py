@@ -1,7 +1,7 @@
 from typing import AnyStr, Dict, List, Optional, Union
 from langcodes import Language, standardize_tag
 import libacbf.BodyInfo as body
-from libacbf.Constants import AuthorActivities
+from libacbf.Constants import AuthorActivities, Genres
 
 class Author:
 	"""
@@ -67,9 +67,22 @@ class Genre:
 	"""
 	docstring
 	"""
-	def __init__(self):
-		self.Genre: AnyStr = ""
+	def __init__(self, gn: Union[AnyStr, Genres, int]):
+		self.Genre: Genres = gn
 		self.Match: Optional[int] = None
+
+	@property
+	def Genre(self) -> Genres:
+		return self._genre
+
+	@Genre.setter
+	def Genre(self, gn: Union[AnyStr, Genres, int]):
+		if type(gn) is Genres:
+			self._genre = gn
+		elif type(gn) is str:
+			self._genre = Genres[gn]
+		elif type(gn) is int:
+			self._genre = Genres(gn)
 
 class CoverPage:
 	"""
