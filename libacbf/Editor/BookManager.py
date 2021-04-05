@@ -5,7 +5,7 @@ from libacbf.ACBFBook import ACBFBook, get_references
 
 def _check_reference_section(book: ACBFBook):
 	ref_section = book.root.find(f"{book.Namespace.ACBFns}references")
-	if type(ref_section) is None:
+	if ref_section is None:
 		idx = book.root.index(book.root.find(f"{book.Namespace.ACBFns}body"))
 		ref_section = etree.Element(f"{book.Namespace.ACBFns}references")
 		book.root.insert(idx+1, ref_section)

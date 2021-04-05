@@ -17,6 +17,7 @@ book: ACBFBook = ACBFBook(sample)
 # 	print("txt", i.text)
 # 	print("tal", i.tail)
 
+print(book.References)
 p = "Text here lala. Oh... <strong>noice</strong>. Hey there. This is <emphasis>EPIC</emphasis>!\nOnce more! Another line! <strikethrough>Is this stupid</strikethrough>? <strong>NAH</strong>!"
 BookManager.add_reference(book, "ref_003_test", p)
 print(book.References)
