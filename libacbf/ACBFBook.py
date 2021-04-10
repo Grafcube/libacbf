@@ -42,6 +42,10 @@ class ACBFBook:
 
 		self.Data: Dict[AnyStr, ACBFData] = get_ACBF_data(self.root, self.Namespace)
 
+	def save(self, path: AnyStr = ""):
+		if path == "":
+			path = self.book_path
+
 def validate_acbf(root):
 	"""
 	docstring
