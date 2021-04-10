@@ -32,7 +32,7 @@ class BookInfo:
 
 	#region Sync
 	def sync_authors(self):
-		self._authors: List[Author] = update_authors(self._info.findall(f"{self._ns.ACBFns}author"), self._ns)
+		self.authors: List[Author] = update_authors(self._info.findall(f"{self._ns.ACBFns}author"), self._ns)
 
 	def sync_book_titles(self):
 		self._book_title: Dict[Union[AnyStr, Language], AnyStr] = {}
@@ -156,69 +156,6 @@ class BookInfo:
 
 			self.database_ref.append(new_db)
 	#endregion
-
-	@property
-	def authors(self) -> List[Author]:
-		"""
-		docstring
-		"""
-		return self._authors
-
-	@authors.setter
-	def authors(self, val: List[Author]):
-		if len(val) > 0:
-			for elem in self._info.findall(f"{self._ns.ACBFns}author"):
-				elem.clear()
-				self._info.remove(elem)
-			for au in val:
-				self.add_author(au)
-		else:
-			raise ValueError("Book must have at least one Author")
-
-	def add_author(self, au: Author):
-		au_element = etree.Element(f"{self._ns.ACBFns}author")
-
-		if au.activity is not None:
-			au_element.set("activity", au.activity.name)
-		if au.lang is not None:
-			au_element.set("lang", str(au.lang))
-
-		if au.first_name is not None:
-			element = etree.Element(f"{self._ns.ACBFns}first-name")
-			element.text = au.first_name
-			au_element.append(element)
-		if au.last_name is not None:
-			element = etree.Element(f"{self._ns.ACBFns}last-name")
-			element.text = au.last_name
-			au_element.append(element)
-		if au.nickname is not None:
-			element = etree.Element(f"{self._ns.ACBFns}nickname")
-			element.text = au.nickname
-			au_element.append(element)
-		if au.middle_name is not None:
-			element = etree.Element(f"{self._ns.ACBFns}middle-name")
-			element.text = au.middle_name
-			au_element.append(element)
-		if au.home_page is not None:
-			element = etree.Element(f"{self._ns.ACBFns}home-page")
-			element.text = au.home_page
-			au_element.append(element)
-		if au.email is not None:
-			element = etree.Element(f"{self._ns.ACBFns}email")
-			element.text = au.email
-			au_element.append(element)
-
-		last_au_idx = 0
-		if len(self._info.findall(f"{self._ns.ACBFns}author")) > 0:
-			last_au_idx = self._info.index(self._info.findall(f"{self._ns.ACBFns}author")[-1])
-		self._info.insert(last_au_idx+1, au_element)
-		self.sync_authors()
-
-	def remove_author(self, val: Optional[Author] = None, idx: Optional[int] = None):
-		pass
-
-	def replace_author(self, val: Optional[Author] = None, idx: Optional[int] = None):
-		pass
 
 	@property
 	def book_title(self) -> Dict[Union[AnyStr, Language], AnyStr]:
