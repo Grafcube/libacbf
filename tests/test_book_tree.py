@@ -4,20 +4,22 @@ from libacbf.Editor import BookManager
 sample = "tests/samples/Doctorow, Cory - Craphound-1.1.acbf"
 book: ACBFBook = ACBFBook(sample)
 
-# xml = f"<p>{p}</p>"
+for i in book.Data.keys():
+	print(i)
+	print("id:", book.Data[i].id)
+	print("ty:", book.Data[i].type)
+	print("dt:", book.Data[i].data != "")
+	print('\n')
 
-# root = etree.fromstring(bytes(xml, encoding="utf-8"))
+BookManager.add_data(book, "tests/samples/cover.jpg")
+BookManager.add_data(book, "tests/samples/JETBRAINSMONO-REGULAR.TTF")
 
-# print("tag", root.tag)
-# print("txt", root.text)
-# print("tal", root.tail)
+for i in book.Data.keys():
+	print(i)
+	print("id:", book.Data[i].id)
+	print("ty:", book.Data[i].type)
+	print("dt:", book.Data[i].data != "")
+	print('\n')
 
-# for i in list(root):
-# 	print("tag", i.tag)
-# 	print("txt", i.text)
-# 	print("tal", i.tail)
-
-print(book.References)
-p = "Text here lala. Oh... <strong>noice</strong>. Hey there. This is <emphasis>EPIC</emphasis>!\nOnce more! Another line! <strikethrough>Is this stupid</strikethrough>? <strong>NAH</strong>!"
-BookManager.add_reference(book, "ref_003_test", p)
-print(book.References)
+	with open(f"tests/results/editor/add_data_{book.Data[i].id}.txt", 'w', encoding="utf-8") as op:
+		op.write(book.Data[i].data)

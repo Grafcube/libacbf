@@ -27,20 +27,20 @@ class ACBFBook:
 
 		validate_acbf(self.root)
 
-		self.Namespace: BookNamespace = BookNamespace(r"{" + self.root.nsmap[None] + r"}")
+		self.namespace: BookNamespace = BookNamespace(r"{" + self.root.nsmap[None] + r"}")
 		self.styles: List[AnyStr] = findall(r'<\?xml-stylesheet type="text\/css" href="(.+)"\?>', contents, IGNORECASE)
 
-		self.Metadata: metadata = metadata.ACBFMetadata(self.root.find(f"{self.Namespace.ACBFns}meta-data"), self.Namespace)
+		self.Metadata: metadata = metadata.ACBFMetadata(self.root.find(f"{self.namespace.ACBFns}meta-data"), self.namespace)
 
-		self.Body: ACBFBody = ACBFBody(self.root.find(f"{self.Namespace.ACBFns}body"), self.Namespace)
+		self.Body: ACBFBody = ACBFBody(self.root.find(f"{self.namespace.ACBFns}body"), self.namespace)
 
 		self.Stylesheet: Optional[AnyStr] = None
-		if self.root.find(f"{self.Namespace.ACBFns}style") is not None:
-			self.Stylesheet = self.root.find(f"{self.Namespace.ACBFns}style").text.strip()
+		if self.root.find(f"{self.namespace.ACBFns}style") is not None:
+			self.Stylesheet = self.root.find(f"{self.namespace.ACBFns}style").text.strip()
 
-		self.References: Dict[AnyStr, Dict[AnyStr, AnyStr]] = get_references(self.root.find(f"{self.Namespace.ACBFns}references"), self.Namespace)
+		self.References: Dict[AnyStr, Dict[AnyStr, AnyStr]] = get_references(self.root.find(f"{self.namespace.ACBFns}references"), self.namespace)
 
-		self.Data: Dict[AnyStr, ACBFData] = get_ACBF_data(self.root, self.Namespace)
+		self.Data: Dict[AnyStr, ACBFData] = get_ACBF_data(self.root, self.namespace)
 
 	def save(self, path: AnyStr = ""):
 		if path == "":
@@ -85,9 +85,6 @@ def get_ACBF_data(root, ns: BookNamespace):
 		base = root.find(f"{ns.ACBFns}data")
 		data_items = base.findall(f"{ns.ACBFns}binary")
 		for b in data_items:
-			new_data = ACBFData()
-			new_data.id = b.attrib["id"]
-			new_data.type = b.attrib["content-type"]
-			new_data.data = b.text
+			new_data = ACBFData(b.attrib["id"], b.attrib["content-type"], b.text)
 			data[new_data.id] = new_data
 	return data
