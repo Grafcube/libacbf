@@ -1,4 +1,3 @@
-from typing import Optional
 from lxml import etree
 from libacbf.Structs import Author
 from libacbf.ACBFMetadata import ACBFMetadata
@@ -46,5 +45,12 @@ def add_book_author(metadata: ACBFMetadata, author: Author):
 
 	metadata.book_info.sync_authors()
 
-def remove_book_author(metadata: ACBFMetadata, value: Optional[Author] = None, index: Optional[int] = None):
-	pass
+def remove_book_author(metadata: ACBFMetadata, index: int):
+	ns = metadata._ns
+	info_section = metadata.book_info._info
+
+	au_items = info_section.findall(f"{ns.ACBFns}author")
+	au_items[index].clear()
+	au_items[index].getparent().remove(au_items[index])
+
+	metadata.book_info.sync_authors()

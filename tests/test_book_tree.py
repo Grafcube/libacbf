@@ -1,25 +1,34 @@
+from libacbf.Structs import Author
+from libacbf.ACBFMetadata import ACBFMetadata
 from libacbf.ACBFBook import ACBFBook
-from libacbf.Editor import BookManager
+from libacbf.Editor import MetadataManager
 
 sample = "tests/samples/Doctorow, Cory - Craphound-1.1.acbf"
 book: ACBFBook = ACBFBook(sample)
+meta: ACBFMetadata = book.Metadata
 
-for i in book.Data.keys():
-	print(i)
-	print("id:", book.Data[i].id)
-	print("ty:", book.Data[i].type)
-	print("dt:", book.Data[i].data != "")
+for i in meta.book_info.authors:
+	print("fn:", i.first_name)
+	print("mn:", i.middle_name)
+	print("ln:", i.last_name)
+	print("nn:", i.nickname)
+	print("lang:", i.lang)
+	print("act:", i.activity)
+	print("hp:", i.home_page)
+	print("em:", i.email)
 	print('\n')
 
-BookManager.add_data(book, "tests/samples/cover.jpg")
-BookManager.add_data(book, "tests/samples/JETBRAINSMONO-REGULAR.TTF")
+MetadataManager.add_book_author(meta, Author("AlsoHere"))
+MetadataManager.remove_book_author(meta, 3)
 
-for i in book.Data.keys():
-	print(i)
-	print("id:", book.Data[i].id)
-	print("ty:", book.Data[i].type)
-	print("dt:", book.Data[i].data != "")
+print("after")
+for i in meta.book_info.authors:
+	print("fn:", i.first_name)
+	print("mn:", i.middle_name)
+	print("ln:", i.last_name)
+	print("nn:", i.nickname)
+	print("lang:", i.lang)
+	print("act:", i.activity)
+	print("hp:", i.home_page)
+	print("em:", i.email)
 	print('\n')
-
-	with open(f"tests/results/editor/add_data_{book.Data[i].id}.txt", 'w', encoding="utf-8") as op:
-		op.write(book.Data[i].data)
