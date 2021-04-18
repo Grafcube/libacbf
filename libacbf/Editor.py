@@ -24,9 +24,9 @@ class BookManager:
 			self.book.root.insert(idx+1, ref_section)
 		return ref_section
 
-	def _check_data_section(self):
+	def _check_data_section(self, create: bool = True):
 		dat_section = self.book.root.find(f"{self.book.namespace.ACBFns}data")
-		if dat_section is None:
+		if dat_section is None and create:
 			ref_section = self.book.root.find(f"{self.book.namespace.ACBFns}references")
 			if ref_section is None:
 				idx = self.book.root.index(self.book.root.find(f"{self.book.namespace.ACBFns}body"))
@@ -89,7 +89,15 @@ class BookManager:
 		self.book.Data = get_ACBF_data(self.book.root, self.book.namespace)
 
 	def remove_data(self, id: AnyStr):
-		pass
+		dat_section = self._check_data_section(False)
+		if dat_section is not None:
+			for i in dat_section.findall(f"{self.book.namespace.ACBFns}binary"):
+				if i.attrib["id"] == id:
+					i.clear()
+					i.getparent().remove(i)
+					break
+
+			self.book.Data = get_ACBF_data(self.book.root, self.book.namespace)
 
 class MetadataManager:
 	"""
