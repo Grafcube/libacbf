@@ -1,10 +1,8 @@
-from typing import AnyStr
-
 class ACBFData:
 	"""
 	docstring
 	"""
-	def __init__(self, id: AnyStr, type: AnyStr, data: AnyStr):
-		self.id: AnyStr = id
-		self.type: AnyStr = type
-		self.data: AnyStr = data
+	def __init__(self, id: str, type: str, data: str):
+		self.id: str = id
+		self.type: str = type
+		self.data: str = data

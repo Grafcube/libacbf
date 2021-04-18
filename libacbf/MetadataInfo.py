@@ -1,7 +1,7 @@
 from libacbf.Constants import Genres
 from re import split
 from datetime import date
-from typing import AnyStr, Dict, List, Literal, Optional, Union
+from typing import Dict, List, Literal, Optional, Union
 from langcodes import Language, standardize_tag
 from libacbf.ACBFBook import BookNamespace
 from libacbf.Structs import Author, DBRef, Genre, CoverPage, LanguageLayer, Series
@@ -34,7 +34,7 @@ class BookInfo:
 		self.authors: List[Author] = update_authors(self._info.findall(f"{self._ns.ACBFns}author"), self._ns)
 
 	def sync_book_titles(self):
-		self._book_title: Dict[Union[Literal["_"], Language], AnyStr] = {}
+		self._book_title: Dict[Union[Literal["_"], Language], str] = {}
 
 		book_items = self._info.findall(f"{self._ns.ACBFns}book-title")
 		for title in book_items:
@@ -45,7 +45,7 @@ class BookInfo:
 				self._book_title["_"] = title.text
 
 	def sync_genres(self):
-		self._genres: Dict[AnyStr, Genre] = {}
+		self._genres: Dict[str, Genre] = {}
 
 		genre_items = self._info.findall(f"{self._ns.ACBFns}genre")
 		for genre in genre_items:
@@ -57,7 +57,7 @@ class BookInfo:
 			self._genres[new_genre.Genre.name] = new_genre
 
 	def sync_annotations(self):
-		self._annotations: Dict[Union[Literal["_"], Language], AnyStr] = {}
+		self._annotations: Dict[Union[Literal["_"], Language], str] = {}
 
 		annotation_items = self._info.findall(f"{self._ns.ACBFns}annotation")
 		for an in annotation_items:
@@ -94,7 +94,7 @@ class BookInfo:
 				self.languages.append(new_lang)
 
 	def sync_characters(self):
-		self.characters: List[AnyStr] = []
+		self.characters: List[str] = []
 
 		character_item = self._info.find(f"{self._ns.ACBFns}characters")
 		if character_item is not None:
@@ -102,7 +102,7 @@ class BookInfo:
 				self.characters.append(c.text)
 
 	def sync_keywords(self):
-		self.keywords: Dict[Union[Literal["_"], Language], List[AnyStr]] = {}
+		self.keywords: Dict[Union[Literal["_"], Language], List[str]] = {}
 
 		keyword_items = self._info.findall(f"{self._ns.ACBFns}keywords")
 		for k in keyword_items:
@@ -114,7 +114,7 @@ class BookInfo:
 					self.keywords["_"] = split(", |,", k.text)
 
 	def sync_series(self):
-		self.series: Dict[AnyStr, Series] = {}
+		self.series: Dict[str, Series] = {}
 
 		series_items = self._info.findall(f"{self._ns.ACBFns}sequence")
 		for se in series_items:
@@ -130,7 +130,7 @@ class BookInfo:
 			self.series[se.attrib["title"]] = new_se
 
 	def sync_content_rating(self):
-		self.content_rating: Dict[AnyStr, AnyStr] = {}
+		self.content_rating: Dict[str, str] = {}
 
 		rating_items = self._info.findall(f"{self._ns.ACBFns}content-rating")
 		for rt in rating_items:
@@ -155,25 +155,25 @@ class BookInfo:
 	#endregion
 
 	@property
-	def book_title(self) -> Dict[Union[AnyStr, Language], AnyStr]:
+	def book_title(self) -> Dict[Union[str, Language], str]:
 		return self._book_title
 
 	@book_title.setter
-	def book_title(self, val: Dict[Union[AnyStr, Language], AnyStr]):
+	def book_title(self, val: Dict[Union[str, Language], str]):
 		pass
 
-	def add_title(self, tt: AnyStr, lang: Union[AnyStr, Language] = "_"):
+	def add_title(self, tt: str, lang: Union[str, Language] = "_"):
 		pass
 
 	def remove_title(self, idx: int):
 		pass
 
 	@property
-	def genres(self) -> Dict[AnyStr, Genre]:
+	def genres(self) -> Dict[str, Genre]:
 		return self._genres
 
 	@genres.setter
-	def genres(self, val: Dict[AnyStr, Genre]):
+	def genres(self, val: Dict[str, Genre]):
 		pass
 
 	def add_genre(self, gn: Genres, match: Optional[int] = None):
@@ -183,14 +183,14 @@ class BookInfo:
 		pass
 
 	@property
-	def annotations(self) -> Dict[Union[AnyStr, Language], AnyStr]:
+	def annotations(self) -> Dict[Union[str, Language], str]:
 		return self._annotations
 
 	@annotations.setter
-	def annotations(self, val: Dict[Union[AnyStr, Language], AnyStr]):
+	def annotations(self, val: Dict[Union[str, Language], str]):
 		pass
 
-	def add_annotation(self, an: AnyStr, lang: Union[AnyStr, Language] = "_"):
+	def add_annotation(self, an: str, lang: Union[str, Language] = "_"):
 		pass
 
 	def remove_annotation(self, idx: int):
@@ -215,24 +215,24 @@ class PublishInfo:
 	docstring
 	"""
 	def __init__(self, info: dict, ns: BookNamespace):
-		self.publisher: AnyStr = info.find(f"{ns.ACBFns}publisher").text
+		self.publisher: str = info.find(f"{ns.ACBFns}publisher").text
 
-		self.publish_date_string: AnyStr = info.find(f"{ns.ACBFns}publish-date").text
+		self.publish_date_string: str = info.find(f"{ns.ACBFns}publish-date").text
 
 		# Optional
 		self.publish_date: Optional[date] = None
 		if "value" in info.find(f"{ns.ACBFns}publish-date").keys():
 			self.publish_date = date.fromisoformat(info.find(f"{ns.ACBFns}publish-date").attrib["value"])
 
-		self.publish_city: Optional[AnyStr] = None
+		self.publish_city: Optional[str] = None
 		if info.find(f"{ns.ACBFns}city") is not None:
 			self.publish_city = info.find(f"{ns.ACBFns}city").text
 
-		self.isbn: Optional[AnyStr] = None
+		self.isbn: Optional[str] = None
 		if info.find(f"{ns.ACBFns}isbn") is not None:
 			self.isbn = info.find(f"{ns.ACBFns}isbn").text
 
-		self.license: Optional[AnyStr] = None
+		self.license: Optional[str] = None
 		if info.find(f"{ns.ACBFns}license") is not None:
 			self.license = info.find(f"{ns.ACBFns}license").text
 
@@ -243,29 +243,29 @@ class DocumentInfo:
 	def __init__(self, info: dict, ns: BookNamespace):
 		self.authors: List[Author] = update_authors(info.findall(f"{ns.ACBFns}author"), ns)
 
-		self.creation_date_string: AnyStr = info.find(f"{ns.ACBFns}creation-date").text
+		self.creation_date_string: str = info.find(f"{ns.ACBFns}creation-date").text
 
 		# Optional
 		self.creation_date: Optional[date] = None
 		if "value" in info.find(f"{ns.ACBFns}creation-date").keys():
 			self.creation_date = date.fromisoformat(info.find(f"{ns.ACBFns}creation-date").attrib["value"])
 
-		self.source: Optional[AnyStr] = None
+		self.source: Optional[str] = None
 		if info.find(f"{ns.ACBFns}source") is not None:
 			p = []
 			for line in info.findall(f"{ns.ACBFns}source/{ns.ACBFns}p"):
 				p.append(line.text)
 			self.source = "\n".join(p)
 
-		self.document_id: Optional[AnyStr] = None
+		self.document_id: Optional[str] = None
 		if info.find(f"{ns.ACBFns}id") is not None:
 			self.document_id = info.find(f"{ns.ACBFns}id").text
 
-		self.document_version: Optional[AnyStr] = None
+		self.document_version: Optional[str] = None
 		if info.find(f"{ns.ACBFns}version") is not None:
 			self.document_version = info.find(f"{ns.ACBFns}version").text
 
-		self.document_history: List[AnyStr] = []
+		self.document_history: List[str] = []
 		if info.find(f"{ns.ACBFns}history") is not None:
 			for item in info.findall(f"{ns.ACBFns}history/{ns.ACBFns}p"):
 				self.document_history.append(item.text)

@@ -1,5 +1,5 @@
 import pathlib
-from typing import List, Dict, AnyStr, Optional
+from typing import List, Dict, Optional
 from re import sub, findall, IGNORECASE
 from lxml import etree
 from libacbf.Constants import BookNamespace
@@ -11,7 +11,7 @@ class ACBFBook:
 	"""
 	docstring
 	"""
-	def __init__(self, file_path: AnyStr = "libacbf/templates/base_template_1.1.acbf"):
+	def __init__(self, file_path: str = "libacbf/templates/base_template_1.1.acbf"):
 		self.book_path = file_path
 
 		self.tree = None
@@ -28,21 +28,21 @@ class ACBFBook:
 		validate_acbf(self.root)
 
 		self.namespace: BookNamespace = BookNamespace(r"{" + self.root.nsmap[None] + r"}")
-		self.styles: List[AnyStr] = findall(r'<\?xml-stylesheet type="text\/css" href="(.+)"\?>', contents, IGNORECASE)
+		self.styles: List[str] = findall(r'<\?xml-stylesheet type="text\/css" href="(.+)"\?>', contents, IGNORECASE)
 
 		self.Metadata: metadata = metadata.ACBFMetadata(self.root.find(f"{self.namespace.ACBFns}meta-data"), self.namespace)
 
 		self.Body: ACBFBody = ACBFBody(self.root.find(f"{self.namespace.ACBFns}body"), self.namespace)
 
-		self.Stylesheet: Optional[AnyStr] = None
+		self.Stylesheet: Optional[str] = None
 		if self.root.find(f"{self.namespace.ACBFns}style") is not None:
 			self.Stylesheet = self.root.find(f"{self.namespace.ACBFns}style").text.strip()
 
-		self.References: Dict[AnyStr, Dict[AnyStr, AnyStr]] = get_references(self.root.find(f"{self.namespace.ACBFns}references"), self.namespace)
+		self.References: Dict[str, Dict[str, str]] = get_references(self.root.find(f"{self.namespace.ACBFns}references"), self.namespace)
 
-		self.Data: Dict[AnyStr, ACBFData] = get_ACBF_data(self.root, self.namespace)
+		self.Data: Dict[str, ACBFData] = get_ACBF_data(self.root, self.namespace)
 
-	def save(self, path: AnyStr = ""):
+	def save(self, path: str = ""):
 		if path == "":
 			path = self.book_path
 
@@ -66,7 +66,7 @@ def validate_acbf(root):
 		print("Validation failed. File may be valid (bug)")
 		print(err)
 
-def get_references(ref_root, ns: BookNamespace) -> Dict[AnyStr, Dict[AnyStr, AnyStr]]:
+def get_references(ref_root, ns: BookNamespace) -> Dict[str, Dict[str, str]]:
 		references = {}
 		if ref_root is None:
 			return references

@@ -1,6 +1,6 @@
 from collections import namedtuple
 from re import split, sub
-from typing import List, Dict, AnyStr, Optional
+from typing import List, Dict, Optional
 from lxml import etree
 from libacbf.Constants import BookNamespace, PageTransitions, TextAreas
 import libacbf.Structs as structs
@@ -13,7 +13,7 @@ class Page:
 	"""
 	def __init__(self, page, ns: BookNamespace):
 		# Optional
-		self.bg_color: Optional[AnyStr] = None
+		self.bg_color: Optional[str] = None
 		if "bgcolor" in page.keys():
 			self.bg_color = page.attrib["bgcolor"]
 
@@ -22,10 +22,10 @@ class Page:
 			self.transition = PageTransitions[page.attrib["transition"]]
 
 		# Sub
-		self.image_ref: AnyStr = page.find(f"{ns.ACBFns}image").attrib["href"]
+		self.image_ref: str = page.find(f"{ns.ACBFns}image").attrib["href"]
 
 		## Optional
-		self.title: Dict[AnyStr, AnyStr] = {}
+		self.title: Dict[str, str] = {}
 		title_items = page.findall(f"{ns.ACBFns}title")
 		for t in title_items:
 			if "lang" in t.keys():
@@ -33,7 +33,7 @@ class Page:
 			else:
 				self.title["_"] = t.text
 
-		self.text_layers: Dict[AnyStr, TextLayer] = get_textlayers(page, ns)
+		self.text_layers: Dict[str, TextLayer] = get_textlayers(page, ns)
 
 		self.frames: List[structs.Frame] = get_frames(page, ns)
 
@@ -62,7 +62,7 @@ class TextArea:
 	def __init__(self, area, ns: BookNamespace):
 		self.points = get_points(area.attrib["points"])
 
-		self.paragraph: AnyStr = ""
+		self.paragraph: str = ""
 		pa = []
 		for p in area.findall(f"{ns.ACBFns}p"):
 			text = sub(r"<\/?p[^>]*>", "", str(etree.tostring(p, encoding="utf-8"), encoding="utf-8").strip())

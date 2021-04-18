@@ -1,4 +1,4 @@
-from typing import AnyStr, Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union
 from langcodes import Language, standardize_tag
 import libacbf.BodyInfo as body
 from libacbf.Constants import AuthorActivities, Genres
@@ -7,10 +7,10 @@ class Author:
 	"""
 	docstring
 	"""
-	def __init__(self, *names: AnyStr, first_name = None, last_name = None, nickname = None):
-		self.first_name: Optional[AnyStr] = None
-		self.last_name: Optional[AnyStr] = None
-		self.nickname: Optional[AnyStr] = None
+	def __init__(self, *names: str, first_name = None, last_name = None, nickname = None):
+		self.first_name: Optional[str] = None
+		self.last_name: Optional[str] = None
+		self.nickname: Optional[str] = None
 
 		if len(names) == 1:
 			nickname = names[0]
@@ -23,24 +23,24 @@ class Author:
 			nickname = names[2]
 
 		if (first_name is not None and last_name is not None) or nickname is not None:
-			self.first_name: Optional[AnyStr] = first_name
-			self.last_name: Optional[AnyStr] = last_name
-			self.nickname: Optional[AnyStr] = nickname
+			self.first_name: Optional[str] = first_name
+			self.last_name: Optional[str] = last_name
+			self.nickname: Optional[str] = nickname
 		else:
 			raise ValueError("Author must have either First Name and Last Name or Nickname")
 
 		self._activity: Optional[AuthorActivities] = None
 		self._lang: Optional[Language] = None
-		self.middle_name: Optional[AnyStr] = None
-		self.home_page: Optional[AnyStr] = None
-		self.email: Optional[AnyStr] = None
+		self.middle_name: Optional[str] = None
+		self.home_page: Optional[str] = None
+		self.email: Optional[str] = None
 
 	@property
 	def activity(self) -> Optional[AuthorActivities]:
 		return self._activity
 
 	@activity.setter
-	def activity(self, val: Optional[Union[AuthorActivities, int, AnyStr]]):
+	def activity(self, val: Optional[Union[AuthorActivities, int, str]]):
 		if val is None:
 			self._activity = None
 		elif type(val) is AuthorActivities:
@@ -55,7 +55,7 @@ class Author:
 		return self._lang
 
 	@lang.setter
-	def lang(self, val: Optional[Union[AnyStr, Language]]):
+	def lang(self, val: Optional[Union[str, Language]]):
 		if val is None:
 			self._lang = None
 		elif type(val) is Language:
@@ -67,7 +67,7 @@ class Genre:
 	"""
 	docstring
 	"""
-	def __init__(self, gn: Union[AnyStr, Genres, int]):
+	def __init__(self, gn: Union[str, Genres, int]):
 		self.Genre: Genres = gn
 		self.Match: Optional[int] = None
 
@@ -76,7 +76,7 @@ class Genre:
 		return self._genre
 
 	@Genre.setter
-	def Genre(self, gn: Union[AnyStr, Genres, int]):
+	def Genre(self, gn: Union[str, Genres, int]):
 		if type(gn) is Genres:
 			self._genre = gn
 		elif type(gn) is str:
@@ -88,9 +88,9 @@ class CoverPage:
 	"""
 	docstring
 	"""
-	def __init__(self, href: AnyStr):
-		self.image_ref: AnyStr = href
-		self.text_layers: Dict[AnyStr, body.TextLayer] = {}
+	def __init__(self, href: str):
+		self.image_ref: str = href
+		self.text_layers: Dict[str, body.TextLayer] = {}
 		self.frames: List[Frame] = []
 		self.jumps: List[Jump] = []
 
@@ -99,7 +99,7 @@ class LanguageLayer:
 	docstring
 	"""
 	def __init__(self):
-		self.lang: AnyStr = ""
+		self.lang: str = ""
 		self.show: Optional[bool] = None
 
 class Series:
@@ -107,19 +107,19 @@ class Series:
 	docstring
 	"""
 	def __init__(self):
-		self.title: AnyStr = ""
-		self.sequence: AnyStr = ""
-		self.lang: Optional[AnyStr] = None
-		self.volume: Optional[AnyStr] = None
+		self.title: str = ""
+		self.sequence: str = ""
+		self.lang: Optional[str] = None
+		self.volume: Optional[str] = None
 
 class DBRef:
 	"""
 	docstring
 	"""
 	def __init__(self):
-		self.dbname: AnyStr = ""
-		self.text: AnyStr = ""
-		self.type: Optional[AnyStr] = None
+		self.dbname: str = ""
+		self.text: str = ""
+		self.type: Optional[str] = None
 
 class Frame:
 	"""
@@ -127,7 +127,7 @@ class Frame:
 	"""
 	def __init__(self):
 		self.points: List = []
-		self.bgcolor: Optional[AnyStr] = None
+		self.bgcolor: Optional[str] = None
 
 class Jump:
 	"""

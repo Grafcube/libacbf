@@ -1,7 +1,8 @@
-from typing import AnyStr
+from typing import Literal, Union
 from re import split
 from pathlib import Path
 from base64 import b64encode
+from langcodes import Language, standardize_tag
 from magic import from_buffer
 from lxml import etree
 from libacbf.ACBFBook import ACBFBook, get_ACBF_data, get_references
@@ -36,7 +37,7 @@ class BookManager:
 			self.book.root.insert(idx+1, dat_section)
 		return dat_section
 
-	def add_reference(self, id: AnyStr, paragraph: AnyStr, idx: int = -1):
+	def add_reference(self, id: str, paragraph: str, idx: int = -1):
 		ref_section = self._check_reference_section()
 
 		ref_element = etree.Element(f"{self.book.namespace.ACBFns}reference")
@@ -59,7 +60,7 @@ class BookManager:
 
 		self.book.References = get_references(self.book.root.find(f"{self.book.namespace.ACBFns}references"), self.book.namespace)
 
-	def remove_reference(self, id: AnyStr):
+	def remove_reference(self, id: str):
 		ref_section = self._check_reference_section(False)
 		if ref_section is not None:
 			for i in ref_section.findall(f"{self.book.namespace.ACBFns}reference"):
@@ -70,7 +71,7 @@ class BookManager:
 
 			self.book.References = get_references(self.book.root.find(f"{self.book.namespace.ACBFns}references"), self.book.namespace)
 
-	def add_data(self, file_path: AnyStr):
+	def add_data(self, file_path: str):
 		dat_section = self._check_data_section()
 
 		dat_path = Path(file_path)
@@ -88,7 +89,7 @@ class BookManager:
 		dat_section.append(bin_element)
 		self.book.Data = get_ACBF_data(self.book.root, self.book.namespace)
 
-	def remove_data(self, id: AnyStr):
+	def remove_data(self, id: str):
 		dat_section = self._check_data_section(False)
 		if dat_section is not None:
 			for i in dat_section.findall(f"{self.book.namespace.ACBFns}binary"):
@@ -157,3 +158,73 @@ class MetadataManager:
 		au_items[index].getparent().remove(au_items[index])
 
 		self.metadata.book_info.sync_authors()
+
+	def edit_book_title(self, title: str, lang: Union[Literal["_"], str, Language] = "_"):
+		info_section = self.metadata.book_info._info
+
+		title_elements = info_section.findall(f"{self.ns.ACBFns}book-title")
+		idx = info_section.index(title_elements[-1]) + 1
+		found = False
+		key = None
+
+		if lang == "_":
+			for i in title_elements:
+				if len(i.keys()) == 0:
+					i.text = title
+					found = True
+					break
+			if not found:
+				t_element = etree.Element(f"{self.ns.ACBFns}book-title")
+				t_element.text = title
+				info_section.insert(idx, t_element)
+				found = True
+
+		elif type(lang) is Language:
+			key = str(lang)
+		elif type(lang) is str:
+			key = standardize_tag(lang)
+
+		if not found:
+			for i in title_elements:
+				if key == standardize_tag(i.attrib["lang"]):
+					i.text == title
+					found = True
+					break
+			if not found:
+				t_element = etree.Element(f"{self.ns.ACBFns}book-title")
+				t_element.set("lang", key)
+				t_element.text = title
+				info_section.insert(idx, t_element)
+				found = True
+
+		self.metadata.book_info.sync_book_titles()
+
+	def remove_book_title(self, lang: Union[Literal["_"], str, Language] = "_"):
+		info_section = self.metadata.book_info._info
+
+		title_elements = info_section.findall(f"{self.ns.ACBFns}book-title")
+
+		key = None
+		complete = False
+		if len(title_elements) > 1:
+			if lang == "_":
+				for i in title_elements:
+					if len(i.keys()) == 0:
+						i.clear()
+						i.getparent().remove(i)
+						complete = True
+						break
+			elif type(lang) is Language:
+				key = str(lang)
+			elif type(lang) is str:
+				key = standardize_tag(lang)
+
+			if not complete:
+				for i in title_elements:
+					if key == standardize_tag(i.attrib["lang"]):
+						i.clear()
+						i.getparent().remove(i)
+						complete = True
+						break
+
+			self.metadata.book_info.sync_book_titles()
