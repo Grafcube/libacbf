@@ -1,4 +1,3 @@
-from lxml import etree
 from libacbf.Constants import BookNamespace
 from libacbf.MetadataInfo import BookInfo, PublishInfo, DocumentInfo
 

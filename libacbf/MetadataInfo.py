@@ -1,12 +1,11 @@
 from libacbf.Constants import Genres
 from re import split
 from datetime import date
-from typing import AnyStr, Dict, List, Optional, Union
-from lxml import etree
+from typing import AnyStr, Dict, List, Literal, Optional, Union
 from langcodes import Language, standardize_tag
 from libacbf.ACBFBook import BookNamespace
 from libacbf.Structs import Author, DBRef, Genre, CoverPage, LanguageLayer, Series
-from libacbf.BodyInfo import TextArea, get_textlayers, get_frames, get_jumps
+from libacbf.BodyInfo import get_textlayers, get_frames, get_jumps
 
 class BookInfo:
 	"""
@@ -35,7 +34,7 @@ class BookInfo:
 		self.authors: List[Author] = update_authors(self._info.findall(f"{self._ns.ACBFns}author"), self._ns)
 
 	def sync_book_titles(self):
-		self._book_title: Dict[Union[AnyStr, Language], AnyStr] = {}
+		self._book_title: Dict[Union[Literal["_"], Language], AnyStr] = {}
 
 		book_items = self._info.findall(f"{self._ns.ACBFns}book-title")
 		for title in book_items:
@@ -58,7 +57,7 @@ class BookInfo:
 			self._genres[new_genre.Genre.name] = new_genre
 
 	def sync_annotations(self):
-		self._annotations: Dict[Union[AnyStr, Language], AnyStr] = {}
+		self._annotations: Dict[Union[Literal["_"], Language], AnyStr] = {}
 
 		annotation_items = self._info.findall(f"{self._ns.ACBFns}annotation")
 		for an in annotation_items:
@@ -103,18 +102,16 @@ class BookInfo:
 				self.characters.append(c.text)
 
 	def sync_keywords(self):
-		self.keywords: List[Dict[AnyStr, List[AnyStr]]] = []
+		self.keywords: Dict[Union[Literal["_"], Language], List[AnyStr]] = {}
 
 		keyword_items = self._info.findall(f"{self._ns.ACBFns}keywords")
 		for k in keyword_items:
-			new_k = {}
 			if "lang" in k.keys():
-				new_k[k.attrib["lang"]] = split(", |,", k.text)
+				lang = Language.get(standardize_tag(k.attrib["lang"]))
+				self.keywords[lang] = split(", |,", k.text)
 			else:
 				if k.text is not None:
-					new_k["_"] = split(r", |,", k.text)
-
-			self.keywords.append(new_k)
+					self.keywords["_"] = split(", |,", k.text)
 
 	def sync_series(self):
 		self.series: Dict[AnyStr, Series] = {}

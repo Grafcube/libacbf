@@ -70,9 +70,13 @@ def test_characters():
 		result.write(json.dumps(book_metadata.book_info.characters, ensure_ascii=False))
 
 def test_keywords():
-	print(book_metadata.book_info.keywords)
+	op = {}
+	for i in book_metadata.book_info.keywords.keys():
+		key = str(i) if type(i) is Language else i
+		op[key] = book_metadata.book_info.keywords[i]
+	print(op)
 	with open("tests/results/metadata/book_info/test_bookinfo_keywords.json", "w", encoding="utf-8", newline="\n") as result:
-		result.write(json.dumps(book_metadata.book_info.keywords, ensure_ascii=False))
+		result.write(json.dumps(op, ensure_ascii=False))
 
 def test_series():
 	op = {}
