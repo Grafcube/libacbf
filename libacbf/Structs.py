@@ -67,9 +67,9 @@ class Genre:
 	"""
 	docstring
 	"""
-	def __init__(self, gn: Union[str, Genres, int]):
-		self.Genre: Genres = gn
-		self.Match: Optional[int] = None
+	def __init__(self, genre_type: Union[str, Genres, int], match: Optional[int] = None):
+		self.Genre: Genres = genre_type
+		self.Match: Optional[int] = match
 
 	@property
 	def Genre(self) -> Genres:
@@ -83,6 +83,19 @@ class Genre:
 			self._genre = Genres[gn]
 		elif type(gn) is int:
 			self._genre = Genres(gn)
+
+	@property
+	def Match(self) -> Optional[int]:
+		return self._match
+
+	@Match.setter
+	def Match(self, val: Optional[int] = None):
+		self._match = None
+		if val is not None:
+			if val >= 0 and val <= 100:
+				self._match = val
+			else:
+				raise ValueError("Match must be an int from 0 to 100.")
 
 class CoverPage:
 	"""

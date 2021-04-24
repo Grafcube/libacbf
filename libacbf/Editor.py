@@ -7,8 +7,8 @@ from magic import from_buffer
 from lxml import etree
 from libacbf.ACBFBook import ACBFBook, get_ACBF_data, get_references
 from libacbf.ACBFMetadata import ACBFMetadata
-from libacbf.Structs import Author
-from libacbf.Constants import BookNamespace
+from libacbf.Structs import Author, Genre
+from libacbf.Constants import BookNamespace, Genres
 
 class BookManager:
 	"""
@@ -38,6 +38,9 @@ class BookManager:
 		return dat_section
 
 	def add_reference(self, id: str, paragraph: str, idx: int = -1):
+		"""
+		docstring
+		"""
 		ref_section = self._check_reference_section()
 
 		ref_element = etree.Element(f"{self.book.namespace.ACBFns}reference")
@@ -61,6 +64,9 @@ class BookManager:
 		self.book.References = get_references(self.book.root.find(f"{self.book.namespace.ACBFns}references"), self.book.namespace)
 
 	def remove_reference(self, id: str):
+		"""
+		docstring
+		"""
 		ref_section = self._check_reference_section(False)
 		if ref_section is not None:
 			for i in ref_section.findall(f"{self.book.namespace.ACBFns}reference"):
@@ -72,6 +78,9 @@ class BookManager:
 			self.book.References = get_references(self.book.root.find(f"{self.book.namespace.ACBFns}references"), self.book.namespace)
 
 	def add_data(self, file_path: str):
+		"""
+		docstring
+		"""
 		dat_section = self._check_data_section()
 
 		dat_path = Path(file_path)
@@ -90,6 +99,9 @@ class BookManager:
 		self.book.Data = get_ACBF_data(self.book.root, self.book.namespace)
 
 	def remove_data(self, id: str):
+		"""
+		docstring
+		"""
 		dat_section = self._check_data_section(False)
 		if dat_section is not None:
 			for i in dat_section.findall(f"{self.book.namespace.ACBFns}binary"):
@@ -109,6 +121,9 @@ class MetadataManager:
 		self.ns: BookNamespace = book.Metadata._ns
 
 	def add_book_author(self, author: Author):
+		"""
+		docstring
+		"""
 		info_section = self.metadata.book_info._info
 
 		au_element = etree.Element(f"{self.ns.ACBFns}author")
@@ -151,6 +166,9 @@ class MetadataManager:
 		self.metadata.book_info.sync_authors()
 
 	def remove_book_author(self, index: int):
+		"""
+		docstring
+		"""
 		info_section = self.metadata.book_info._info
 
 		au_items = info_section.findall(f"{self.ns.ACBFns}author")
@@ -160,6 +178,9 @@ class MetadataManager:
 		self.metadata.book_info.sync_authors()
 
 	def edit_book_title(self, title: str, lang: Union[Literal["_"], str, Language] = "_"):
+		"""
+		docstring
+		"""
 		info_section = self.metadata.book_info._info
 
 		title_elements = info_section.findall(f"{self.ns.ACBFns}book-title")
@@ -200,6 +221,9 @@ class MetadataManager:
 		self.metadata.book_info.sync_book_titles()
 
 	def remove_book_title(self, lang: Union[Literal["_"], str, Language] = "_"):
+		"""
+		docstring
+		"""
 		info_section = self.metadata.book_info._info
 
 		title_elements = info_section.findall(f"{self.ns.ACBFns}book-title")
@@ -228,3 +252,86 @@ class MetadataManager:
 						break
 
 			self.metadata.book_info.sync_book_titles()
+
+	def add_genre(self, genre: Union[Genre, Genres]):
+		"""
+		docstring
+		"""
+		info_section = self.metadata.book_info._info
+
+		gn_elements = info_section.findall(f"{self.ns.ACBFns}genre")
+		idx = info_section.index(gn_elements[-1]) + 1
+
+		name = None
+		match = None
+
+		if type(genre) is Genres:
+			if genre.name in self.metadata.book_info.genres.keys():
+				return
+			else:
+				name = genre.name
+		elif type(genre) is Genre:
+			if genre.Genre.name in self.metadata.book_info.genres.keys():
+				if genre.Match is not None:
+					self.edit_genre_match(genre.Match, genre)
+					return
+				else:
+					return
+			else:
+				name = genre.Genre.name
+				match = genre.Match
+
+		gn_element = etree.Element(f"{self.ns.ACBFns}genre")
+		gn_element.text = name
+		if match is not None:
+			gn_element.set("match", str(match))
+		info_section.insert(idx, gn_element)
+
+		self.metadata.book_info.sync_genres()
+
+	def edit_genre_match(self, match: int, genre: Union[Genre, Genres]):
+		"""
+		docstring
+		"""
+		info_section = self.metadata.book_info._info
+		gn_elements = info_section.findall(f"{self.ns.ACBFns}genre")
+		name = None
+
+		if type(genre) is Genres:
+			if genre.name not in self.metadata.book_info.genres.keys():
+				raise ValueError("The specified Genre was not found.")
+			else:
+				name = genre.name
+		elif type(genre) is Genre:
+			if genre.Genre.name not in self.metadata.book_info.genres.keys():
+				raise ValueError("The specified Genre was not found.")
+			else:
+				name = genre.Genre.name
+
+		for i in gn_elements:
+			if i.text == name:
+				gn_element = i
+				break
+		gn_element.set("match", str(match))
+
+		self.metadata.book_info.sync_genres()
+
+	def remove_genre(self, genre: Union[Genre, Genres]):
+		"""
+		docstring
+		"""
+		info_section = self.metadata.book_info._info
+		gn_elements = info_section.findall(f"{self.ns.ACBFns}genre")
+		name = None
+
+		if type(genre) is Genres:
+			name = genre.name
+		elif type(genre) is Genre:
+			name = genre.Genre.name
+
+		for i in gn_elements:
+			if i.text == name:
+				i.clear()
+				i.getparent().remove(i)
+				self.metadata.book_info.sync_genres()
+				break
