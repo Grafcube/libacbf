@@ -87,8 +87,9 @@ class BookManager:
 
 		id = dat_path.name
 		with open(file_path, 'rb') as file:
-			content_type = from_buffer(file.read(2048), True)
-			data64 = str(b64encode(file.read()), encoding="utf-8")
+			contents = file.read()
+			content_type = from_buffer(contents, True)
+			data64 = str(b64encode(contents), encoding="utf-8")
 
 		bin_element = etree.Element(f"{self.book.namespace.ACBFns}binary")
 		bin_element.set("id", id)

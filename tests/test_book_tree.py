@@ -1,41 +1,25 @@
-from libacbf.Structs import Genre
-from libacbf.Constants import Genres
-from libacbf.ACBFMetadata import ACBFMetadata
 from libacbf.ACBFBook import ACBFBook
-from libacbf.Editor import MetadataManager
+from libacbf.Editor import BookManager
 
 sample = "tests/samples/Doctorow, Cory - Craphound-1.1.acbf"
 book: ACBFBook = ACBFBook(sample)
-meta: ACBFMetadata = book.Metadata
-mm = MetadataManager(book)
+bm = BookManager(book)
 
-for i in meta.book_info.genres.values():
-	print("nm:", i.Genre)
-	print("mt:", i.Match)
+for i in book.Data.keys():
+	print(i)
+	print("id:", book.Data[i].id)
+	print("ty:", book.Data[i].type)
+	print('\n')
 
-mm.add_genre(Genres.adventure)
-mm.add_genre(Genre(Genres.fantasy, 42))
+bm.add_data("tests/samples/JETBRAINSMONO-REGULAR.TTF")
+dt = None
 
-print("\nafter\n")
-for i in meta.book_info.genres.values():
-	print("nm:", i.Genre)
-	print("mt:", i.Match)
+for i in book.Data.keys():
+	print(i)
+	print("id:", book.Data[i].id)
+	print("ty:", book.Data[i].type)
+	dt = book.Data[i].data
+	print('\n')
 
-mm.add_genre(Genre(Genres.fantasy, 78))
-mm.add_genre(Genres.adventure)
-mm.edit_genre_match(55, Genres.science_fiction)
-
-print("\nafter\n")
-for i in meta.book_info.genres.values():
-	print("nm:", i.Genre)
-	print("mt:", i.Match)
-
-mm.remove_genre(Genres.fantasy)
-
-print("\nafter\n")
-for i in meta.book_info.genres.values():
-	print("nm:", i.Genre)
-	print("mt:", i.Match)
-
-# Raises error as expected
-# mm.edit_genre_match(100, Genres.fantasy)
+with open("tests/results/op.ttf", 'wb') as img:
+	img.write(dt.getvalue())
