@@ -1,5 +1,4 @@
 import json
-
 from langcodes import Language
 from libacbf.ACBFMetadata import ACBFMetadata
 from libacbf.ACBFBook import ACBFBook

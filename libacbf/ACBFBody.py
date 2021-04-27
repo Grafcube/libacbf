@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 from libacbf.Constants import BookNamespace
 from libacbf.BodyInfo import Page
 

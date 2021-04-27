@@ -1,8 +1,9 @@
 from collections import namedtuple
+from libacbf.ACBFData import ACBFData
 from re import split, sub
 from typing import List, Dict, Optional
 from lxml import etree
-from libacbf.Constants import BookNamespace, PageTransitions, TextAreas
+from libacbf.Constants import BookNamespace, PageTransitions
 import libacbf.Structs as structs
 
 Vec2 = namedtuple("Vector2", "x y")
