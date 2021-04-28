@@ -1,25 +1,26 @@
+from libacbf.ACBFMetadata import ACBFMetadata
 from libacbf.ACBFBook import ACBFBook
-from libacbf.Editor import BookManager
+from libacbf.Editor import MetadataManager
 
 sample = "tests/samples/Doctorow, Cory - Craphound-1.1.acbf"
 book: ACBFBook = ACBFBook(sample)
-bm = BookManager(book)
+meta: ACBFMetadata = book.Metadata
+mm = MetadataManager(book)
 
-for i in book.Data.keys():
-	print(i)
-	print("id:", book.Data[i].id)
-	print("ty:", book.Data[i].type)
-	print('\n')
+print(meta.book_info.annotations)
+print("\n")
 
-bm.add_data("tests/samples/JETBRAINSMONO-REGULAR.TTF")
-dt = None
+mm.edit_annotation("This is an annotation.")
 
-for i in book.Data.keys():
-	print(i)
-	print("id:", book.Data[i].id)
-	print("ty:", book.Data[i].type)
-	dt = book.Data[i].data
-	print('\n')
+print("after")
+print(meta.book_info.annotations)
 
-with open("tests/results/op.ttf", 'wb') as img:
-	img.write(dt.getvalue())
+mm.remove_annotation()
+
+print("after")
+print(meta.book_info.annotations)
+
+mm.edit_annotation("ಇದು ಈ ಪುಸ್ತಕದ ವಿವರಣೆ", "kn")
+
+print("after")
+print(meta.book_info.annotations)

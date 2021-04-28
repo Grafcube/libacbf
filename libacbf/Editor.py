@@ -178,7 +178,7 @@ class MetadataManager:
 
 		self.metadata.book_info.sync_authors()
 
-	def edit_book_title(self, title: str, lang: Union[Literal["_"], str, Language] = "_"):
+	def edit_book_title(self, title: str, lang: Union[str, Language] = "_"):
 		"""
 		docstring
 		"""
@@ -191,7 +191,7 @@ class MetadataManager:
 
 		if lang == "_":
 			for i in title_elements:
-				if len(i.keys()) == 0:
+				if "lang" not in i.keys():
 					i.text = title
 					found = True
 					break
@@ -221,7 +221,7 @@ class MetadataManager:
 
 		self.metadata.book_info.sync_book_titles()
 
-	def remove_book_title(self, lang: Union[Literal["_"], str, Language] = "_"):
+	def remove_book_title(self, lang: Union[str, Language] = "_"):
 		"""
 		docstring
 		"""
@@ -234,7 +234,7 @@ class MetadataManager:
 		if len(title_elements) > 1:
 			if lang == "_":
 				for i in title_elements:
-					if len(i.keys()) == 0:
+					if "lang" not in i.keys():
 						i.clear()
 						i.getparent().remove(i)
 						complete = True
@@ -336,3 +336,79 @@ class MetadataManager:
 				i.getparent().remove(i)
 				self.metadata.book_info.sync_genres()
 				break
+
+	def edit_annotation(self, text: str, lang: Union[str, Language] = "_"):
+		"""
+		docstring
+		"""
+		info_section = self.metadata.book_info._info
+
+		annotation_elements = info_section.findall(f"{self.ns.ACBFns}annotation")
+		an_element = None
+		key = None
+		idx = info_section.index(annotation_elements[-1]) + 1
+
+		if lang == "_":
+			for i in annotation_elements:
+				if "lang" not in i.keys():
+					an_element = i
+					break
+			if an_element is None:
+				an_element = etree.Element(f"{self.ns.ACBFns}annotation")
+				info_section.insert(idx, an_element)
+
+		elif type(lang) is Language:
+			key = str(lang)
+		elif type(lang) is str:
+			key = standardize_tag(lang)
+
+		if an_element is None:
+			for i in annotation_elements:
+				if standardize_tag(i.attrib["lang"]) == key:
+					an_element = i
+					break
+			if an_element is None:
+				an_element = etree.Element(f"{self.ns.ACBFns}annotation")
+				an_element.set("lang", key)
+				info_section.insert(idx, an_element)
+
+		for pt in text.split(r"\n"):
+			p = etree.Element(f"{self.ns.ACBFns}p")
+			p.text = pt
+			an_element.append(p)
+
+		self.metadata.book_info.sync_annotations()
+
+	def remove_annotation(self, lang: Union[str, Language] = "_"):
+		"""
+		docstring
+		"""
+		info_section = self.metadata.book_info._info
+		annotation_elements = info_section.findall(f"{self.ns.ACBFns}annotation")
+		an_element = None
+		key = None
+
+		if lang == "_":
+			for i in annotation_elements:
+				if "lang" not in i.keys():
+					an_element = i
+					break
+
+		elif type(lang) is Language:
+			key = str(lang)
+		elif type(lang) is str:
+			key = standardize_tag(lang)
+
+		if an_element is None:
+			for i in annotation_elements:
+				if standardize_tag(i.attrib["lang"]) == key:
+					an_element = i
+					break
+
+		if an_element is None:
+			return
+		else:
+			an_element.clear()
+			an_element.getparent().remove(an_element)
+
+		self.metadata.book_info.sync_annotations()
