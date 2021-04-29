@@ -40,7 +40,7 @@ class ACBFBook:
 
 		self.References: Dict[str, Dict[str, str]] = get_references(self.root.find(f"{self.namespace.ACBFns}references"), self.namespace)
 
-		self.Data: Dict[str, ACBFData] = get_ACBF_data(self.root, self.namespace)
+		self.Data: ACBFData = ACBFData(self.root, self.namespace)
 
 	def save(self, path: str = ""):
 		if path == "":
@@ -78,13 +78,3 @@ def get_references(ref_root, ns: BookNamespace) -> Dict[str, Dict[str, str]]:
 				pa.append(text)
 			references[ref.attrib["id"]] = {"paragraph": "\n".join(pa)}
 		return references
-
-def get_ACBF_data(root, ns: BookNamespace):
-	data = {}
-	if root.find(f"{ns.ACBFns}data") is not None:
-		base = root.find(f"{ns.ACBFns}data")
-		data_items = base.findall(f"{ns.ACBFns}binary")
-		for b in data_items:
-			new_data = ACBFData(b.attrib["id"], b.attrib["content-type"], b.text)
-			data[new_data.id] = new_data
-	return data

@@ -1,5 +1,4 @@
 from collections import namedtuple
-from libacbf.ACBFData import ACBFData
 from re import split, sub
 from typing import List, Dict, Optional
 from lxml import etree

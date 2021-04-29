@@ -1,12 +1,12 @@
 import json
 from libacbf.ACBFBook import ACBFBook
 
-sample_path = "tests/samples/Doctorow, Cory - Craphound-1.1.acbf"
+sample_path = "tests/samples/Doctorow, Cory - Craphound-1.0.acbf"
 book = ACBFBook(sample_path)
 
 def test_data():
 	op = {}
-	for d in book.Data.keys():
+	for d in book.Data.files.keys():
 		op[d] = {
 			"type": book.Data[d].type,
 			"data": book.Data[d].base64data

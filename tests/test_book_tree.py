@@ -1,26 +1,12 @@
-from libacbf.ACBFMetadata import ACBFMetadata
 from libacbf.ACBFBook import ACBFBook
-from libacbf.Editor import MetadataManager
+from libacbf.Editor import BookManager
 
 sample = "tests/samples/Doctorow, Cory - Craphound-1.1.acbf"
 book: ACBFBook = ACBFBook(sample)
-meta: ACBFMetadata = book.Metadata
-mm = MetadataManager(book)
+data = book.Data
+bm = BookManager(book)
 
-print(meta.book_info.annotations)
-print("\n")
-
-mm.edit_annotation("This is an annotation.")
-
-print("after")
-print(meta.book_info.annotations)
-
-mm.remove_annotation()
-
-print("after")
-print(meta.book_info.annotations)
-
-mm.edit_annotation("ಇದು ಈ ಪುಸ್ತಕದ ವಿವರಣೆ", "kn")
-
-print("after")
-print(meta.book_info.annotations)
+bm.add_data(r"tests/samples/JetBrainsMono[wght].ttf")
+print(len(data))
+print(data.list_files())
+print(data["JetBrainsMono[wght].ttf"].type)

@@ -8,7 +8,7 @@ book_pages = book_body.pages
 
 def test_body_info():
 	print(book_body.bgcolor)
-	print("Number of Pages: ", book_body.total_pages)
+	print("Number of Pages: ", len(book_body))
 	with open("tests/results/body/test_body_info.json", "w", encoding="utf-8", newline="\n") as result:
 		result.write(json.dumps({"bgcolour": book_body.bgcolor, "pages": book_body.total_pages}, ensure_ascii=False))
 

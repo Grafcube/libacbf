@@ -1,11 +1,11 @@
-from typing import Literal, Union
+from typing import Union
 from re import split
 from pathlib import Path
 from base64 import b64encode
 from langcodes import Language, standardize_tag
 from magic import from_buffer
 from lxml import etree
-from libacbf.ACBFBook import ACBFBook, get_ACBF_data, get_references
+from libacbf.ACBFBook import ACBFBook, get_references
 from libacbf.ACBFMetadata import ACBFMetadata
 from libacbf.Structs import Author, Genre
 from libacbf.Constants import BookNamespace, Genres
@@ -97,7 +97,7 @@ class BookManager:
 		bin_element.text = data64
 
 		dat_section.append(bin_element)
-		self.book.Data = get_ACBF_data(self.book.root, self.book.namespace)
+		self.book.Data.update_data()
 
 	def remove_data(self, id: str):
 		"""
@@ -111,7 +111,7 @@ class BookManager:
 					i.getparent().remove(i)
 					break
 
-			self.book.Data = get_ACBF_data(self.book.root, self.book.namespace)
+			self.book.Data.update_data()
 
 class MetadataManager:
 	"""
