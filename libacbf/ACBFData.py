@@ -14,9 +14,9 @@ class ACBFData:
 
 		self.files: Dict[str, Optional[BookData]] = {}
 
-		self.update_data()
+		self.sync_data()
 
-	def update_data(self):
+	def sync_data(self):
 		self._base = self._root.find(f"{self._ns.ACBFns}data")
 		if self._base is not None:
 			self._data_elements = self._base.findall(f"{self._ns.ACBFns}binary")
@@ -33,11 +33,14 @@ class ACBFData:
 		return len(self.files.keys())
 
 	def __getitem__(self, key: str):
-		if self.files[key] is not None:
-			return self.files[key]
+		if key in self.files.keys():
+			if self.files[key] is not None:
+				return self.files[key]
+			else:
+				for i in self._data_elements:
+					if i.attrib["id"] == key:
+						new_data = BookData(key, i.attrib["content-type"], i.text)
+						self.files[key] = new_data
+						return new_data
 		else:
-			for i in self._data_elements:
-				if i.attrib["id"] == key:
-					new_data = BookData(key, i.attrib["content-type"], i.text)
-					self.files[key] = new_data
-					return new_data
+			raise FileNotFoundError

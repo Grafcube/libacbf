@@ -9,7 +9,7 @@ def test_data():
 	for d in book.Data.files.keys():
 		op[d] = {
 			"type": book.Data[d].type,
-			"data": book.Data[d].base64data
+			"data": book.Data[d]._base64data
 		}
 	print(op)
 	with open("tests/results/test_binary_data.json", "w", encoding="utf-8", newline="\n") as result:

@@ -97,7 +97,7 @@ class BookManager:
 		bin_element.text = data64
 
 		dat_section.append(bin_element)
-		self.book.Data.update_data()
+		self.book.Data.sync_data()
 
 	def remove_data(self, id: str):
 		"""
@@ -111,7 +111,7 @@ class BookManager:
 					i.getparent().remove(i)
 					break
 
-			self.book.Data.update_data()
+			self.book.Data.sync_data()
 
 class MetadataManager:
 	"""
