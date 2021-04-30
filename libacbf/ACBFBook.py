@@ -32,15 +32,15 @@ class ACBFBook:
 
 		self.Metadata: metadata = metadata.ACBFMetadata(self.root.find(f"{self.namespace.ACBFns}meta-data"), self.namespace)
 
-		self.Body: ACBFBody = ACBFBody(self.root.find(f"{self.namespace.ACBFns}body"), self.namespace)
+		self.Data: ACBFData = ACBFData(self.root, self.namespace)
+
+		self.Body: ACBFBody = ACBFBody(self)
 
 		self.Stylesheet: Optional[str] = None
 		if self.root.find(f"{self.namespace.ACBFns}style") is not None:
 			self.Stylesheet = self.root.find(f"{self.namespace.ACBFns}style").text.strip()
 
 		self.References: Dict[str, Dict[str, str]] = get_references(self.root.find(f"{self.namespace.ACBFns}references"), self.namespace)
-
-		self.Data: ACBFData = ACBFData(self.root, self.namespace)
 
 	def save(self, path: str = ""):
 		if path == "":

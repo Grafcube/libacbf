@@ -5,7 +5,7 @@ from typing import Dict, List, Literal, Optional, Union
 from langcodes import Language, standardize_tag
 from libacbf.ACBFBook import BookNamespace
 from libacbf.Structs import Author, DBRef, Genre, CoverPage, LanguageLayer, Series
-from libacbf.BodyInfo import get_textlayers, get_frames, get_jumps
+import libacbf.BodyInfo as bdinfo
 
 class BookInfo:
 	"""
@@ -75,9 +75,9 @@ class BookInfo:
 	def sync_coverpage(self):
 		cpage = self._info.find(f"{self._ns.ACBFns}coverpage")
 		self.cover_page: CoverPage = CoverPage(cpage.find(f"{self._ns.ACBFns}image").attrib["href"])
-		self.cover_page.text_layers = get_textlayers(cpage, self._ns)
-		self.cover_page.frames = get_frames(cpage, self._ns)
-		self.cover_page.jumps = get_jumps(cpage, self._ns)
+		self.cover_page.text_layers = bdinfo.get_textlayers(cpage, self._ns)
+		self.cover_page.frames = bdinfo.get_frames(cpage, self._ns)
+		self.cover_page.jumps = bdinfo.get_jumps(cpage, self._ns)
 
 	def sync_languages(self):
 		self.languages: List[LanguageLayer] = []

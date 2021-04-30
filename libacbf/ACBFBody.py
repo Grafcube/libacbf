@@ -6,21 +6,23 @@ class ACBFBody:
 	"""
 	docstring
 	"""
-	def __init__(self, body, ns: BookNamespace):
-		self._body = body
-		self._ns = ns
+	def __init__(self, book):
+		self.book = book
+
+		self._ns: BookNamespace = book.namespace
+		self._body = book.root.find(f"{self._ns.ACBFns}body")
 		self._first_page = self._body.find(f"{self._ns.ACBFns}page")
 		self._current_page = self._first_page
 
 		self.page: Optional[Page] = None
-		self.total_pages: int = len(list(body))
+		self.total_pages: int = len(list(self._body))
 		self.pages: Dict[int, Page] = {}
 		self.page_number: int = 0
 
 		# Optional
 		self.bgcolor: str = "#000000"
-		if "bgcolor" in body.keys():
-			self.bgcolor = body.attrib["bgcolor"]
+		if "bgcolor" in self._body.keys():
+			self.bgcolor = self._body.attrib["bgcolor"]
 
 	def __len__(self):
 		return self.total_pages
@@ -32,7 +34,7 @@ class ACBFBody:
 			return self.page
 		else:
 			self._current_page = self._body.findall(f"{self._ns.ACBFns}page")[index]
-			self.page = Page(self._current_page, self._ns)
+			self.page = Page(self._current_page, self.book)
 			self.pages[self.page_number] = self.page
 			return self.page
 
@@ -58,7 +60,7 @@ class ACBFBody:
 		else:
 			self._current_page = self._current_page.getnext()
 			if self._current_page is not None:
-				self.page = Page(self._current_page, self._ns)
+				self.page = Page(self._current_page, self.book)
 				self.pages[self.page_number] = self.page
 			else:
 				self.page = None
@@ -73,7 +75,7 @@ class ACBFBody:
 		else:
 			self._current_page = self._current_page.getprevious()
 			if self._current_page is not None:
-				self.page = Page(self._current_page, self._ns)
+				self.page = Page(self._current_page, self.book)
 				self.pages[self.page_number] = self.page
 				return self.page
 			else:

@@ -1,17 +1,28 @@
 from collections import namedtuple
-from re import split, sub
+from pathlib import Path
+from magic.magic import from_buffer
+from re import IGNORECASE, fullmatch, split, sub
 from typing import List, Dict, Optional
+import requests
 from lxml import etree
-from libacbf.Constants import BookNamespace, PageTransitions
+from libacbf.ACBFData import ACBFData
+from libacbf.BookData import BookData
+from libacbf.Constants import BookNamespace, ImageRefType, PageTransitions
 import libacbf.Structs as structs
 
 Vec2 = namedtuple("Vector2", "x y")
+url_pattern = r'(((ftp|http|https):\/\/)|(\/)|(..\/))(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?'
 
 class Page:
 	"""
 	docstring
 	"""
-	def __init__(self, page, ns: BookNamespace):
+	def __init__(self, page, book):
+		self.book = book
+
+		ns: BookNamespace = book.namespace
+		book_data: ACBFData = book.Data
+
 		# Optional
 		self.bg_color: Optional[str] = None
 		if "bgcolor" in page.keys():
@@ -23,6 +34,37 @@ class Page:
 
 		# Sub
 		self.image_ref: str = page.find(f"{ns.ACBFns}image").attrib["href"]
+
+		ref_t = None
+		img = None
+		if self.image_ref.startswith("#"):
+			file_id = sub("#", "", self.image_ref)
+			ref_t = ImageRefType.Embedded
+			img = book_data[file_id]
+		elif self.image_ref.startswith("zip:"):
+			ref_t = ImageRefType.Archived
+			# Data in archive (after reading archive is added)
+		elif fullmatch(url_pattern, self.image_ref, IGNORECASE):
+			response = requests.get(self.image_ref)
+			file_id = split("/", self.image_ref)[-1]
+			contents = response.content
+			contents_type = from_buffer(contents, True)
+			ref_t = ImageRefType.URL
+			img = BookData(file_id, contents_type, contents)
+		else:
+			file_path = Path(self.image_ref)
+			parent_dir = Path(book.book_path).parent
+			path = parent_dir / file_path
+			file_id = path.name
+			with open(path, "rb") as image:
+				contents = image.read()
+			contents_type = from_buffer(contents, True)
+			ref_t = ImageRefType.Local
+			img = BookData(file_id, contents_type, contents)
+
+		self.ref_type: ImageRefType = ref_t
+
+		self.image: BookData = img
 
 		## Optional
 		self.title: Dict[str, str] = {}

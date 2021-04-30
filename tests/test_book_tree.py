@@ -1,13 +1,19 @@
+from lxml import etree
+from libacbf.BodyInfo import Page
 from libacbf.ACBFBook import ACBFBook
-from libacbf.Editor import BookManager
 
 sample = "tests/samples/Doctorow, Cory - Craphound-1.1.acbf"
 book: ACBFBook = ACBFBook(sample)
-data = book.Data
-bm = BookManager(book)
+txml = """<page>
+<image href="https://upload.wikimedia.org/wikipedia/commons/a/a9/ComicsPortal.png"/>
+</page>
+"""
+p = etree.fromstring(txml)
+for i in list(iter(p)):
+	i.tag = book.namespace.ACBFns + i.tag
 
-bm.add_data(r"tests/samples/JetBrainsMono[wght].ttf")
-print(len(data))
-print(data.list_files())
-print(data["JetBrainsMono[wght].ttf"].type)
-print(data["cover.jpg"])
+pg = Page(p, book)
+print(pg.image.id)
+print(pg.image.is_embedded)
+print(pg.image.type)
+print(pg.image.data.getbuffer().nbytes)

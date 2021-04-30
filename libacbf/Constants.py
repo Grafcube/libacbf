@@ -75,3 +75,12 @@ class PageTransitions(Enum):
 	scroll_right = auto()
 	scroll_down = auto()
 	none = 100
+
+class ImageRefType(Enum):
+	"""
+	docstring
+	"""
+	Embedded = 0
+	Archived = auto()
+	URL = auto()
+	Local = auto()
