@@ -1,19 +1,24 @@
-from lxml import etree
-from libacbf.BodyInfo import Page
+from libacbf.Structs import Author
+from libacbf.Editor import MetadataManager
 from libacbf.ACBFBook import ACBFBook
 
 sample = "tests/samples/Doctorow, Cory - Craphound-1.1.acbf"
 book: ACBFBook = ACBFBook(sample)
-txml = """<page>
-<image href="https://upload.wikimedia.org/wikipedia/commons/a/a9/ComicsPortal.png"/>
-</page>
-"""
-p = etree.fromstring(txml)
-for i in list(iter(p)):
-	i.tag = book.namespace.ACBFns + i.tag
+mm = MetadataManager(book)
 
-pg = Page(p, book)
-print(pg.image.id)
-print(pg.image.is_embedded)
-print(pg.image.type)
-print(pg.image.data.getbuffer().nbytes)
+oa1 = book.Metadata.book_info.authors[4]
+oa2 = 5
+
+for i in book.Metadata.book_info.authors:
+	print(i.first_name, i.last_name)
+	print(i.nickname)
+	print('')
+print("after")
+
+mm.edit_book_author(oa1, Author("a_firstname", "a_lastname", "a_nickname"))
+mm.edit_book_author(oa2, Author("b_firstname", "b_lastname", "b_nickname"))
+
+for i in book.Metadata.book_info.authors:
+	print(i.first_name, i.last_name)
+	print(i.nickname)
+	print('')

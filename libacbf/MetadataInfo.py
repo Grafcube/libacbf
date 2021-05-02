@@ -1,19 +1,22 @@
-from libacbf.Constants import Genres
+from __future__ import annotations
+from typing import TYPE_CHECKING, Dict, List, Literal, Optional, Union
+if TYPE_CHECKING:
+	from libacbf.ACBFBook import ACBFBook
+
 from re import split
 from datetime import date
-from typing import Dict, List, Literal, Optional, Union
 from langcodes import Language, standardize_tag
-from libacbf.ACBFBook import BookNamespace
+from libacbf.Constants import BookNamespace, Genres
 from libacbf.Structs import Author, DBRef, Genre, CoverPage, LanguageLayer, Series
-import libacbf.BodyInfo as bdinfo
+from libacbf.BodyInfo import get_textlayers, get_frames, get_jumps
 
 class BookInfo:
 	"""
 	docstring
 	"""
-	def __init__(self, info, ns: BookNamespace):
+	def __init__(self, info, book: ACBFBook):
 		self._info = info
-		self._ns = ns
+		self._ns: BookNamespace = book.namespace
 
 		self.sync_authors()
 		self.sync_book_titles()
@@ -75,9 +78,9 @@ class BookInfo:
 	def sync_coverpage(self):
 		cpage = self._info.find(f"{self._ns.ACBFns}coverpage")
 		self.cover_page: CoverPage = CoverPage(cpage.find(f"{self._ns.ACBFns}image").attrib["href"])
-		self.cover_page.text_layers = bdinfo.get_textlayers(cpage, self._ns)
-		self.cover_page.frames = bdinfo.get_frames(cpage, self._ns)
-		self.cover_page.jumps = bdinfo.get_jumps(cpage, self._ns)
+		self.cover_page.text_layers = get_textlayers(cpage, self._ns)
+		self.cover_page.frames = get_frames(cpage, self._ns)
+		self.cover_page.jumps = get_jumps(cpage, self._ns)
 
 	def sync_languages(self):
 		self.languages: List[LanguageLayer] = []
@@ -214,7 +217,9 @@ class PublishInfo:
 	"""
 	docstring
 	"""
-	def __init__(self, info: dict, ns: BookNamespace):
+	def __init__(self, info, book: ACBFBook):
+		ns = book.namespace
+
 		self.publisher: str = info.find(f"{ns.ACBFns}publisher").text
 
 		self.publish_date_string: str = info.find(f"{ns.ACBFns}publish-date").text
@@ -240,7 +245,9 @@ class DocumentInfo:
 	"""
 	docstring
 	"""
-	def __init__(self, info: dict, ns: BookNamespace):
+	def __init__(self, info, book: ACBFBook):
+		ns: BookNamespace = book.namespace
+
 		self.authors: List[Author] = update_authors(info.findall(f"{ns.ACBFns}author"), ns)
 
 		self.creation_date_string: str = info.find(f"{ns.ACBFns}creation-date").text
@@ -288,6 +295,7 @@ def update_authors(author_items, ns: BookNamespace):
 			new_nickname = au.find(f"{ns.ACBFns}nickname").text
 
 		new_author: Author = Author(new_first_name, new_last_name, new_nickname)
+		new_author._element = au
 
 		if "activity" in au.keys():
 			new_author.activity = au.attrib["activity"]

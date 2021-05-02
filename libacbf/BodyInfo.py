@@ -1,8 +1,12 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING, List, Dict, Optional
+if TYPE_CHECKING:
+	from libacbf.ACBFBook import ACBFBook
+
 from collections import namedtuple
 from pathlib import Path
 from magic.magic import from_buffer
 from re import IGNORECASE, fullmatch, split, sub
-from typing import List, Dict, Optional
 import requests
 from lxml import etree
 from libacbf.ACBFData import ACBFData
@@ -17,7 +21,7 @@ class Page:
 	"""
 	docstring
 	"""
-	def __init__(self, page, book):
+	def __init__(self, page, book: ACBFBook):
 		self.book = book
 
 		ns: BookNamespace = book.namespace

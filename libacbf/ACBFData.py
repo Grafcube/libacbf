@@ -1,15 +1,18 @@
-from typing import Dict, List, Optional
+from __future__ import annotations
+from typing import TYPE_CHECKING, Dict, List, Optional
+if TYPE_CHECKING:
+	from libacbf.ACBFBook import ACBFBook
+
 from libacbf.BookData import BookData
-from libacbf.Constants import BookNamespace
 
 class ACBFData:
 	"""
 	docstring
 	"""
-	def __init__(self, root, ns: BookNamespace):
-		self._ns = ns
+	def __init__(self, root, book: ACBFBook):
+		self._ns = book.namespace
 		self._root = root
-		self._base = root.find(f"{ns.ACBFns}data")
+		self._base = root.find(f"{self._ns.ACBFns}data")
 		self._data_elements = []
 
 		self.files: Dict[str, Optional[BookData]] = {}

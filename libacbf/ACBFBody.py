@@ -1,4 +1,8 @@
-from typing import Dict, Optional
+from __future__ import annotations
+from typing import TYPE_CHECKING, Dict, Optional
+if TYPE_CHECKING:
+	from libacbf.ACBFBook import ACBFBook
+
 from libacbf.Constants import BookNamespace
 from libacbf.BodyInfo import Page
 
@@ -6,7 +10,7 @@ class ACBFBody:
 	"""
 	docstring
 	"""
-	def __init__(self, book):
+	def __init__(self, book: ACBFBook):
 		self.book = book
 
 		self._ns: BookNamespace = book.namespace

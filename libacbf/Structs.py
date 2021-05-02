@@ -8,6 +8,8 @@ class Author:
 	docstring
 	"""
 	def __init__(self, *names: str, first_name = None, last_name = None, nickname = None):
+		self._element = None
+
 		self.first_name: Optional[str] = None
 		self.last_name: Optional[str] = None
 		self.nickname: Optional[str] = None

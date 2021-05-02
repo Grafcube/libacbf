@@ -3,7 +3,7 @@ from typing import List, Dict, Optional
 from re import sub, findall, IGNORECASE
 from lxml import etree
 from libacbf.Constants import BookNamespace
-import libacbf.ACBFMetadata as metadata
+from libacbf.ACBFMetadata import ACBFMetadata
 from libacbf.ACBFBody import ACBFBody
 from libacbf.ACBFData import ACBFData
 
@@ -27,14 +27,14 @@ class ACBFBook:
 
 		validate_acbf(self.root)
 
-		self.namespace: BookNamespace = BookNamespace(r"{" + self.root.nsmap[None] + r"}")
+		self.namespace: BookNamespace = BookNamespace(f"{{{self.root.nsmap[None]}}}")
 		self.styles: List[str] = findall(r'<\?xml-stylesheet type="text\/css" href="(.+)"\?>', contents, IGNORECASE)
 
-		self.Metadata: metadata = metadata.ACBFMetadata(self.root.find(f"{self.namespace.ACBFns}meta-data"), self.namespace)
-
-		self.Data: ACBFData = ACBFData(self.root, self.namespace)
+		self.Metadata: ACBFMetadata = ACBFMetadata(self)
 
 		self.Body: ACBFBody = ACBFBody(self)
+
+		self.Data: ACBFData = ACBFData(self.root, self)
 
 		self.Stylesheet: Optional[str] = None
 		if self.root.find(f"{self.namespace.ACBFns}style") is not None:

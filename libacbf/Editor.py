@@ -78,6 +78,7 @@ class BookManager:
 			self.book.References = get_references(self.book.root.find(f"{self.book.namespace.ACBFns}references"), self.book.namespace)
 
 	def add_data(self, file_path: str):
+		# TODO: Option to choose whether to embed in xml or add to archive
 		"""
 		docstring
 		"""
@@ -119,7 +120,7 @@ class MetadataManager:
 	"""
 	def __init__(self, book: ACBFBook):
 		self.metadata: ACBFMetadata = book.Metadata
-		self.ns: BookNamespace = book.Metadata._ns
+		self.ns: BookNamespace = book.namespace
 
 	def add_book_author(self, author: Author):
 		"""
@@ -163,6 +164,83 @@ class MetadataManager:
 		if len(info_section.findall(f"{self.ns.ACBFns}author")) > 0:
 			last_au_idx = info_section.index(info_section.findall(f"{self.ns.ACBFns}author")[-1])
 		info_section.insert(last_au_idx+1, au_element)
+
+		self.metadata.book_info.sync_authors()
+
+	def edit_book_author(self, original_author: Union[Author, int], new_author: Author):
+		au_list = self.metadata.book_info._info.findall(f"{self.ns.ACBFns}author")
+
+		if type(original_author) is Author:
+			if original_author._element is None:
+				raise ValueError("`original_author` is not part of the book.")
+			else:
+				au_element = original_author._element
+
+		elif type(original_author) is int:
+			au_element = au_list[original_author]
+			original_author = self.metadata.book_info.authors[original_author]
+
+		if new_author.activity is not None:
+			au_element.set("activity", new_author.activity.name)
+		if new_author.lang is not None:
+			au_element.set("lang", str(new_author.lang))
+
+		if new_author.first_name is not None:
+			element = au_element.find(f"{self.ns.ACBFns}first-name")
+			if element is None:
+				element = etree.Element(f"{self.ns.ACBFns}first-name")
+				au_element.insert(0, element)
+			element.text = new_author.first_name
+
+		if new_author.last_name is not None:
+			element = au_element.find(f"{self.ns.ACBFns}last-name")
+			if element is None:
+				element = etree.Element(f"{self.ns.ACBFns}last-name")
+				if au_element.find(f"{self.ns.ACBFns}middle-name") is not None:
+					au_element.insert(2, element)
+				else:
+					au_element.insert(1, element)
+			element.text = new_author.last_name
+
+		if new_author.nickname is not None:
+			element = au_element.find(f"{self.ns.ACBFns}nickname")
+			if element is None:
+				element = etree.Element(f"{self.ns.ACBFns}nickname")
+				if au_element.find(f"{self.ns.ACBFns}last-name") is not None:
+					if au_element.find(f"{self.ns.ACBFns}middle-name"):
+						idx = 3
+					else:
+						idx = 2
+				elif au_element.find(f"{self.ns.ACBFns}middle-name") is not None:
+					idx = 1
+				else:
+					idx = 0
+				au_element.insert(idx, element)
+			element.text = new_author.nickname
+
+		if new_author.middle_name is not None:
+			element = au_element.find(f"{self.ns.ACBFns}middle-name")
+			if element is None:
+				element = etree.Element(f"{self.ns.ACBFns}middle-name")
+				if au_element.find(f"{self.ns.ACBFns}first-name") is not None:
+					au_element.insert(1, element)
+				else:
+					au_element.insert(0, element)
+			element.text = new_author.middle_name
+
+		if new_author.home_page is not None:
+			element = au_element.find(f"{self.ns.ACBFns}home-page")
+			if element is None:
+				element = etree.Element(f"{self.ns.ACBFns}home-page")
+				au_element.append(element)
+			element.text = new_author.home_page
+
+		if new_author.email is not None:
+			element = au_element.find(f"{self.ns.ACBFns}email")
+			if element is None:
+				element = etree.Element(f"{self.ns.ACBFns}email")
+				au_element.append(element)
+			element.text = new_author.email
 
 		self.metadata.book_info.sync_authors()
 
