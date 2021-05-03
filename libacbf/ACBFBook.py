@@ -1,7 +1,8 @@
 import pathlib
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Union
 from re import sub, findall, IGNORECASE
 from lxml import etree
+import zipfile as Zip
 from libacbf.Constants import BookNamespace
 from libacbf.ACBFMetadata import ACBFMetadata
 from libacbf.ACBFBody import ACBFBody
@@ -14,16 +15,39 @@ class ACBFBook:
 	def __init__(self, file_path: str = "libacbf/templates/base_template_1.1.acbf"):
 		self.book_path = file_path
 
-		self.tree = None
-		self.root = None
+		self.archive_path: Optional[Union[Zip.Path]] = None
 
-		if pathlib.Path(file_path).suffix != ".acbf": # TODO cbz handling
-			raise ValueError("File is not an ACBF Ebook")
-		else:
+		path = pathlib.Path(file_path)
+		archive = None
+		if path.suffix == ".acbf":
 			with open(file_path, encoding="utf-8") as book:
 				contents = book.read()
-				self.root = etree.fromstring(bytes(contents, encoding="utf-8"))
-				self.tree = self.root.getroottree()
+		elif path.suffix == ".cbz":
+			archive = Zip.ZipFile(file_path, 'r')
+			self.archive_path = Zip.Path(archive)
+		elif path.suffix == ".cbr":
+			pass
+		elif path.suffix == ".cb7":
+			pass
+		else:
+			raise ValueError("File is not an ACBF Ebook")
+
+		if archive is not None:
+			arch_iter = self.archive_path.iterdir()
+			acbf_path = None
+			while True:
+				try:
+					acbf_path = next(arch_iter)
+				except StopIteration:
+					raise ValueError("File is not an ACBF Ebook")
+				if acbf_path.name.endswith(".acbf"):
+					break
+
+			contents = acbf_path.read_text("utf-8")
+			archive.close()
+
+		self.root = etree.fromstring(bytes(contents, encoding="utf-8"))
+		self.tree = self.root.getroottree()
 
 		validate_acbf(self.root)
 
@@ -34,7 +58,7 @@ class ACBFBook:
 
 		self.Body: ACBFBody = ACBFBody(self)
 
-		self.Data: ACBFData = ACBFData(self.root, self)
+		self.Data: ACBFData = ACBFData(self)
 
 		self.Stylesheet: Optional[str] = None
 		if self.root.find(f"{self.namespace.ACBFns}style") is not None:

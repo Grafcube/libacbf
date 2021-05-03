@@ -56,15 +56,18 @@ class Page:
 			ref_t = ImageRefType.URL
 			img = BookData(file_id, contents_type, contents)
 		else:
-			file_path = Path(self.image_ref)
-			parent_dir = Path(book.book_path).parent
-			path = parent_dir / file_path
-			file_id = path.name
-			with open(path, "rb") as image:
-				contents = image.read()
-			contents_type = from_buffer(contents, True)
-			ref_t = ImageRefType.Local
-			img = BookData(file_id, contents_type, contents)
+			if book.archive is not None:
+				pass # Path relative to archive
+			else:
+				file_path = Path(self.image_ref)
+				parent_dir = Path(book.book_path).parent
+				path = parent_dir / file_path
+				file_id = path.name
+				with open(path, "rb") as image:
+					contents = image.read()
+				contents_type = from_buffer(contents, True)
+				ref_t = ImageRefType.Local
+				img = BookData(file_id, contents_type, contents)
 
 		self.ref_type: ImageRefType = ref_t
 
