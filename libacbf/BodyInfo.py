@@ -1,4 +1,5 @@
 from __future__ import annotations
+import os
 from typing import TYPE_CHECKING, List, Dict, Optional
 if TYPE_CHECKING:
 	from libacbf.ACBFBook import ACBFBook
@@ -56,18 +57,30 @@ class Page:
 			ref_t = ImageRefType.URL
 			img = BookData(file_id, contents_type, contents)
 		else:
-			if book.archive is not None:
-				pass # Path relative to archive
+			if self.image_ref.startswith("file://"):
+				file_path = Path(os.path.abspath(self.image_ref))
 			else:
 				file_path = Path(self.image_ref)
-				parent_dir = Path(book.book_path).parent
-				path = parent_dir / file_path
-				file_id = path.name
-				with open(path, "rb") as image:
-					contents = image.read()
-				contents_type = from_buffer(contents, True)
+			path = None
+
+			if os.path.isabs(self.image_ref):
 				ref_t = ImageRefType.Local
-				img = BookData(file_id, contents_type, contents)
+				path = file_path
+			else:
+				if book.archive_path is not None:
+					ref_t = ImageRefType.SelfArchived
+					path = book.archive_path/file_path
+
+				else:
+					ref_t = ImageRefType.Local
+					parent_dir = Path(book.book_path).parent
+					path = parent_dir/file_path
+
+			file_id = path.name
+			with open(path, "rb") as image:
+				contents = image.read()
+			contents_type = from_buffer(contents, True)
+			img = BookData(file_id, contents_type, contents)
 
 		self.ref_type: ImageRefType = ref_t
 

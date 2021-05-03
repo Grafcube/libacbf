@@ -1,3 +1,4 @@
+import os
 import pathlib
 from typing import List, Dict, Optional, Union
 from re import sub, findall, IGNORECASE
@@ -13,7 +14,7 @@ class ACBFBook:
 	docstring
 	"""
 	def __init__(self, file_path: str = "libacbf/templates/base_template_1.1.acbf"):
-		self.book_path = file_path
+		self.book_path = os.path.abspath(file_path)
 
 		self.archive_path: Optional[Union[Zip.Path]] = None
 

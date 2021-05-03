@@ -82,5 +82,6 @@ class ImageRefType(Enum):
 	"""
 	Embedded = 0
 	Archived = auto()
+	SelfArchived = auto()
 	URL = auto()
 	Local = auto()
