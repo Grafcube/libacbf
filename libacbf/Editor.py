@@ -15,7 +15,10 @@ class BookManager:
 	docstring
 	"""
 	def __init__(self, book: ACBFBook):
-		self.book = book
+		if book.is_open:
+			self.book = book
+		else:
+			raise ValueError("I/O operation on closed file.")
 
 	def _check_reference_section(self, create: bool = True):
 		ref_section = self.book.root.find(f"{self.book.namespace.ACBFns}references")

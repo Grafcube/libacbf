@@ -23,3 +23,7 @@ class BookData:
 		self.is_embedded: bool = self._base64data is not None
 
 		self.data: BytesIO = dt
+
+	@property
+	def filesize(self):
+		return self.data.getbuffer().nbytes

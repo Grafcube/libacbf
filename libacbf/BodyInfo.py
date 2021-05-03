@@ -69,16 +69,18 @@ class Page:
 			else:
 				if book.archive_path is not None:
 					ref_t = ImageRefType.SelfArchived
-					path = book.archive_path/file_path
-
+					path = file_path
+					with book.archive.open(str(path), "r") as image:
+						contents = image.read()
 				else:
 					ref_t = ImageRefType.Local
 					parent_dir = Path(book.book_path).parent
 					path = parent_dir/file_path
 
 			file_id = path.name
-			with open(path, "rb") as image:
-				contents = image.read()
+			if ref_t == ImageRefType.Local:
+				with open(str(path), "rb") as image:
+					contents = image.read()
 			contents_type = from_buffer(contents, True)
 			img = BookData(file_id, contents_type, contents)
 
