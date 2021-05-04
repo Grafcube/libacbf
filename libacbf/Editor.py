@@ -122,8 +122,11 @@ class MetadataManager:
 	docstring
 	"""
 	def __init__(self, book: ACBFBook):
-		self.metadata: ACBFMetadata = book.Metadata
-		self.ns: BookNamespace = book.namespace
+		if book.is_open:
+			self.metadata: ACBFMetadata = book.Metadata
+			self.ns: BookNamespace = book.namespace
+		else:
+			raise ValueError("I/O operation on closed file.")
 
 	def add_book_author(self, author: Author):
 		"""

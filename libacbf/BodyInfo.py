@@ -6,13 +6,14 @@ if TYPE_CHECKING:
 
 from collections import namedtuple
 from pathlib import Path
+import warnings
 from magic.magic import from_buffer
 from re import IGNORECASE, fullmatch, split, sub
 import requests
 from lxml import etree
 from libacbf.ACBFData import ACBFData
 from libacbf.BookData import BookData
-from libacbf.Constants import BookNamespace, ImageRefType, PageTransitions
+from libacbf.Constants import BookNamespace, ImageRefType, PageTransitions, ConnectionErrorWarning
 import libacbf.Structs as structs
 
 Vec2 = namedtuple("Vector2", "x y")
@@ -50,12 +51,17 @@ class Page:
 			ref_t = ImageRefType.Archived
 			# Data in archive (after reading archive is added)
 		elif fullmatch(url_pattern, self.image_ref, IGNORECASE):
-			response = requests.get(self.image_ref)
 			file_id = split("/", self.image_ref)[-1]
-			contents = response.content
-			contents_type = from_buffer(contents, True)
 			ref_t = ImageRefType.URL
-			img = BookData(file_id, contents_type, contents)
+			try:
+				response = requests.get(self.image_ref)
+			except requests.ConnectionError as ce:
+				img = None
+				warnings.warn(ce, ConnectionErrorWarning)
+			else:
+				contents = response.content
+				contents_type = from_buffer(contents, True)
+				img = BookData(file_id, contents_type, contents)
 		else:
 			if self.image_ref.startswith("file://"):
 				file_path = Path(os.path.abspath(self.image_ref))
@@ -86,7 +92,7 @@ class Page:
 
 		self.ref_type: ImageRefType = ref_t
 
-		self.image: BookData = img
+		self.image: Optional[BookData] = img
 
 		## Optional
 		self.title: Dict[str, str] = {}

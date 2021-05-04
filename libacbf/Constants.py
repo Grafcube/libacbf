@@ -1,5 +1,6 @@
 from enum import Enum, auto
 from re import sub
+import warnings
 
 class BookNamespace:
 	def __init__(self, ns: str):
@@ -8,6 +9,9 @@ class BookNamespace:
 	@property
 	def ACBFns_raw(self) -> str:
 		return sub(r'\{|\}', "", self.ACBFns)
+
+class ConnectionErrorWarning(UserWarning):
+	pass
 
 class AuthorActivities(Enum):
 	"""

@@ -74,8 +74,9 @@ class ACBFBook:
 			path = self.book_path
 
 	def close(self):
-		self.archive.close()
-		self.is_open = False
+		if self.archive is not None:
+			self.archive.close()
+			self.is_open = False
 
 	def __enter__(self):
 		return self
