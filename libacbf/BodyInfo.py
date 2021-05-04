@@ -11,6 +11,7 @@ from magic.magic import from_buffer
 from re import IGNORECASE, fullmatch, split, sub
 import requests
 from lxml import etree
+import zipfile as Zip
 from libacbf.ACBFData import ACBFData
 from libacbf.BookData import BookData
 from libacbf.Constants import BookNamespace, ImageRefType, PageTransitions, ConnectionErrorWarning
@@ -43,13 +44,35 @@ class Page:
 
 		ref_t = None
 		img = None
+
 		if self.image_ref.startswith("#"):
 			file_id = sub("#", "", self.image_ref)
 			ref_t = ImageRefType.Embedded
 			img = book_data[file_id]
+
 		elif self.image_ref.startswith("zip:"):
 			ref_t = ImageRefType.Archived
-			# Data in archive (after reading archive is added)
+
+			ref_path = sub("zip:", "", self.image_ref)
+			arch_path = Path(split("!", ref_path)[0])
+			file_path = Path(split("!", ref_path)[1])
+			if not os.path.isabs(arch_path):
+				arch_path = Path(os.path.abspath(str(arch_path)))
+
+			if arch_path.suffix in [".zip", ".cbz"]:
+				with Zip.ZipFile(str(arch_path), 'r') as archive:
+					with archive.open(str(file_path)) as image:
+						contents = image.read()
+					contents_type = from_buffer(contents, True)
+					img = BookData(file_path.name, contents_type, contents)
+
+			elif arch_path.suffix in [".rar", ".cbr"]:
+				pass
+			elif arch_path.suffix in [".7z", ".cb7"]:
+				pass
+			else:
+				raise ValueError("Image reference is not a valid archive.")
+
 		elif fullmatch(url_pattern, self.image_ref, IGNORECASE):
 			file_id = split("/", self.image_ref)[-1]
 			ref_t = ImageRefType.URL
@@ -62,6 +85,7 @@ class Page:
 				contents = response.content
 				contents_type = from_buffer(contents, True)
 				img = BookData(file_id, contents_type, contents)
+
 		else:
 			if self.image_ref.startswith("file://"):
 				file_path = Path(os.path.abspath(self.image_ref))
