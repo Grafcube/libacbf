@@ -92,7 +92,7 @@ class BookInfo:
 
 				new_lang.lang = layer.attrib["lang"]
 				if "show" in layer.keys():
-					new_lang.show = layer.attrib["show"]
+					new_lang.show = eval(layer.attrib["show"])
 
 				self.languages.append(new_lang)
 

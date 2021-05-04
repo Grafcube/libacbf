@@ -3,8 +3,9 @@ from langcodes import Language
 from libacbf.ACBFMetadata import ACBFMetadata
 from libacbf.ACBFBook import ACBFBook
 
-sample_path = "tests/samples/Doctorow, Cory - Craphound-1.1.acbf"
+sample_path = "tests/samples/Doctorow, Cory - Craphound.cbz"
 book = ACBFBook(sample_path)
+book.close()
 book_metadata: ACBFMetadata = book.Metadata
 
 def test_authors():
