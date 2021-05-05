@@ -54,7 +54,7 @@ class ACBFBook:
 		self.root = etree.fromstring(bytes(contents, encoding="utf-8"))
 		self.tree = self.root.getroottree()
 
-		validate_acbf(self.root)
+		self._validate_acbf()
 
 		self.namespace: BookNamespace = BookNamespace(f"{{{self.root.nsmap[None]}}}")
 
@@ -96,28 +96,27 @@ class ACBFBook:
 			self.archive.close()
 			self.is_open = False
 
+	def _validate_acbf(self):
+		"""
+		docstring
+		"""
+		version = self.tree.docinfo.xml_version
+		xsd_path = f"libacbf/schema/acbf-{version}.xsd"
+
+		with open(xsd_path, encoding="utf-8") as file:
+			acbf_root = etree.fromstring(bytes(file.read(), encoding="utf-8"))
+			acbf_tree = acbf_root.getroottree()
+			acbf_schema = etree.XMLSchema(acbf_tree)
+
+		# TODO fix schema error. When fixed, remove try/except
+		try:
+			acbf_schema.assertValid(self.tree)
+		except etree.DocumentInvalid as err:
+			print("Validation failed. File may be valid (bug)")
+			print(err)
+
 	def __enter__(self):
 		return self
 
 	def __exit__(self, exception_type, exception_value, traceback):
 		self.close()
-
-def validate_acbf(root):
-	"""
-	docstring
-	"""
-	tree = root.getroottree()
-	version = tree.docinfo.xml_version
-	xsd_path = f"libacbf/schema/acbf-{version}.xsd"
-
-	with open(xsd_path, encoding="utf-8") as file:
-		acbf_root = etree.fromstring(bytes(file.read(), encoding="utf-8"))
-		acbf_tree = acbf_root.getroottree()
-		acbf_schema = etree.XMLSchema(acbf_tree)
-
-	# TODO fix schema error. When fixed, remove try/except
-	try:
-		acbf_schema.assertValid(tree)
-	except etree.DocumentInvalid as err:
-		print("Validation failed. File may be valid (bug)")
-		print(err)

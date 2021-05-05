@@ -7,9 +7,11 @@ class BookData:
 	docstring
 	"""
 	def __init__(self, id: str, file_type: str, data: Union[str, bytes, BytesIO]):
-		self.id: str = id
-		self.type: str = file_type
 		self._base64data: Optional[str] = None
+
+		self.id: str = id
+
+		self.type: str = file_type
 
 		dt = None
 		if type(data) is str:
