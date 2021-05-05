@@ -12,7 +12,6 @@ from re import IGNORECASE, fullmatch, split, sub
 import requests
 from lxml import etree
 import zipfile as Zip
-from libacbf.ACBFData import ACBFData
 from libacbf.BookData import BookData
 from libacbf.Constants import BookNamespace, ImageRefType, PageTransitions, ConnectionErrorWarning
 import libacbf.Structs as structs
@@ -25,10 +24,11 @@ class Page:
 	docstring
 	"""
 	def __init__(self, page, book: ACBFBook):
+		self._image: Optional[BookData] = None
+
 		self.book = book
 
 		ns: BookNamespace = book.namespace
-		book_data: ACBFData = book.Data
 
 		# Optional
 		self.bg_color: Optional[str] = None
@@ -43,80 +43,43 @@ class Page:
 		self.image_ref: str = page.find(f"{ns.ACBFns}image").attrib["href"]
 
 		ref_t = None
-		img = None
+		self._image = None
 
 		if self.image_ref.startswith("#"):
-			file_id = sub("#", "", self.image_ref)
+			self._file_id = sub("#", "", self.image_ref)
 			ref_t = ImageRefType.Embedded
-			img = book_data[file_id]
 
 		elif self.image_ref.startswith("zip:"):
 			ref_t = ImageRefType.Archived
 
 			ref_path = sub("zip:", "", self.image_ref)
-			arch_path = Path(split("!", ref_path)[0])
-			file_path = Path(split("!", ref_path)[1])
-			if not os.path.isabs(arch_path):
-				arch_path = Path(os.path.abspath(str(arch_path)))
-
-			if arch_path.suffix in [".zip", ".cbz"]:
-				with Zip.ZipFile(str(arch_path), 'r') as archive:
-					with archive.open(str(file_path)) as image:
-						contents = image.read()
-					contents_type = from_buffer(contents, True)
-					img = BookData(file_path.name, contents_type, contents)
-
-			elif arch_path.suffix in [".rar", ".cbr"]:
-				pass
-			elif arch_path.suffix in [".7z", ".cb7"]:
-				pass
-			else:
-				raise ValueError("Image reference is not a valid archive.")
+			self._arch_path = Path(split("!", ref_path)[0])
+			self._file_path = Path(split("!", ref_path)[1])
+			if not os.path.isabs(self._arch_path):
+				self._arch_path = Path(os.path.abspath(str(self._arch_path)))
 
 		elif fullmatch(url_pattern, self.image_ref, IGNORECASE):
-			file_id = split("/", self.image_ref)[-1]
+			self._file_id = split("/", self.image_ref)[-1]
 			ref_t = ImageRefType.URL
-			try:
-				response = requests.get(self.image_ref)
-			except requests.ConnectionError as ce:
-				img = None
-				warnings.warn(ce, ConnectionErrorWarning)
-			else:
-				contents = response.content
-				contents_type = from_buffer(contents, True)
-				img = BookData(file_id, contents_type, contents)
 
 		else:
 			if self.image_ref.startswith("file://"):
-				file_path = Path(os.path.abspath(self.image_ref))
+				self._file_path = Path(os.path.abspath(self.image_ref))
 			else:
-				file_path = Path(self.image_ref)
-			path = None
+				self._file_path = Path(self.image_ref)
 
 			if os.path.isabs(self.image_ref):
 				ref_t = ImageRefType.Local
-				path = file_path
 			else:
 				if book.archive_path is not None:
 					ref_t = ImageRefType.SelfArchived
-					path = file_path
-					with book.archive.open(str(path), "r") as image:
-						contents = image.read()
 				else:
 					ref_t = ImageRefType.Local
-					parent_dir = Path(book.book_path).parent
-					path = parent_dir/file_path
+					self._file_path = Path(book.book_path).parent/self._file_path
 
-			file_id = path.name
-			if ref_t == ImageRefType.Local:
-				with open(str(path), "rb") as image:
-					contents = image.read()
-			contents_type = from_buffer(contents, True)
-			img = BookData(file_id, contents_type, contents)
+			self._file_id = self._file_path.name
 
 		self.ref_type: ImageRefType = ref_t
-
-		self.image: Optional[BookData] = img
 
 		## Optional
 		self.title: Dict[str, str] = {}
@@ -132,6 +95,50 @@ class Page:
 		self.frames: List[structs.Frame] = get_frames(page, ns)
 
 		self.jumps: List[structs.Jump] = get_jumps(page, ns)
+
+	@property
+	def image(self) -> Optional[BookData]:
+		if self._image is None:
+			if self.image_ref.startswith("#"):
+				self._image = self.book.Data[self._file_id]
+
+			elif self.image_ref.startswith("zip:"):
+				if self._arch_path.suffix in [".zip", ".cbz"]:
+					with Zip.ZipFile(str(self._arch_path), 'r') as archive:
+						with archive.open(str(self._file_path)) as image:
+							contents = image.read()
+						contents_type = from_buffer(contents, True)
+						self._image = BookData(self._file_path.name, contents_type, contents)
+
+				elif self._arch_path.suffix in [".rar", ".cbr"]:
+					pass
+				elif self._arch_path.suffix in [".7z", ".cb7"]:
+					pass
+				else:
+					raise ValueError("Image reference is not a valid archive.")
+
+			elif fullmatch(url_pattern, self.image_ref, IGNORECASE):
+				try:
+					response = requests.get(self.image_ref)
+				except requests.ConnectionError as ce:
+					self._image = None
+					warnings.warn(ce, ConnectionErrorWarning)
+				else:
+					contents = response.content
+					contents_type = from_buffer(contents, True)
+					self._image = BookData(self._file_id, contents_type, contents)
+
+			else:
+				if self.ref_type == ImageRefType.SelfArchived:
+					with self.book.archive.open(str(self._file_path), "r") as image:
+						contents = image.read()
+				elif self.ref_type == ImageRefType.Local:
+					with open(str(self._file_path), "rb") as image:
+						contents = image.read()
+				contents_type = from_buffer(contents, True)
+				self._image = BookData(self._file_id, contents_type, contents)
+
+		return self._image
 
 class TextLayer:
 	"""

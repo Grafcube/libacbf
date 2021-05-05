@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Dict, List, Literal, Optional, Union
 if TYPE_CHECKING:
 	from libacbf.ACBFBook import ACBFBook
 
+from distutils.util import strtobool
 from re import split
 from datetime import date
 from langcodes import Language, standardize_tag
@@ -92,7 +93,7 @@ class BookInfo:
 
 				new_lang.lang = layer.attrib["lang"]
 				if "show" in layer.keys():
-					new_lang.show = eval(layer.attrib["show"])
+					new_lang.show = bool(strtobool(layer.attrib["show"]))
 
 				self.languages.append(new_lang)
 

@@ -4,6 +4,7 @@ from libacbf.ACBFBook import ACBFBook
 
 sample_path = "tests/samples/Doctorow, Cory - Craphound-1.1.acbf"
 book = ACBFBook(sample_path)
+book.close()
 book_metadata: ACBFMetadata = book.Metadata
 
 def test_authors():
