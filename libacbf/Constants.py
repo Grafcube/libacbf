@@ -1,6 +1,5 @@
 from enum import Enum, auto
 from re import sub
-import warnings
 
 class BookNamespace:
 	def __init__(self, ns: str):
@@ -63,15 +62,15 @@ class Genres(Enum):
 	other = 100
 
 class TextAreas(Enum):
-	Speech = 0
-	Commentary = auto()
-	Formal = auto()
-	Letter = auto()
-	Code = auto()
-	Heading = auto()
-	Audio = auto()
-	Thought = auto()
-	Sign = auto()
+	speech = 0
+	commentary = auto()
+	formal = auto()
+	letter = auto()
+	code = auto()
+	heading = auto()
+	audio = auto()
+	thought = auto()
+	sign = auto()
 
 class PageTransitions(Enum):
 	fade = 0

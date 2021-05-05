@@ -182,7 +182,7 @@ class Frame:
 	docstring
 	"""
 	def __init__(self):
-		self.points: List = []
+		self.points: List[body.Vec2] = []
 		self.bgcolor: Optional[str] = None
 
 class Jump:
@@ -191,4 +191,4 @@ class Jump:
 	"""
 	def __init__(self):
 		self.page: Optional[int] = None
-		self.points: List = []
+		self.points: List[body.Vec2] = []

@@ -4,16 +4,18 @@ from typing import TYPE_CHECKING, List, Dict, Optional
 if TYPE_CHECKING:
 	from libacbf.ACBFBook import ACBFBook
 
+from distutils.util import strtobool
 from collections import namedtuple
 from pathlib import Path
 import warnings
 from magic.magic import from_buffer
 from re import IGNORECASE, fullmatch, split, sub
 import requests
+from langcodes import Language, standardize_tag
 from lxml import etree
 import zipfile as Zip
 from libacbf.BookData import BookData
-from libacbf.Constants import BookNamespace, ImageRefType, PageTransitions, ConnectionErrorWarning
+from libacbf.Constants import BookNamespace, ImageRefType, PageTransitions, ConnectionErrorWarning, TextAreas
 import libacbf.Structs as structs
 
 Vec2 = namedtuple("Vector2", "x y")
@@ -145,12 +147,13 @@ class TextLayer:
 	docstring
 	"""
 	def __init__(self, layer, ns: BookNamespace):
-		self.language = layer.attrib["lang"]
+		self.language: Language = Language.get(standardize_tag(layer.attrib["lang"]))
 
-		self.bg_color = None
+		self.bg_color: Optional[str] = None
 		if "bgcolor" in layer.keys():
 			self.bg_color = layer.attrib["bgcolor"]
 
+		# Sub
 		self.text_areas: List[TextArea] = []
 		areas = layer.findall(f"{ns.ACBFns}text-area")
 		for ar in areas:
@@ -161,7 +164,7 @@ class TextArea:
 	docstring
 	"""
 	def __init__(self, area, ns: BookNamespace):
-		self.points = get_points(area.attrib["points"])
+		self.points: List[Vec2] = get_points(area.attrib["points"])
 
 		self.paragraph: str = ""
 		pa = []
@@ -171,25 +174,29 @@ class TextArea:
 		self.paragraph = "\n".join(pa)
 
 		# Optional
-		self.bg_color = None
+		self.bg_color: Optional[str] = None
 		if "bgcolor" in area.keys():
 			self.bg_color = area.attrib["bgcolor"]
 
-		self.rotation = 0
+		self.rotation: Optional[int] = None
 		if "text-rotation" in area.keys():
-			self.rotation = area.attrib["text-rotation"]
+			rot = int(area.attrib["text-rotation"])
+			if rot >= 0 and rot <= 360:
+				self.rotation = rot
+			else:
+				raise ValueError("Rotation must be an integer from0 to 360.")
 
-		self.type = None
+		self.type: Optional[TextAreas] = None
 		if "type" in area.keys():
-			self.rotation = area.attrib["type"]
+			self.type = TextAreas[area.attrib["type"]]
 
-		self.inverted = False
+		self.inverted: Optional[bool] = None
 		if "inverted" in area.keys():
-			self.rotation = area.attrib["inverted"]
+			self.inverted = bool(strtobool(area.attrib["inverted"]))
 
-		self.transparent = False
+		self.transparent: Optional[bool] = None
 		if "transparent" in area.keys():
-			self.rotation = area.attrib["transparent"]
+			self.transparent = bool(strtobool(area.attrib["transparent"]))
 
 def get_textlayers(item, ns: BookNamespace):
 	text_layers = {}
