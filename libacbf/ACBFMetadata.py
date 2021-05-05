@@ -12,7 +12,7 @@ class ACBFMetadata:
 	"""
 	def __init__(self, book: ACBFBook):
 		ns: BookNamespace = book.namespace
-		meta_root = book.root.find(f"{ns.ACBFns}meta-data")
+		meta_root = book._root.find(f"{ns.ACBFns}meta-data")
 
 		self.book_info: BookInfo = BookInfo(meta_root.find(f"{ns.ACBFns}book-info"), book)
 		self.publisher_info: PublishInfo = PublishInfo(meta_root.find(f"{ns.ACBFns}publish-info"), book)

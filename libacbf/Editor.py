@@ -21,23 +21,23 @@ class BookManager:
 			raise ValueError("I/O operation on closed file.")
 
 	def _check_reference_section(self, create: bool = True):
-		ref_section = self.book.root.find(f"{self.book.namespace.ACBFns}references")
+		ref_section = self.book._root.find(f"{self.book.namespace.ACBFns}references")
 		if ref_section is None and create:
-			idx = self.book.root.index(self.book.root.find(f"{self.book.namespace.ACBFns}body"))
+			idx = self.book._root.index(self.book._root.find(f"{self.book.namespace.ACBFns}body"))
 			ref_section = etree.Element(f"{self.book.namespace.ACBFns}references")
-			self.book.root.insert(idx+1, ref_section)
+			self.book._root.insert(idx+1, ref_section)
 		return ref_section
 
 	def _check_data_section(self, create: bool = True):
-		dat_section = self.book.root.find(f"{self.book.namespace.ACBFns}data")
+		dat_section = self.book._root.find(f"{self.book.namespace.ACBFns}data")
 		if dat_section is None and create:
-			ref_section = self.book.root.find(f"{self.book.namespace.ACBFns}references")
+			ref_section = self.book._root.find(f"{self.book.namespace.ACBFns}references")
 			if ref_section is None:
-				idx = self.book.root.index(self.book.root.find(f"{self.book.namespace.ACBFns}body"))
+				idx = self.book._root.index(self.book._root.find(f"{self.book.namespace.ACBFns}body"))
 			else:
-				idx = self.book.root.index(ref_section)
+				idx = self.book._root.index(ref_section)
 			dat_section = etree.Element(f"{self.book.namespace.ACBFns}data")
-			self.book.root.insert(idx+1, dat_section)
+			self.book._root.insert(idx+1, dat_section)
 		return dat_section
 
 	def add_reference(self, id: str, paragraph: str, idx: int = -1):

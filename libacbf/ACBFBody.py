@@ -14,12 +14,11 @@ class ACBFBody:
 		self.book = book
 
 		self._ns: BookNamespace = book.namespace
-		self._body = book.root.find(f"{self._ns.ACBFns}body")
+		self._body = book._root.find(f"{self._ns.ACBFns}body")
 		self._first_page = self._body.find(f"{self._ns.ACBFns}page")
 		self._current_page = self._first_page
 
 		self.page: Optional[Page] = None
-		self.total_pages: int = len(list(self._body))
 		self.pages: Dict[int, Page] = {}
 		self.page_number: int = 0
 
@@ -27,6 +26,10 @@ class ACBFBody:
 		self.bgcolor: str = "#000000"
 		if "bgcolor" in self._body.keys():
 			self.bgcolor = self._body.attrib["bgcolor"]
+
+	@property
+	def total_pages(self) -> int:
+		return len(list(self._body))
 
 	def __len__(self):
 		return self.total_pages

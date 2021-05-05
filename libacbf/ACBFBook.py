@@ -51,12 +51,12 @@ class ACBFBook:
 
 			contents = acbf_path.read_text("utf-8")
 
-		self.root = etree.fromstring(bytes(contents, encoding="utf-8"))
-		self.tree = self.root.getroottree()
+		self._root = etree.fromstring(bytes(contents, encoding="utf-8"))
+		self._tree = self._root.getroottree()
 
 		self._validate_acbf()
 
-		self.namespace: BookNamespace = BookNamespace(f"{{{self.root.nsmap[None]}}}")
+		self.namespace: BookNamespace = BookNamespace(f"{{{self._root.nsmap[None]}}}")
 
 		self.Styles: Styles = Styles(self, findall(r'<\?xml-stylesheet type="text\/css" href="(.+)"\?>', contents, IGNORECASE))
 
@@ -67,14 +67,14 @@ class ACBFBook:
 		self.Data: ACBFData = ACBFData(self)
 
 		self.Stylesheet: Optional[str] = None
-		if self.root.find(f"{self.namespace.ACBFns}style") is not None:
-			self.Stylesheet = self.root.find(f"{self.namespace.ACBFns}style").text.strip()
+		if self._root.find(f"{self.namespace.ACBFns}style") is not None:
+			self.Stylesheet = self._root.find(f"{self.namespace.ACBFns}style").text.strip()
 
 		self.References: Dict[str, Dict[str, str]] = self.sync_references()
 
 	def sync_references(self) -> Dict[str, Dict[str, str]]:
 		ns = self.namespace
-		ref_root = self.root.find(f"{ns.ACBFns}references")
+		ref_root = self._root.find(f"{ns.ACBFns}references")
 		references = {}
 		if ref_root is None:
 			return references
@@ -100,7 +100,7 @@ class ACBFBook:
 		"""
 		docstring
 		"""
-		version = self.tree.docinfo.xml_version
+		version = self._tree.docinfo.xml_version
 		xsd_path = f"libacbf/schema/acbf-{version}.xsd"
 
 		with open(xsd_path, encoding="utf-8") as file:
@@ -110,7 +110,7 @@ class ACBFBook:
 
 		# TODO fix schema error. When fixed, remove try/except
 		try:
-			acbf_schema.assertValid(self.tree)
+			acbf_schema.assertValid(self._tree)
 		except etree.DocumentInvalid as err:
 			print("Validation failed. File may be valid (bug)")
 			print(err)

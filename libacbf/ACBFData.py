@@ -11,8 +11,8 @@ class ACBFData:
 	"""
 	def __init__(self, book: ACBFBook):
 		self._ns = book.namespace
-		self._root = book.root
-		self._base = book.root.find(f"{self._ns.ACBFns}data")
+		self._root = book._root
+		self._base = book._root.find(f"{self._ns.ACBFns}data")
 		self._data_elements = []
 
 		self.files: Dict[str, Optional[BookData]] = {}
