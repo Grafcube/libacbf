@@ -1,7 +1,48 @@
-from typing import Dict, List, Optional, Union
+from __future__ import annotations
+from typing import TYPE_CHECKING, Dict, List, Optional, Union
+if TYPE_CHECKING:
+	from libacbf.ACBFBook import ACBFBook
+
+from pathlib import Path
 from langcodes import Language, standardize_tag
 import libacbf.BodyInfo as body
 from libacbf.Constants import AuthorActivities, Genres
+
+class Styles:
+	"""
+	docstring
+	"""
+	def __init__(self, book: ACBFBook, style_refs: List[str]):
+		self.book = book
+
+		self.styles: Dict[str, Optional[str]] = {}
+		for i in style_refs:
+			self.styles[i] = None
+
+	def list_styles(self) -> List[str]:
+		fl = []
+		for i in self.styles.keys():
+			fl.append(str(i))
+		return fl
+
+	def __len__(self):
+		len(self.styles.keys())
+
+	def __getitem__(self, key: str):
+		if key in self.styles.keys():
+			if self.styles[key] is not None:
+				return self.styles[key]
+			else:
+				if self.book.archive is None:
+					st_path = self.book.file_path.parent/Path(key)
+					with open(str(st_path), 'r', encoding="utf-8") as st:
+						self.styles[key] = st.read()
+				else:
+					with self.book.archive.open(key, 'r') as st:
+						self.styles[key] = str(st.read(), "utf-8")
+			return self.styles[key]
+		else:
+			raise FileNotFoundError
 
 class Author:
 	"""

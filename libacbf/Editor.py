@@ -117,6 +117,12 @@ class BookManager:
 
 			self.book.Data.sync_data()
 
+	def edit_styles(self, stylesheet: str, file_name: str = "_"):
+		"""
+		docstring
+		"""
+		pass
+
 class MetadataManager:
 	"""
 	docstring

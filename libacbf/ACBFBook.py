@@ -1,6 +1,6 @@
 import os
-import pathlib
-from typing import List, Dict, Optional, Union
+from pathlib import Path
+from typing import Dict, Optional, Union
 from re import sub, findall, IGNORECASE
 from lxml import etree
 import zipfile as Zip
@@ -8,6 +8,7 @@ from libacbf.Constants import BookNamespace
 from libacbf.ACBFMetadata import ACBFMetadata
 from libacbf.ACBFBody import ACBFBody
 from libacbf.ACBFData import ACBFData
+from libacbf.Structs import Styles
 
 class ACBFBook:
 	"""
@@ -22,16 +23,17 @@ class ACBFBook:
 
 		self.archive: Optional[Union[Zip.ZipFile]] = None
 
-		path = pathlib.Path(file_path)
-		if path.suffix == ".acbf":
+		self.file_path = Path(file_path)
+
+		if self.file_path.suffix == ".acbf":
 			with open(file_path, encoding="utf-8") as book:
 				contents = book.read()
-		elif path.suffix == ".cbz":
+		elif self.file_path.suffix == ".cbz":
 			self.archive = Zip.ZipFile(file_path, 'r')
 			self.archive_path = Zip.Path(self.archive)
-		elif path.suffix == ".cbr":
+		elif self.file_path.suffix == ".cbr":
 			pass
-		elif path.suffix == ".cb7":
+		elif self.file_path.suffix == ".cb7":
 			pass
 		else:
 			raise ValueError("File is not an ACBF Ebook")
@@ -55,7 +57,8 @@ class ACBFBook:
 		validate_acbf(self.root)
 
 		self.namespace: BookNamespace = BookNamespace(f"{{{self.root.nsmap[None]}}}")
-		self.styles: List[str] = findall(r'<\?xml-stylesheet type="text\/css" href="(.+)"\?>', contents, IGNORECASE)
+
+		self.Styles: Styles = Styles(self, findall(r'<\?xml-stylesheet type="text\/css" href="(.+)"\?>', contents, IGNORECASE))
 
 		self.Metadata: ACBFMetadata = ACBFMetadata(self)
 
