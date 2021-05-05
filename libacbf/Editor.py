@@ -5,7 +5,7 @@ from base64 import b64encode
 from langcodes import Language, standardize_tag
 from magic import from_buffer
 from lxml import etree
-from libacbf.ACBFBook import ACBFBook, get_references
+from libacbf.ACBFBook import ACBFBook
 from libacbf.ACBFMetadata import ACBFMetadata
 from libacbf.Structs import Author, Genre
 from libacbf.Constants import BookNamespace, Genres
@@ -64,7 +64,7 @@ class BookManager:
 		else:
 			ref_section.insert(idx, ref_element)
 
-		self.book.References = get_references(self.book.root.find(f"{self.book.namespace.ACBFns}references"), self.book.namespace)
+		self.book.References = self.book.sync_references()
 
 	def remove_reference(self, id: str):
 		"""
@@ -78,7 +78,7 @@ class BookManager:
 					i.getparent().remove(i)
 					break
 
-			self.book.References = get_references(self.book.root.find(f"{self.book.namespace.ACBFns}references"), self.book.namespace)
+			self.book.References = self.book.sync_references()
 
 	def add_data(self, file_path: str):
 		# TODO: Option to choose whether to embed in xml or add to archive

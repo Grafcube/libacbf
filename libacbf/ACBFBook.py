@@ -70,7 +70,22 @@ class ACBFBook:
 		if self.root.find(f"{self.namespace.ACBFns}style") is not None:
 			self.Stylesheet = self.root.find(f"{self.namespace.ACBFns}style").text.strip()
 
-		self.References: Dict[str, Dict[str, str]] = get_references(self.root.find(f"{self.namespace.ACBFns}references"), self.namespace)
+		self.References: Dict[str, Dict[str, str]] = self.sync_references()
+
+	def sync_references(self) -> Dict[str, Dict[str, str]]:
+		ns = self.namespace
+		ref_root = self.root.find(f"{ns.ACBFns}references")
+		references = {}
+		if ref_root is None:
+			return references
+		reference_items = ref_root.findall(f"{ns.ACBFns}reference")
+		for ref in reference_items:
+			pa = []
+			for p in ref.findall(f"{ns.ACBFns}p"):
+				text = sub(r"<\/?p[^>]*>", "", str(etree.tostring(p, encoding="utf-8"), encoding="utf-8").strip())
+				pa.append(text)
+			references[ref.attrib["id"]] = {"paragraph": "\n".join(pa)}
+		return references
 
 	def save(self, path: str = ""):
 		if path == "":
@@ -106,16 +121,3 @@ def validate_acbf(root):
 	except etree.DocumentInvalid as err:
 		print("Validation failed. File may be valid (bug)")
 		print(err)
-
-def get_references(ref_root, ns: BookNamespace) -> Dict[str, Dict[str, str]]:
-		references = {}
-		if ref_root is None:
-			return references
-		reference_items = ref_root.findall(f"{ns.ACBFns}reference")
-		for ref in reference_items:
-			pa = []
-			for p in ref.findall(f"{ns.ACBFns}p"):
-				text = sub(r"<\/?p[^>]*>", "", str(etree.tostring(p, encoding="utf-8"), encoding="utf-8").strip())
-				pa.append(text)
-			references[ref.attrib["id"]] = {"paragraph": "\n".join(pa)}
-		return references
