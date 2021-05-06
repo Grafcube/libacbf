@@ -70,7 +70,7 @@ class Author:
 			self.last_name: Optional[str] = last_name
 			self.nickname: Optional[str] = nickname
 		else:
-			raise ValueError("Author must have either First Name and Last Name or Nickname")
+			raise ValueError("Author must have either First Name and Last Name or Nickname.")
 
 		self._activity: Optional[AuthorActivities] = None
 		self._lang: Optional[Language] = None

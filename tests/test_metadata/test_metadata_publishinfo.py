@@ -2,7 +2,7 @@ import json
 from libacbf.ACBFMetadata import ACBFMetadata
 from libacbf.ACBFBook import ACBFBook
 
-sample_path = "tests/samples/Doctorow, Cory - Craphound.cbz"
+sample_path = "tests/samples/Doctorow, Cory - Craphound.cb7"
 book = ACBFBook(sample_path)
 book.close()
 book_metadata: ACBFMetadata = book.Metadata

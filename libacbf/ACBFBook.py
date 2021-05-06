@@ -3,7 +3,9 @@ from pathlib import Path
 from typing import Dict, Optional, Union
 from re import sub, findall, IGNORECASE
 from lxml import etree
-import zipfile as Zip
+from zipfile import ZipFile
+from py7zr import SevenZipFile
+from rarfile import RarFile
 from libacbf.Constants import BookNamespace
 from libacbf.ACBFMetadata import ACBFMetadata
 from libacbf.ACBFBody import ACBFBody
@@ -19,37 +21,39 @@ class ACBFBook:
 
 		self.book_path = os.path.abspath(file_path)
 
-		self.archive_path: Optional[Union[Zip.Path]] = None
-
-		self.archive: Optional[Union[Zip.ZipFile]] = None
+		self.archive: Optional[Union[ZipFile, SevenZipFile, RarFile]] = None
 
 		self.file_path = Path(file_path)
 
+		contents = None
 		if self.file_path.suffix == ".acbf":
 			with open(file_path, encoding="utf-8") as book:
 				contents = book.read()
-		elif self.file_path.suffix == ".cbz":
-			self.archive = Zip.ZipFile(file_path, 'r')
-			self.archive_path = Zip.Path(self.archive)
-		elif self.file_path.suffix == ".cbr":
-			pass
-		elif self.file_path.suffix == ".cb7":
-			pass
-		else:
-			raise ValueError("File is not an ACBF Ebook")
 
-		if self.archive is not None:
-			arch_iter = self.archive_path.iterdir()
-			acbf_path = None
-			while True:
-				try:
-					acbf_path = next(arch_iter)
-				except StopIteration:
-					raise ValueError("File is not an ACBF Ebook")
-				if acbf_path.name.endswith(".acbf"):
+		elif self.file_path.suffix == ".cbz":
+			self.archive = ZipFile(file_path, 'r')
+			for i in self.archive.namelist():
+				i = str(i)
+				if "/" not in i and i.endswith(".acbf"):
+					with self.archive.open(i, 'r') as book:
+						contents = str(book.read(), "utf-8")
 					break
 
-			contents = acbf_path.read_text("utf-8")
+		elif self.file_path.suffix == ".cb7":
+			self.archive = SevenZipFile(self.book_path, 'r')
+			for i in self.archive.getnames():
+				if "/" not in i and i.endswith(".acbf"):
+					contents = str(list(self.archive.read([i]).values())[0].read(), "utf-8")
+					break
+
+		elif self.file_path.suffix == ".cbr":
+			pass
+
+		else:
+			raise ValueError("File is not an ACBF Ebook.")
+
+		if contents is None:
+			raise ValueError("File is not an ACBF Ebook.")
 
 		self._root = etree.fromstring(bytes(contents, encoding="utf-8"))
 		self._tree = self._root.getroottree()
@@ -87,7 +91,7 @@ class ACBFBook:
 			references[ref.attrib["id"]] = {"paragraph": "\n".join(pa)}
 		return references
 
-	def save(self, path: str = ""):
+	def save(self, path: str = "", overwrite: bool = True):
 		if path == "":
 			path = self.book_path
 

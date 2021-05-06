@@ -9,9 +9,6 @@ class BookNamespace:
 	def ACBFns_raw(self) -> str:
 		return sub(r'\{|\}', "", self.ACBFns)
 
-class ConnectionErrorWarning(UserWarning):
-	pass
-
 class AuthorActivities(Enum):
 	"""
 	docstring

@@ -1,6 +1,7 @@
 from __future__ import annotations
 import os
 from typing import TYPE_CHECKING, List, Dict, Optional
+
 if TYPE_CHECKING:
 	from libacbf.ACBFBook import ACBFBook
 
@@ -12,9 +13,11 @@ from re import IGNORECASE, fullmatch, split, sub
 import requests
 from langcodes import Language, standardize_tag
 from lxml import etree
-import zipfile as Zip
+from zipfile import ZipFile
+from py7zr import SevenZipFile
+from rarfile import RarFile
 from libacbf.BookData import BookData
-from libacbf.Constants import BookNamespace, ImageRefType, PageTransitions, ConnectionErrorWarning, TextAreas
+from libacbf.Constants import BookNamespace, ImageRefType, PageTransitions, TextAreas
 import libacbf.Structs as structs
 
 Vec2 = namedtuple("Vector2", "x y")
@@ -72,7 +75,7 @@ class Page:
 			if os.path.isabs(self.image_ref):
 				ref_t = ImageRefType.Local
 			else:
-				if book.archive_path is not None:
+				if book.archive is not None:
 					ref_t = ImageRefType.SelfArchived
 				else:
 					ref_t = ImageRefType.Local
@@ -102,37 +105,47 @@ class Page:
 		if self._image is None:
 			if self.image_ref.startswith("#"):
 				self._image = self.book.Data[self._file_id]
+				return self._image
 
 			elif self.image_ref.startswith("zip:"):
 				if self._arch_path.suffix in [".zip", ".cbz"]:
-					with Zip.ZipFile(str(self._arch_path), 'r') as archive:
+					with ZipFile(str(self._arch_path), 'r') as archive:
 						with archive.open(str(self._file_path)) as image:
 							contents = image.read()
-						contents_type = from_buffer(contents, True)
-						self._image = BookData(self._file_path.name, contents_type, contents)
+
+				elif self._arch_path.suffix in [".7z", ".cb7"]:
+					with SevenZipFile(str(self._arch_path), 'r') as archive:
+						contents = bytes(list(archive.read([str(self._file_path)]).values())[0].read())
 
 				elif self._arch_path.suffix in [".rar", ".cbr"]:
 					pass
-				elif self._arch_path.suffix in [".7z", ".cb7"]:
-					pass
+
 				else:
 					raise ValueError("Image reference is not a valid archive.")
+
+				contents_type = from_buffer(contents, True)
+				self._image = BookData(self._file_path.name, contents_type, contents)
 
 			elif fullmatch(url_pattern, self.image_ref, IGNORECASE):
 				response = requests.get(self.image_ref)
 				contents = response.content
-				contents_type = from_buffer(contents, True)
-				self._image = BookData(self._file_id, contents_type, contents)
 
 			else:
 				if self.ref_type == ImageRefType.SelfArchived:
-					with self.book.archive.open(str(self._file_path), "r") as image:
-						contents = image.read()
+					if self.book.file_path.suffix == ".cbz":
+						with self.book.archive.open(str(self._file_path), "r") as image:
+							contents = image.read()
+					elif self.book.file_path.suffix == ".cb7":
+						contents = bytes(list(self.book.archive.read([str(self._file_path)]).values())[0].read())
+					elif self.book.file_path.suffix == ".cbr":
+						pass
+
 				elif self.ref_type == ImageRefType.Local:
 					with open(str(self._file_path), "rb") as image:
 						contents = image.read()
-				contents_type = from_buffer(contents, True)
-				self._image = BookData(self._file_id, contents_type, contents)
+
+			contents_type = from_buffer(contents, True)
+			self._image = BookData(self._file_id, contents_type, contents)
 
 		return self._image
 
