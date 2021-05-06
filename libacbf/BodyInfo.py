@@ -7,7 +7,6 @@ if TYPE_CHECKING:
 from distutils.util import strtobool
 from collections import namedtuple
 from pathlib import Path
-import warnings
 from magic.magic import from_buffer
 from re import IGNORECASE, fullmatch, split, sub
 import requests
@@ -120,15 +119,10 @@ class Page:
 					raise ValueError("Image reference is not a valid archive.")
 
 			elif fullmatch(url_pattern, self.image_ref, IGNORECASE):
-				try:
-					response = requests.get(self.image_ref)
-				except requests.ConnectionError as ce:
-					self._image = None
-					warnings.warn(ce, ConnectionErrorWarning)
-				else:
-					contents = response.content
-					contents_type = from_buffer(contents, True)
-					self._image = BookData(self._file_id, contents_type, contents)
+				response = requests.get(self.image_ref)
+				contents = response.content
+				contents_type = from_buffer(contents, True)
+				self._image = BookData(self._file_id, contents_type, contents)
 
 			else:
 				if self.ref_type == ImageRefType.SelfArchived:
