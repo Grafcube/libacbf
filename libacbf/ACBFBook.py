@@ -43,7 +43,7 @@ class ACBFBook:
 			self.archive = SevenZipFile(self.book_path, 'r')
 			for i in self.archive.getnames():
 				if "/" not in i and i.endswith(".acbf"):
-					contents = str(list(self.archive.read([i]).values())[0].read(), "utf-8")
+					contents = str(self.archive.read([i])[i].read(), "utf-8")
 					break
 
 		elif self.file_path.suffix == ".cbr":
