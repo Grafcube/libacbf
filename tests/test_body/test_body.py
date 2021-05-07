@@ -1,7 +1,7 @@
 import json
 from libacbf.ACBFBook import ACBFBook
 
-sample_path = "tests/samples/Doctorow, Cory - Craphound.cbz"
+sample_path = "tests/samples/Doctorow, Cory - Craphound.cb7"
 book = ACBFBook(sample_path)
 book_body = book.Body
 

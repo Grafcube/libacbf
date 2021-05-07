@@ -136,7 +136,9 @@ class Page:
 						with self.book.archive.open(str(self._file_path), "r") as image:
 							contents = image.read()
 					elif self.book.file_path.suffix == ".cb7":
-						contents = self.book.archive.read([str(self._file_path)])[str(self._file_path)].read()
+						img_path = self.book.archive/self._file_path
+						with open(str(img_path), 'rb') as img:
+							contents = img.read()
 					elif self.book.file_path.suffix == ".cbr":
 						pass
 

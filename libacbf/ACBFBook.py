@@ -1,7 +1,10 @@
 import os
+import shutil
+from glob import glob
 from pathlib import Path
 from typing import Dict, Optional, Union
 from re import sub, findall, IGNORECASE
+from tempfile import mkdtemp
 from lxml import etree
 from zipfile import ZipFile
 from py7zr import SevenZipFile
@@ -21,7 +24,7 @@ class ACBFBook:
 
 		self.book_path = os.path.abspath(file_path)
 
-		self.archive: Optional[Union[ZipFile, SevenZipFile, RarFile]] = None
+		self.archive: Optional[Union[ZipFile, Path, RarFile]] = None
 
 		self.file_path = Path(file_path)
 
@@ -40,11 +43,11 @@ class ACBFBook:
 					break
 
 		elif self.file_path.suffix == ".cb7":
-			self.archive = SevenZipFile(self.book_path, 'r')
-			for i in self.archive.getnames():
-				if "/" not in i and i.endswith(".acbf"):
-					contents = str(self.archive.read([i])[i].read(), "utf-8")
-					break
+			self.archive = Path(mkdtemp())
+			with SevenZipFile(self.book_path, 'r') as archive:
+				archive.extractall(str(self.archive))
+			with open(list(self.archive.glob("*.acbf"))[0], 'r', encoding="utf-8") as book:
+				contents = book.read()
 
 		elif self.file_path.suffix == ".cbr":
 			pass
@@ -97,7 +100,10 @@ class ACBFBook:
 
 	def close(self):
 		if self.archive is not None:
-			self.archive.close()
+			if type(self.archive) is ZipFile:
+				self.archive.close()
+			elif type(self.archive) is Path:
+				shutil.rmtree(str(self.archive))
 			self.is_open = False
 
 	def _validate_acbf(self):
