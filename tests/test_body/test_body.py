@@ -73,9 +73,6 @@ def test_body_pages():
 				}
 				new_tl["text_areas"].append(new_ta)
 			textlayer_output[pg.image_ref] = new_tl
-	print(page_output)
-	print(textlayer_output)
-	print(fr_jm_output)
 	with open("tests/results/body/test_body_pages.json", "w", encoding="utf-8", newline="\n") as result:
 		result.write(json.dumps(page_output, ensure_ascii=False))
 	with open("tests/results/body/test_body_textlayers.json", "w", encoding="utf-8", newline="\n") as result:

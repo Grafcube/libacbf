@@ -18,9 +18,9 @@ class ACBFBody:
 		self._first_page = self._body.find(f"{self._ns.ACBFns}page")
 		self._current_page = self._first_page
 
-		self.page: Optional[Page] = None
 		self.pages: Dict[int, Page] = {}
-		self.page_number: int = 0
+		self.page: Optional[Page] = self[0]
+		self.page_index: Optional[int] = 0
 
 		# Optional
 		self.bgcolor: str = "#000000"
@@ -35,20 +35,19 @@ class ACBFBody:
 		return self.total_pages
 
 	def __getitem__(self, index: int):
-		self.page_number = index + 1
-		if self.page_number in self.pages.keys():
-			self.page = self.pages[self.page_number]
+		self.page_index = index
+		if self.page_index in self.pages.keys():
+			self.page = self.pages[self.page_index]
 			return self.page
 		else:
 			self._current_page = self._body.findall(f"{self._ns.ACBFns}page")[index]
 			self.page = Page(self._current_page, self.book)
-			self.pages[self.page_number] = self.page
+			self.pages[self.page_index] = self.page
 			return self.page
 
 	def __iter__(self):
 		self.page = None
-		self.page_number = 0
-		self._first_page = self._body.find(f"{self._ns.ACBFns}page")
+		self.page_index = None
 		self._current_page = self._first_page
 		return self
 
@@ -60,32 +59,36 @@ class ACBFBody:
 			raise StopIteration
 
 	def next_page(self):
-		self.page_number += 1
-		if self.page_number in self.pages.keys():
-			self.page = self.pages[self.page_number]
+		if self.page_index is not None:
+			self.page_index += 1
+		else:
+			self.page_index = 0
+
+		if self.page_index in self.pages.keys():
+			self.page = self.pages[self.page_index]
 			return self.page
 		else:
-			self._current_page = self._current_page.getnext()
-			if self._current_page is not None:
-				self.page = Page(self._current_page, self.book)
-				self.pages[self.page_number] = self.page
-			else:
+			if self.page_index != 0:
+				self._current_page = self._current_page.getnext()
+			if self._current_page is None:
 				self.page = None
-				self.page_number = 0
+			else:
+				self.page = Page(self._current_page, self.book)
+				self.pages[self.page_index] = self.page
 		return self.page
 
 	def previous_page(self):
-		self.page_number -= 1
-		if self.page_number in self.pages.keys():
-			self.page = self.pages[self.page_number]
+		self.page_index -= 1
+		if self.page_index in self.pages.keys():
+			self.page = self.pages[self.page_index]
 			return self.page
 		else:
 			self._current_page = self._current_page.getprevious()
 			if self._current_page is not None:
 				self.page = Page(self._current_page, self.book)
-				self.pages[self.page_number] = self.page
+				self.pages[self.page_index] = self.page
 				return self.page
 			else:
 				self.page = None
-				self.page_number = 0
+				self.page_index = 0
 				raise StopIteration
