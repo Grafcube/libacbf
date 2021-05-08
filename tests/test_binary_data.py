@@ -1,7 +1,8 @@
 import json
 from libacbf.ACBFBook import ACBFBook
+from tests.testsettings import samples
 
-sample_path = "tests/samples/Doctorow, Cory - Craphound-1.0.acbf"
+sample_path = samples[0]
 book = ACBFBook(sample_path)
 
 def test_data():

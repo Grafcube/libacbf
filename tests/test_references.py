@@ -1,7 +1,7 @@
 import json
 from libacbf.ACBFBook import ACBFBook
+from tests.testsettings import sample_path
 
-sample_path = "tests/samples/Doctorow, Cory - Craphound.cb7"
 book = ACBFBook(sample_path)
 book.close()
 
