@@ -1,19 +1,15 @@
 import os
-import shutil
-from glob import glob
 from pathlib import Path
-from typing import Dict, Optional, Union
+from typing import Dict, Optional
 from re import sub, findall, IGNORECASE
-from tempfile import mkdtemp
 from lxml import etree
-from zipfile import ZipFile
-from py7zr import SevenZipFile
-from rarfile import RarFile
+
 from libacbf.Constants import BookNamespace
 from libacbf.ACBFMetadata import ACBFMetadata
 from libacbf.ACBFBody import ACBFBody
 from libacbf.ACBFData import ACBFData
 from libacbf.Structs import Styles
+from libacbf.ArchiveReader import ArchiveReader
 
 class ACBFBook:
 	"""
@@ -22,40 +18,24 @@ class ACBFBook:
 	def __init__(self, file_path: str = "libacbf/templates/base_template_1.1.acbf"):
 		self.is_open: bool = True
 
-		self.book_path = os.path.abspath(file_path)
+		self.file_path = os.path.abspath(file_path)
 
-		self.archive: Optional[Union[ZipFile, Path, RarFile]] = None
+		self.archive: Optional[ArchiveReader] = None
 
-		self.file_path = Path(file_path)
+		self.book_path = Path(file_path)
 
 		contents = None
-		if self.file_path.suffix == ".acbf":
+		if self.book_path.suffix == ".acbf":
 			with open(file_path, encoding="utf-8") as book:
 				contents = book.read()
 
-		elif self.file_path.suffix == ".cbz":
-			self.archive = ZipFile(file_path, 'r')
-			for i in self.archive.namelist():
-				i = str(i)
-				if "/" not in i and i.endswith(".acbf"):
-					with self.archive.open(i, 'r') as book:
-						contents = str(book.read(), "utf-8")
-					break
-
-		elif self.file_path.suffix == ".cb7":
-			self.archive = Path(mkdtemp())
-			with SevenZipFile(self.book_path, 'r') as archive:
-				archive.extractall(str(self.archive))
-			with open(list(self.archive.glob("*.acbf"))[0], 'r', encoding="utf-8") as book:
-				contents = book.read()
-
-		elif self.file_path.suffix == ".cbr":
-			pass
+		elif self.book_path.suffix in [".cbz", ".cb7", ".cbt", ".cbr"]:
+			self.archive = ArchiveReader(file_path)
+			contents = self.archive.get_acbf_contents()
+			if contents is None:
+				raise ValueError("File is not an ACBF Ebook.")
 
 		else:
-			raise ValueError("File is not an ACBF Ebook.")
-
-		if contents is None:
 			raise ValueError("File is not an ACBF Ebook.")
 
 		self._root = etree.fromstring(bytes(contents, encoding="utf-8"))
@@ -96,14 +76,11 @@ class ACBFBook:
 
 	def save(self, path: str = "", overwrite: bool = True):
 		if path == "":
-			path = self.book_path
+			path = self.file_path
 
 	def close(self):
 		if self.archive is not None:
-			if type(self.archive) is ZipFile:
-				self.archive.close()
-			elif type(self.archive) is Path:
-				shutil.rmtree(str(self.archive))
+			self.archive.close()
 			self.is_open = False
 
 	def _validate_acbf(self):

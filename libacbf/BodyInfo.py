@@ -1,4 +1,5 @@
 from __future__ import annotations
+from libacbf.ArchiveReader import ArchiveReader
 import os
 from typing import TYPE_CHECKING, List, Dict, Optional
 
@@ -59,6 +60,7 @@ class Page:
 			ref_path = sub("zip:", "", self.image_ref)
 			self._arch_path = Path(split("!", ref_path)[0])
 			self._file_path = Path(split("!", ref_path)[1])
+			self._file_id = self._file_path.name
 			if not os.path.isabs(self._arch_path):
 				self._arch_path = Path(os.path.abspath(str(self._arch_path)))
 
@@ -79,7 +81,7 @@ class Page:
 					ref_t = ImageRefType.SelfArchived
 				else:
 					ref_t = ImageRefType.Local
-					self._file_path = Path(book.book_path).parent/self._file_path
+					self._file_path = Path(book.file_path).parent/self._file_path
 
 			self._file_id = self._file_path.name
 
@@ -108,23 +110,8 @@ class Page:
 				return self._image
 
 			elif self.image_ref.startswith("zip:"):
-				if self._arch_path.suffix in [".zip", ".cbz"]:
-					with ZipFile(str(self._arch_path), 'r') as archive:
-						with archive.open(str(self._file_path)) as image:
-							contents = image.read()
-
-				elif self._arch_path.suffix in [".7z", ".cb7"]:
-					with SevenZipFile(str(self._arch_path), 'r') as archive:
-						contents = bytes(list(archive.read([str(self._file_path)]).values())[0].read())
-
-				elif self._arch_path.suffix in [".rar", ".cbr"]:
-					pass
-
-				else:
-					raise ValueError("Image reference is not a valid archive.")
-
-				contents_type = from_buffer(contents, True)
-				self._image = BookData(self._file_path.name, contents_type, contents)
+				with ArchiveReader(self._arch_path) as ext_archive:
+					contents = ext_archive.read(str(self._file_path))
 
 			elif fullmatch(url_pattern, self.image_ref, IGNORECASE):
 				response = requests.get(self.image_ref)
@@ -132,16 +119,7 @@ class Page:
 
 			else:
 				if self.ref_type == ImageRefType.SelfArchived:
-					if self.book.file_path.suffix == ".cbz":
-						with self.book.archive.open(str(self._file_path), "r") as image:
-							contents = image.read()
-					elif self.book.file_path.suffix == ".cb7":
-						img_path = self.book.archive/self._file_path
-						with open(str(img_path), 'rb') as img:
-							contents = img.read()
-					elif self.book.file_path.suffix == ".cbr":
-						pass
-
+					contents = self.book.archive.read(str(self._file_path))
 				elif self.ref_type == ImageRefType.Local:
 					with open(str(self._file_path), "rb") as image:
 						contents = image.read()

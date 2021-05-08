@@ -5,7 +5,6 @@ if TYPE_CHECKING:
 
 from pathlib import Path
 from langcodes import Language, standardize_tag
-from zipfile import ZipFile
 import libacbf.BodyInfo as body
 from libacbf.Constants import AuthorActivities, Genres
 
@@ -35,17 +34,11 @@ class Styles:
 				return self.styles[key]
 			else:
 				if self.book.archive is None:
-					st_path = self.book.file_path.parent/Path(key)
+					st_path = self.book.book_path.parent/Path(key)
 					with open(str(st_path), 'r', encoding="utf-8") as st:
 						self.styles[key] = st.read()
 				else:
-					if type(self.book.archive) is ZipFile:
-						with self.book.archive.open(key, 'r') as st:
-							self.styles[key] = str(st.read(), "utf-8")
-					elif type(self.book.archive) is Path:
-						st_path = self.book.archive/Path(key)
-						with open(str(st_path), 'r', encoding="utf-8") as st:
-							self.styles[key] = st.read()
+					self.styles[key] = str(self.book.archive.read(key), "utf-8")
 			return self.styles[key]
 		else:
 			raise FileNotFoundError
