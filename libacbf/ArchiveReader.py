@@ -48,13 +48,14 @@ class ArchiveReader:
 						contents = str(book.read(), "utf-8")
 					break
 		elif self.type == ArchiveTypes.SevenZip:
-			with open(list(self.archive.glob("*.acbf"))[0], 'r', encoding="utf-8") as book:
-				contents = book.read()
+			acbf_files = list(self.archive.glob("*.acbf"))
+			if len(acbf_files) > 0:
+				with open(acbf_files[0], 'r', encoding="utf-8") as book:
+					contents = book.read()
 		elif self.type == ArchiveTypes.Tar:
 			pass
 		elif self.type == ArchiveTypes.Rar:
 			pass
-
 		return contents
 
 	def read(self, file_path: str) -> bytes:
