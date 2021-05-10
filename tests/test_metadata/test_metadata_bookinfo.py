@@ -23,7 +23,7 @@ def test_authors():
 		}
 		op.append(new_op)
 	print(op)
-	with open("tests/results/metadata/book_info/test_bookinfo_authors.json", "w", encoding="utf-8", newline="\n") as result:
+	with open("tests/results/metadata/book_info/test_bookinfo_authors.json", 'w', encoding="utf-8", newline='\n') as result:
 		result.write(json.dumps(op, ensure_ascii=False))
 
 def test_titles():
@@ -32,7 +32,7 @@ def test_titles():
 		key = str(i) if type(i) is Language else i
 		op[key] = book_metadata.book_info.book_title[i]
 	print(op)
-	with open("tests/results/metadata/book_info/test_bookinfo_titles.json", "w", encoding="utf-8", newline="\n") as result:
+	with open("tests/results/metadata/book_info/test_bookinfo_titles.json", 'w', encoding="utf-8", newline='\n') as result:
 		result.write(json.dumps(op, ensure_ascii=False))
 
 def test_genres():
@@ -40,7 +40,7 @@ def test_genres():
 	for i in book_metadata.book_info.genres.keys():
 		op[book_metadata.book_info.genres[i].Genre.name] = book_metadata.book_info.genres[i].Match
 	print(op)
-	with open("tests/results/metadata/book_info/test_bookinfo_genres.json", "w", encoding="utf-8", newline="\n") as result:
+	with open("tests/results/metadata/book_info/test_bookinfo_genres.json", 'w', encoding="utf-8", newline='\n') as result:
 		result.write(json.dumps(op, ensure_ascii=False))
 
 def test_annotations():
@@ -49,7 +49,7 @@ def test_annotations():
 		key = str(i) if type(i) is Language else i
 		op[key] = book_metadata.book_info.annotations[i]
 	print(op)
-	with open("tests/results/metadata/book_info/test_bookinfo_annotations.json", "w", encoding="utf-8", newline="\n") as result:
+	with open("tests/results/metadata/book_info/test_bookinfo_annotations.json", 'w', encoding="utf-8", newline='\n') as result:
 		result.write(json.dumps(op, ensure_ascii=False))
 
 def test_languages():
@@ -61,12 +61,12 @@ def test_languages():
 		}
 		op.append(new_op)
 	print(op)
-	with open("tests/results/metadata/book_info/test_bookinfo_languages.json", "w", encoding="utf-8", newline="\n") as result:
+	with open("tests/results/metadata/book_info/test_bookinfo_languages.json", 'w', encoding="utf-8", newline='\n') as result:
 		result.write(json.dumps(op, ensure_ascii=False))
 
 def test_characters():
 	print(book_metadata.book_info.characters)
-	with open("tests/results/metadata/book_info/test_bookinfo_characters.json", "w", encoding="utf-8", newline="\n") as result:
+	with open("tests/results/metadata/book_info/test_bookinfo_characters.json", 'w', encoding="utf-8", newline='\n') as result:
 		result.write(json.dumps(book_metadata.book_info.characters, ensure_ascii=False))
 
 def test_keywords():
@@ -75,7 +75,7 @@ def test_keywords():
 		key = str(i) if type(i) is Language else i
 		op[key] = book_metadata.book_info.keywords[i]
 	print(op)
-	with open("tests/results/metadata/book_info/test_bookinfo_keywords.json", "w", encoding="utf-8", newline="\n") as result:
+	with open("tests/results/metadata/book_info/test_bookinfo_keywords.json", 'w', encoding="utf-8", newline='\n') as result:
 		result.write(json.dumps(op, ensure_ascii=False))
 
 def test_series():
@@ -88,12 +88,12 @@ def test_series():
 			"volume": book_metadata.book_info.series[i].volume
 		}
 	print(op)
-	with open("tests/results/metadata/book_info/test_bookinfo_series.json", "w", encoding="utf-8", newline="\n") as result:
+	with open("tests/results/metadata/book_info/test_bookinfo_series.json", 'w', encoding="utf-8", newline='\n') as result:
 		result.write(json.dumps(op, ensure_ascii=False))
 
 def test_content_rating():
 	print(book_metadata.book_info.content_rating)
-	with open("tests/results/metadata/book_info/test_bookinfo_content_rating.json", "w", encoding="utf-8", newline="\n") as result:
+	with open("tests/results/metadata/book_info/test_bookinfo_content_rating.json", 'w', encoding="utf-8", newline='\n') as result:
 		result.write(json.dumps(book_metadata.book_info.content_rating, ensure_ascii=False))
 
 def test_database_ref():
@@ -106,7 +106,7 @@ def test_database_ref():
 		}
 		op.append(new_op)
 	print(op)
-	with open("tests/results/metadata/book_info/test_bookinfo_database_ref.json", "w", encoding="utf-8", newline="\n") as result:
+	with open("tests/results/metadata/book_info/test_bookinfo_database_ref.json", 'w', encoding="utf-8", newline='\n') as result:
 		result.write(json.dumps(op, ensure_ascii=False))
 
 def test_coverpage():
@@ -154,5 +154,5 @@ def test_coverpage():
 		op_jumps.append(new_jm)
 	op["jumps"] = op_jumps
 	print(op)
-	with open("tests/results/metadata/book_info/test_bookinfo_cover_page.json", "w", encoding="utf-8", newline="\n") as result:
+	with open("tests/results/metadata/book_info/test_bookinfo_cover_page.json", 'w', encoding="utf-8", newline='\n') as result:
 		result.write(json.dumps(op, ensure_ascii=False))

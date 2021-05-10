@@ -1,4 +1,3 @@
-from io import BytesIO
 import shutil
 from enum import Enum, auto
 from pathlib import Path
@@ -28,8 +27,9 @@ class ArchiveReader:
 			with SevenZipFile(str(archive_path), 'r') as sarchive:
 				sarchive.extractall(str(archive))
 
-		elif "".join(archive_path.suffixes) in [".cbt", ".tar", ".tar.gz"]:
+		elif archive_path.suffix in [".cbt", ".tar", ".gz"]:
 			ar = ArchiveTypes.Tar
+			archive = Tar.open(str(archive_path), 'r')
 
 		elif archive_path.suffix in [".cbr", ".rar"]:
 			ar = ArchiveTypes.Rar
@@ -41,9 +41,8 @@ class ArchiveReader:
 	def get_acbf_contents(self) -> Optional[str]:
 		contents = None
 		if self.type == ArchiveTypes.Zip:
-			for i in self.archive.namelist():
-				i = str(i)
-				if "/" not in i and i.endswith(".acbf"):
+			for i in self.archive.infolist():
+				if not i.is_dir() and "/" not in i.filename and i.filename.endswith(".acbf"):
 					with self.archive.open(i, 'r') as book:
 						contents = str(book.read(), "utf-8")
 					break
@@ -53,7 +52,9 @@ class ArchiveReader:
 				with open(acbf_files[0], 'r', encoding="utf-8") as book:
 					contents = book.read()
 		elif self.type == ArchiveTypes.Tar:
-			pass
+			for i in self.archive.getmembers():
+				if i.isfile() and "/" not in i.name and i.name.endswith(".acbf"):
+					contents = str(self.archive.extractfile(i).read(), encoding="utf-8")
 		elif self.type == ArchiveTypes.Rar:
 			pass
 		return contents
@@ -67,7 +68,7 @@ class ArchiveReader:
 			with open(str(self.archive/Path(file_path)), 'rb') as file:
 				contents = file.read()
 		elif self.type == ArchiveTypes.Tar:
-			pass
+			contents = self.archive.extractfile(file_path).read()
 		elif self.type == ArchiveTypes.Rar:
 			pass
 		return contents
@@ -78,7 +79,7 @@ class ArchiveReader:
 		elif self.type == ArchiveTypes.SevenZip:
 			shutil.rmtree(str(self.archive))
 		elif self.type == ArchiveTypes.Tar:
-			pass
+			self.archive.close()
 		elif self.type == ArchiveTypes.Rar:
 			pass
 

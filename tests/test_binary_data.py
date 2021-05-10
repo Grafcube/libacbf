@@ -1,8 +1,7 @@
 import json
 from libacbf.ACBFBook import ACBFBook
-from tests.testsettings import samples
+from tests.testsettings import sample_path
 
-sample_path = samples[0]
 book = ACBFBook(sample_path)
 
 def test_data():
@@ -14,6 +13,6 @@ def test_data():
 			"filesize": book.Data[i].filesize
 		}
 	print(op)
-	with open("tests/results/test_binary_data.json", "w", encoding="utf-8", newline="\n") as result:
+	with open("tests/results/test_binary_data.json", 'w', encoding="utf-8", newline='\n') as result:
 		result.write(json.dumps(op, ensure_ascii=False))
 	book.close()
