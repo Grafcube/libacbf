@@ -18,11 +18,11 @@ class ACBFBook:
 	def __init__(self, file_path: str = "libacbf/templates/base_template_1.1.acbf"):
 		self.is_open: bool = True
 
+		self.book_path = Path(file_path)
+
 		self.file_path = os.path.abspath(file_path)
 
 		self.archive: Optional[ArchiveReader] = None
-
-		self.book_path = Path(file_path)
 
 		contents = None
 		if self.book_path.suffix == ".acbf":

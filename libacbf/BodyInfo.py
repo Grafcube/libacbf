@@ -14,9 +14,6 @@ from re import IGNORECASE, fullmatch, split, sub
 import requests
 from langcodes import Language, standardize_tag
 from lxml import etree
-from zipfile import ZipFile
-from py7zr import SevenZipFile
-from rarfile import RarFile
 from libacbf.BookData import BookData
 from libacbf.Constants import BookNamespace, ImageRefType, PageTransitions, TextAreas
 import libacbf.Structs as structs
