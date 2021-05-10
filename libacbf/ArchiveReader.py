@@ -33,6 +33,7 @@ class ArchiveReader:
 
 		elif archive_path.suffix in [".cbr", ".rar"]:
 			ar = ArchiveTypes.Rar
+			archive = RarFile(str(archive_path), 'r')
 
 		self.archive: Union[ZipFile, Path, Tar.TarFile, RarFile] = archive
 
@@ -40,9 +41,9 @@ class ArchiveReader:
 
 	def get_acbf_contents(self) -> Optional[str]:
 		contents = None
-		if self.type == ArchiveTypes.Zip:
+		if self.type in [ArchiveTypes.Zip, ArchiveTypes.Rar]:
 			for i in self.archive.infolist():
-				if not i.is_dir() and "/" not in i.filename and i.filename.endswith(".acbf"):
+				if not i.is_dir() and '/' not in i.filename and i.filename.endswith(".acbf"):
 					with self.archive.open(i, 'r') as book:
 						contents = str(book.read(), "utf-8")
 					break
@@ -53,15 +54,14 @@ class ArchiveReader:
 					contents = book.read()
 		elif self.type == ArchiveTypes.Tar:
 			for i in self.archive.getmembers():
-				if i.isfile() and "/" not in i.name and i.name.endswith(".acbf"):
+				if i.isfile() and '/' not in i.name and i.name.endswith(".acbf"):
 					contents = str(self.archive.extractfile(i).read(), encoding="utf-8")
-		elif self.type == ArchiveTypes.Rar:
-			pass
+					break
 		return contents
 
 	def read(self, file_path: str) -> bytes:
 		contents = None
-		if self.type == ArchiveTypes.Zip:
+		if self.type in [ArchiveTypes.Zip, ArchiveTypes.Rar]:
 			with self.archive.open(file_path, 'r') as file:
 				contents = file.read()
 		elif self.type == ArchiveTypes.SevenZip:
@@ -69,19 +69,13 @@ class ArchiveReader:
 				contents = file.read()
 		elif self.type == ArchiveTypes.Tar:
 			contents = self.archive.extractfile(file_path).read()
-		elif self.type == ArchiveTypes.Rar:
-			pass
 		return contents
 
 	def close(self):
-		if self.type == ArchiveTypes.Zip:
+		if self.type in [ArchiveTypes.Zip, ArchiveTypes.Tar, ArchiveTypes.Rar]:
 			self.archive.close()
 		elif self.type == ArchiveTypes.SevenZip:
 			shutil.rmtree(str(self.archive))
-		elif self.type == ArchiveTypes.Tar:
-			self.archive.close()
-		elif self.type == ArchiveTypes.Rar:
-			pass
 
 	def __enter__(self):
 		return self
