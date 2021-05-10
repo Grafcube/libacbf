@@ -1,3 +1,6 @@
+import pytest
+from libacbf.ACBFBook import ACBFBook
+
 samples = ["tests/samples/Doctorow, Cory - Craphound-1.0.acbf",
 		"tests/samples/Doctorow, Cory - Craphound.cbz",
 		"tests/samples/Doctorow, Cory - Craphound.cb7",
@@ -6,4 +9,11 @@ samples = ["tests/samples/Doctorow, Cory - Craphound-1.0.acbf",
 		"tests/samples/Doctorow, Cory - Craphound.cbr" # Could not get RAR to work so I'm giving up for now
 		]
 
-sample_path = samples[4]
+sample_path = samples[1]
+
+book: ACBFBook = ACBFBook(sample_path)
+
+@pytest.fixture(scope="session", autouse=True)
+def run_around_tests():
+	yield
+	book.close()

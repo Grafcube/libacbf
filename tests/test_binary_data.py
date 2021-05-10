@@ -1,8 +1,10 @@
+import os
 import json
-from libacbf.ACBFBook import ACBFBook
-from tests.testsettings import sample_path
+from pathlib import Path
+from tests.conftest import book, sample_path
 
-book = ACBFBook(sample_path)
+dir = f"tests/results/{Path(sample_path).name}/"
+os.makedirs(dir, exist_ok=True)
 
 def test_data():
 	op = {}
@@ -13,6 +15,5 @@ def test_data():
 			"filesize": book.Data[i].filesize
 		}
 	print(op)
-	with open("tests/results/test_binary_data.json", 'w', encoding="utf-8", newline='\n') as result:
+	with open(dir + "test_binary_data.json", 'w', encoding="utf-8", newline='\n') as result:
 		result.write(json.dumps(op, ensure_ascii=False))
-	book.close()

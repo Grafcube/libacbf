@@ -1,15 +1,16 @@
+import os
 import json
-from libacbf.ACBFBook import ACBFBook
-from tests.testsettings import sample_path
+from pathlib import Path
+from tests.conftest import book, sample_path
 
-book = ACBFBook(sample_path)
-book_body = book.Body
+dir = f"tests/results/{Path(sample_path).name}/body/"
+os.makedirs(dir, exist_ok=True)
 
 def test_body_info():
-	print(book_body.bgcolor)
-	print(book_body.total_pages)
-	with open("tests/results/body/test_body_info.json", "w", encoding="utf-8", newline="\n") as result:
-		result.write(json.dumps({"bgcolour": book_body.bgcolor, "pages": book_body.total_pages}, ensure_ascii=False))
+	print(book.Body.bgcolor)
+	print(book.Body.total_pages)
+	with open(dir + "test_body_info.json", "w", encoding="utf-8", newline="\n") as result:
+		result.write(json.dumps({"bgcolour": book.Body.bgcolor, "pages": book.Body.total_pages}, ensure_ascii=False))
 
 def test_body_pages():
 	page_output = {}
@@ -18,7 +19,7 @@ def test_body_pages():
 		"frames": {},
 		"jumps": {}
 	}
-	for pg in list(iter(book_body)):
+	for pg in list(iter(book.Body)):
 		transition = pg.transition.name if pg.transition is not None else None
 		new_pg = {
 			"bgcolour": pg.bg_color,
@@ -73,16 +74,16 @@ def test_body_pages():
 				}
 				new_tl["text_areas"].append(new_ta)
 			textlayer_output[pg.image_ref] = new_tl
-	with open("tests/results/body/test_body_pages.json", "w", encoding="utf-8", newline="\n") as result:
+	with open(dir + "test_body_pages.json", "w", encoding="utf-8", newline="\n") as result:
 		result.write(json.dumps(page_output, ensure_ascii=False))
-	with open("tests/results/body/test_body_textlayers.json", "w", encoding="utf-8", newline="\n") as result:
+	with open(dir + "test_body_textlayers.json", "w", encoding="utf-8", newline="\n") as result:
 		result.write(json.dumps(textlayer_output, ensure_ascii=False))
-	with open("tests/results/body/test_body_frames_jumps.json", "w", encoding="utf-8", newline="\n") as result:
+	with open(dir + "test_body_frames_jumps.json", "w", encoding="utf-8", newline="\n") as result:
 		result.write(json.dumps(fr_jm_output, ensure_ascii=False))
 
 def test_body_images():
 	op = {}
-	for pg in list(iter(book_body)):
+	for pg in list(iter(book.Body)):
 		img = pg.image
 		op[pg.image_ref] = {
 			"id": img.id,
@@ -91,5 +92,5 @@ def test_body_images():
 			"filesize": img.filesize
 		}
 	print(op)
-	with open("tests/results/body/test_body_images.json", "w", encoding="utf-8", newline="\n") as result:
+	with open(dir + "test_body_images.json", "w", encoding="utf-8", newline="\n") as result:
 		result.write(json.dumps(op, ensure_ascii=False))
