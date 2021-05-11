@@ -33,8 +33,7 @@ class ArchiveReader:
 
 		elif archive_path.suffix in [".cbr", ".rar"]:
 			ar = ArchiveTypes.Rar
-			raise NotImplementedError
-			# archive = RarFile(str(archive_path), 'r')
+			archive = RarFile(str(archive_path), errors="strict")
 
 		self.archive: Union[ZipFile, Path, Tar.TarFile, RarFile] = archive
 
