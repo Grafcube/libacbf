@@ -12,8 +12,86 @@ from libacbf.Structs import Styles
 from libacbf.ArchiveReader import ArchiveReader
 
 class ACBFBook:
-	"""
-	docstring
+	"""Base class for reading ACBF ebooks.
+
+	Parameters
+	----------
+	file_path: str: default=Empty book template
+		Path to ACBF book. May be absolute or relative.
+
+	Examples
+	--------
+	A book object can be opened, read and then closed. It can read files with the extensions
+	``.acbf``, ``.cbz``, ``.cb7``, ``.cbt``, ``.cbr``::
+
+		from libacbf.ACBFBook import ACBFBook
+
+		book = ACBFBook("path/to/file.cbz")
+		# Read data from book
+		book.close()
+		```
+
+	``ACBFBook`` is also a context manager and can be used in with statements::
+
+		from libacbf.ACBFBook import ACBFBook
+
+		with ACBFBook("path/to/file.cbz") as book:
+			# Read data from book
+
+	Notes
+	-----
+	libacbf uses `rarfile <https://rarfile.readthedocs.io>`_ to read RAR archives. It requires its own
+	dependancies listed `here <https://rarfile.readthedocs.io/faq.html#what-are-the-dependencies>`_.
+
+	|
+
+	Attributes
+	----------
+	Metadata: ACBFMetadata
+		See :class:`ACBFMetadata<libacbf.ACBFMetadata.ACBFMetadata>` for more information.
+
+	Body: ACBFBody
+		See :class:`ACBFBody<libacbf.ACBFBody.ACBFBody>` for more information.
+
+	Data: ACBFData
+		See :class:`ACBFData<libacbf.ACBFData.ACBFData>` for more information.
+
+	References: dict
+		A dictionary that contains a list of particular references that occur inside the
+		main document body. Keys are unique reference ids and values are dictionaries that contain
+		a ``paragraph`` key with text::
+
+			{
+				"ref_id_001": {
+					"paragraph": "This is a reference."
+				}
+				"ref_id_002": {
+					"paragraph": "This is another reference."
+				}
+			}
+
+		``paragraph`` can contain special tags for formatting. For more information and a full list,
+		see :class:`TextArea<libacbf.BodyInfo.TextArea>`.
+
+	Styles: dict-like object
+		An object that behaves like a dictionary. Use ``Styles[file name]`` to get the
+		contents of the stylesheet as a string. Use ``list_styles()`` to get list of all available
+		styles. All paths are relative::
+
+			style = book.Styles["style_name.css"]
+
+	Stylesheet: str: optional
+		Embedded stylesheet, if exists, as a string.
+
+	archive: ArchiveReader: optional
+		Can be used to read archive directly if file is not ``.acbf``.
+		ArchiveReader.archive may be ``zipfile.ZipFile``, ``pathlib.Path``, ``tarfile.TarFile`` or ``rarfile.RarFile``.
+
+	file_path: str
+		Absolute path to source file.
+
+	namespace: Text
+		Namespace of ACBF XML file. Use BookNamespace.ACBFns_raw to get namespace as string.
 	"""
 	def __init__(self, file_path: str = "libacbf/templates/base_template_1.1.acbf"):
 		self.is_open: bool = True
@@ -75,18 +153,17 @@ class ACBFBook:
 		return references
 
 	def save(self, path: str = "", overwrite: bool = True):
+
 		if path == "":
 			path = self.file_path
 
 	def close(self):
+
 		if self.archive is not None:
 			self.archive.close()
 			self.is_open = False
 
 	def _validate_acbf(self):
-		"""
-		docstring
-		"""
 		version = self._tree.docinfo.xml_version
 		xsd_path = f"libacbf/schema/acbf-{version}.xsd"
 
