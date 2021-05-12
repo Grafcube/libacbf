@@ -21,8 +21,6 @@ libacbf Documentation
 
 	installation
 
-	modules
-
 .. toctree::
 	:maxdepth: 1
 	:caption: API Reference

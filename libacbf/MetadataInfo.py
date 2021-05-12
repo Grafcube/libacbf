@@ -159,62 +159,6 @@ class BookInfo:
 			self.database_ref.append(new_db)
 	#endregion
 
-	@property
-	def book_title(self) -> Dict[Union[str, Language], str]:
-		return self._book_title
-
-	@book_title.setter
-	def book_title(self, val: Dict[Union[str, Language], str]):
-		pass
-
-	def add_title(self, tt: str, lang: Union[str, Language] = "_"):
-		pass
-
-	def remove_title(self, idx: int):
-		pass
-
-	@property
-	def genres(self) -> Dict[str, Genre]:
-		return self._genres
-
-	@genres.setter
-	def genres(self, val: Dict[str, Genre]):
-		pass
-
-	def add_genre(self, gn: Genres, match: Optional[int] = None):
-		pass
-
-	def remove_genre(self, idx: int):
-		pass
-
-	@property
-	def annotations(self) -> Dict[Union[str, Language], str]:
-		return self._annotations
-
-	@annotations.setter
-	def annotations(self, val: Dict[Union[str, Language], str]):
-		pass
-
-	def add_annotation(self, an: str, lang: Union[str, Language] = "_"):
-		pass
-
-	def remove_annotation(self, idx: int):
-		pass
-
-	# Coverpage
-
-	# Languages
-
-	# Characters
-
-	# Keywords
-
-	# Series
-
-	# Content Rating
-
-	# Database Ref
-
 class PublishInfo:
 	"""
 	docstring
