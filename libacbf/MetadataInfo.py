@@ -46,10 +46,45 @@ class BookInfo:
 		It is a dictionary with keys being a ``Language`` object or ``"_"`` if no language is defined
 		and values being multiline strings.
 
-	cover_page : CoverPage
-		See :class:`CoverPage <libacbf.Structs.CoverPage>` for more info.
+	cover_page : Page
+		See :class:`Page <libacbf.BodyInfo.Page>` for more info. ``cover_page`` is the same as
+		:class:`Page <libacbf.BodyInfo.Page>` except it does not have :class:`title <libacbf.BodyInfo.Page.title>`,
+		:class:`bg_color <libacbf.BodyInfo.Page.bg_color>` and :class:`transition <libacbf.BodyInfo.Page.transition>`.
 
+	languages : List[LanguageLayer]
+		``LanguageLayers`` refer to all :class:`TextLayer <libacbf.BodyInfo.TextLayer>` of a language.
 
+		A list of :class:`LanguageLayer <libacbf.Structs.LanguageLayer>`.
+
+	characters : List[str]
+		List of (main) characters that appear in the book.
+
+	keywords: Dict["_" | langcodes.Language, List[str]]
+		For use by search engines.
+
+		A dictionary with keys as ``Language`` objects or ``"_"`` if no language is defined. Keys
+		are a list of string keywords.
+
+	series: Dict[str, Series]
+		Contains the sequence and number if particular comic book is part of a series.
+
+		A dictionary with keys as the title of the series and values as :class:`Series <libacbf.Structs.Series>`
+		objects.
+
+	content_rating: Dict[str, str]
+		Content rating of the book based on age appropriateness and trigger warnings.
+
+		It is a dictionary with the keys being the rating system or ``"_"`` if not defined and
+		values being the rating itself. ::
+
+			{
+				"_": "18+"
+			}
+
+	database_ref : List[DBRef]
+		Contains reference to a record in a comic book database (eg: GCD, MAL).
+
+		A list of :class:`DBRef <libacbf.Structs.DBRef>` objects.
 	"""
 	def __init__(self, info, book: ACBFBook):
 		self.book = book
@@ -123,9 +158,8 @@ class BookInfo:
 		if self._info.find(f"{self._ns.ACBFns}languages") is not None:
 			text_layers = self._info.find(f"{self._ns.ACBFns}languages").findall(f"{self._ns.ACBFns}text-layer")
 			for layer in text_layers:
-				new_lang = LanguageLayer()
+				new_lang = LanguageLayer(layer.attrib["lang"])
 
-				new_lang.lang = layer.attrib["lang"]
 				if "show" in layer.keys():
 					new_lang.show = bool(strtobool(layer.attrib["show"]))
 
@@ -156,14 +190,10 @@ class BookInfo:
 
 		series_items = self._info.findall(f"{self._ns.ACBFns}sequence")
 		for se in series_items:
-			new_se = Series()
-			new_se.title = se.attrib["title"]
-			new_se.sequence = se.text
+			new_se = Series(se.attrib["title"], se.text)
 
 			if "volume" in se.keys():
 				new_se.volume = se.attrib["volume"]
-			if "lang" in se.keys():
-				new_se.lang = se.attrib["lang"]
 
 			self.series[se.attrib["title"]] = new_se
 

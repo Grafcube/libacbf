@@ -55,7 +55,7 @@ def test_languages():
 	op = []
 	for i in book.Metadata.book_info.languages:
 		new_op = {
-			"lang": i.lang,
+			"lang": str(i.lang),
 			"show": i.show
 		}
 		op.append(new_op)
@@ -100,7 +100,7 @@ def test_database_ref():
 	for i in book.Metadata.book_info.database_ref:
 		new_op = {
 			"dbname": i.dbname,
-			"text": i.text,
+			"text": i.reference,
 			"type": i.type
 		}
 		op.append(new_op)

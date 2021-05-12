@@ -236,30 +236,60 @@ class Genre:
 				raise ValueError("Match must be an int from 0 to 100.")
 
 class LanguageLayer:
+	"""Used by :class:`BookInfo.languages <libacbf.MetadataInfo.BookInfo.languages>`.
+
+	See Also
+	--------
+	`Book Info section Languages <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#Languages>`_.
+
+	Attributes
+	----------
+
+	lang : langcodes.Language
+		Language of layer.
+
+	show : bool, optional
+		Whether layer is drawn.
 	"""
-	docstring
-	"""
-	def __init__(self):
-		self.lang: str = ""
-		self.show: Optional[bool] = None
+	def __init__(self, val: Optional[Union[str, Language]], show: Optional[bool] = None):
+		if type(val) is Language:
+			lang = val
+		elif type(val) is str:
+			lang = Language.get(standardize_tag(val))
+
+		self.lang: Language = lang
+		self.show: Optional[bool] = show
 
 class Series:
+	"""Used by :class:`BookInfo.series <libacbf.MetadataInfo.BookInfo.series>`.
+
+	See Also
+	--------
+	`Book Info section Sequence <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#Sequence>`_.
+
+	Attributes
+	----------
+
+	title : str
+		Title of the series that this book is part of.
+
+	sequence : str
+		The book's position/entry in the series.
+
+	volume : str, optional
+		The volume that the book belongs to.
 	"""
-	docstring
-	"""
-	def __init__(self):
-		self.title: str = ""
-		self.sequence: str = ""
-		self.lang: Optional[str] = None
-		self.volume: Optional[str] = None
+	def __init__(self, title: str, sequence: str, volume: Optional[str] = None):
+		self.title: str = title
+		self.sequence: str = sequence
+		self.volume: Optional[str] = volume
 
 class DBRef:
 	"""
-	docstring
 	"""
-	def __init__(self):
-		self.dbname: str = ""
-		self.text: str = ""
+	def __init__(self, dbname: str, ref: str):
+		self.dbname: str = dbname
+		self.reference: str = ref
 		self.type: Optional[str] = None
 
 class Frame:
