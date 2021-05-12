@@ -25,7 +25,7 @@ class Page:
 	"""
 	docstring
 	"""
-	def __init__(self, page, book: ACBFBook):
+	def __init__(self, page, book: ACBFBook, coverpage: bool = False):
 		self._image: Optional[BookData] = None
 
 		self.book = book
@@ -33,13 +33,14 @@ class Page:
 		ns: BookNamespace = book.namespace
 
 		# Optional
-		self.bg_color: Optional[str] = None
-		if "bgcolor" in page.keys():
-			self.bg_color = page.attrib["bgcolor"]
+		if not coverpage:
+			self.bg_color: Optional[str] = None
+			if "bgcolor" in page.keys():
+				self.bg_color = page.attrib["bgcolor"]
 
-		self.transition: Optional[PageTransitions] = None
-		if "transition" in page.keys():
-			self.transition = PageTransitions[page.attrib["transition"]]
+			self.transition: Optional[PageTransitions] = None
+			if "transition" in page.keys():
+				self.transition = PageTransitions[page.attrib["transition"]]
 
 		# Sub
 		self.image_ref: str = page.find(f"{ns.ACBFns}image").attrib["href"]
@@ -85,13 +86,14 @@ class Page:
 		self.ref_type: ImageRefType = ref_t
 
 		## Optional
-		self.title: Dict[str, str] = {}
-		title_items = page.findall(f"{ns.ACBFns}title")
-		for t in title_items:
-			if "lang" in t.keys():
-				self.title[t.attrib["lang"]] = t.text
-			else:
-				self.title["_"] = t.text
+		if not coverpage:
+			self.title: Dict[str, str] = {}
+			title_items = page.findall(f"{ns.ACBFns}title")
+			for t in title_items:
+				if "lang" in t.keys():
+					self.title[t.attrib["lang"]] = t.text
+				else:
+					self.title["_"] = t.text
 
 		self.text_layers: Dict[str, TextLayer] = get_textlayers(page, ns)
 

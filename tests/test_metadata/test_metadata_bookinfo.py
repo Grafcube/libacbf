@@ -111,6 +111,8 @@ def test_database_ref():
 def test_coverpage():
 	op = {
 		"image_ref": book.Metadata.book_info.cover_page.image_ref,
+		"image_name": book.Metadata.book_info.cover_page.image.id,
+		"image_size": book.Metadata.book_info.cover_page.image.filesize,
 		"text_layers": None,
 		"frames": None,
 		"jumps": None

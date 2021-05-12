@@ -7,13 +7,49 @@ from distutils.util import strtobool
 from re import split
 from datetime import date
 from langcodes import Language, standardize_tag
-from libacbf.Constants import BookNamespace, Genres
-from libacbf.Structs import Author, DBRef, Genre, CoverPage, LanguageLayer, Series
-from libacbf.BodyInfo import get_textlayers, get_frames, get_jumps
+from libacbf.Constants import BookNamespace
+from libacbf.Structs import Author, DBRef, Genre, LanguageLayer, Series
+from libacbf.BodyInfo import Page
 
 class BookInfo:
-	"""
-	docstring
+	"""Metadata about the book itself.
+
+	See Also
+	--------
+	`Book-info section <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#Book-info_section>`_.
+
+	Attributes
+	----------
+
+	book : ACBFBook
+		Book that the metadata belongs to.
+
+	authors : List[libacbf.Structs.Author]
+		A list of :class:`Author <libacbf.Structs.Author>` objects.
+
+	book_titles : Dict["_" | langcodes.Language, str]
+		A dictionary with ``Language`` objects as keys for titles as string. Key is ``"_"`` if no
+		language is defined. ::
+
+			{
+				"_": "book title without language",
+				Language.get("en"): "English title"
+			}
+
+	genres : Dict[str, libacbf.Structs.Genre]
+		A dictionary with keys being a string representation of :class:`Genres(Enum) <libacbf.Constants.Genres>`
+		and values being :class:`Genre <libacbf.Structs.Genre>` objects.
+
+	annotations : Dict["_" | langcodes.Language, str]
+		A short summary describing the book.
+
+		It is a dictionary with keys being a ``Language`` object or ``"_"`` if no language is defined
+		and values being multiline strings.
+
+	cover_page : CoverPage
+		See :class:`CoverPage <libacbf.Structs.CoverPage>` for more info.
+
+
 	"""
 	def __init__(self, info, book: ACBFBook):
 		self.book = book
@@ -39,18 +75,18 @@ class BookInfo:
 		self.authors: List[Author] = update_authors(self._info.findall(f"{self._ns.ACBFns}author"), self._ns)
 
 	def sync_book_titles(self):
-		self._book_title: Dict[Union[Literal["_"], Language], str] = {}
+		self.book_title: Dict[Union[Literal["_"], Language], str] = {}
 
 		book_items = self._info.findall(f"{self._ns.ACBFns}book-title")
 		for title in book_items:
 			if "lang" in title.keys():
 				lang = Language.get(standardize_tag(title.attrib["lang"]))
-				self._book_title[lang] = title.text
+				self.book_title[lang] = title.text
 			else:
-				self._book_title["_"] = title.text
+				self.book_title["_"] = title.text
 
 	def sync_genres(self):
-		self._genres: Dict[str, Genre] = {}
+		self.genres: Dict[str, Genre] = {}
 
 		genre_items = self._info.findall(f"{self._ns.ACBFns}genre")
 		for genre in genre_items:
@@ -59,10 +95,10 @@ class BookInfo:
 			if "match" in genre.keys():
 				new_genre.Match = int(genre.attrib["match"])
 
-			self._genres[new_genre.Genre.name] = new_genre
+			self.genres[new_genre.Genre.name] = new_genre
 
 	def sync_annotations(self):
-		self._annotations: Dict[Union[Literal["_"], Language], str] = {}
+		self.annotations: Dict[Union[Literal["_"], Language], str] = {}
 
 		annotation_items = self._info.findall(f"{self._ns.ACBFns}annotation")
 		for an in annotation_items:
@@ -73,16 +109,13 @@ class BookInfo:
 
 			if "lang" in an.keys():
 				lang = Language.get(standardize_tag(an.attrib["lang"]))
-				self._annotations[lang] = p
+				self.annotations[lang] = p
 			else:
-				self._annotations["_"] = p
+				self.annotations["_"] = p
 
 	def sync_coverpage(self):
 		cpage = self._info.find(f"{self._ns.ACBFns}coverpage")
-		self.cover_page: CoverPage = CoverPage(cpage.find(f"{self._ns.ACBFns}image").attrib["href"])
-		self.cover_page.text_layers = get_textlayers(cpage, self._ns)
-		self.cover_page.frames = get_frames(cpage, self._ns)
-		self.cover_page.jumps = get_jumps(cpage, self._ns)
+		self.cover_page: Page = Page(cpage, self.book, True)
 
 	def sync_languages(self):
 		self.languages: List[LanguageLayer] = []

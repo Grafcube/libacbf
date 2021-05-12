@@ -235,16 +235,6 @@ class Genre:
 			else:
 				raise ValueError("Match must be an int from 0 to 100.")
 
-class CoverPage:
-	"""
-	docstring
-	"""
-	def __init__(self, href: str):
-		self.image_ref: str = href
-		self.text_layers: Dict[str, body.TextLayer] = {}
-		self.frames: List[Frame] = []
-		self.jumps: List[Jump] = []
-
 class LanguageLayer:
 	"""
 	docstring
