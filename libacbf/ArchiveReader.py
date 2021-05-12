@@ -9,8 +9,19 @@ import tarfile as Tar
 from rarfile import RarFile
 
 class ArchiveReader:
-	"""
-	docstring
+	"""Class to directly read from archives.
+
+	This class can read Zip, 7Zip, Tar and Rar archives. There shouldn't usually be a reason to use
+	this class.
+
+	Attributes
+	----------
+	archive : zipfile.ZipFile | rarfile.TarFile | rarfile.RarFile | pathlib.Path
+		If it is a ``Path``, the path is to a temporary directory where a ``py7zr.SevenZipFile`` is
+		extracted.
+
+	type : ArchiveTypes(Enum)
+		The type of archive.
 	"""
 	def __init__(self, archive_path: Union[str, Path]):
 		if type(archive_path) is str:
@@ -39,7 +50,7 @@ class ArchiveReader:
 
 		self.type: ArchiveTypes = ar
 
-	def get_acbf_contents(self) -> Optional[str]:
+	def _get_acbf_contents(self) -> Optional[str]:
 		contents = None
 		if self.type in [ArchiveTypes.Zip, ArchiveTypes.Rar]:
 			for i in self.archive.infolist():
@@ -60,6 +71,18 @@ class ArchiveReader:
 		return contents
 
 	def read(self, file_path: str) -> bytes:
+		"""Get file as bytes from archive.
+
+		Parameters
+		----------
+		file_path : str
+			Path relative to root of archive.
+
+		Returns
+		-------
+		bytes
+			Contents of file.
+		"""
 		contents = None
 		if self.type in [ArchiveTypes.Zip, ArchiveTypes.Rar]:
 			with self.archive.open(file_path, 'r') as file:
@@ -72,6 +95,8 @@ class ArchiveReader:
 		return contents
 
 	def close(self):
+		"""Close archive file object or remove temporary directory.
+		"""
 		if self.type in [ArchiveTypes.Zip, ArchiveTypes.Tar, ArchiveTypes.Rar]:
 			self.archive.close()
 		elif self.type == ArchiveTypes.SevenZip:

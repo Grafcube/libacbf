@@ -2,16 +2,27 @@ from enum import Enum, auto
 from re import sub
 
 class BookNamespace:
+	"""Book's XML namespace as an object.
+	"""
 	def __init__(self, ns: str):
 		self.ACBFns: str = ns
 
 	@property
 	def ACBFns_raw(self) -> str:
+		"""The XML namespace as a string.
+
+		Returns
+		-------
+		str
+		"""
 		return sub(r'\{|\}', "", self.ACBFns)
 
 class AuthorActivities(Enum):
-	"""
-	docstring
+	"""List of accepted values for :class:`Author.activity<libacbf.Structs.Author.activity>`.
+
+	See Also
+	--------
+	`ACBF Author specification <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#Author>`_.
 	"""
 	Writer = 0
 	Adapter = auto()
@@ -28,8 +39,11 @@ class AuthorActivities(Enum):
 	Other = 100
 
 class Genres(Enum):
-	"""
-	docstring
+	"""List of accepted values for :class:`Genre.Genre <libacbf.Structs.Genre.Genre>`.
+
+	See Also
+	--------
+	`ACBF Genre specification <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#Genre>`_
 	"""
 	adult = 0
 	adventure = auto()

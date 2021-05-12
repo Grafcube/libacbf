@@ -44,8 +44,58 @@ class Styles:
 			raise FileNotFoundError
 
 class Author:
-	"""
-	docstring
+	"""Defines an author of the comic book.
+
+	See Also
+	--------
+	`ACBF Author specifications <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#Author>`_.
+
+	Examples
+	--------
+	An ``Author`` object can be created with either a nickname, a first and last name or both. ::
+
+		from libacbf.Structs import Author
+
+		author1 = Author("Hugh", "Mann")
+		# author1.first_name == "Hugh"
+		# author1.last_name == "Mann"
+
+		author2 = Author("NotAPlatypus")
+		# author2.nickname == "NotAPlatypus"
+
+		author3 = Author("Hugh", "Mann", "NotAPlatypus")
+		# author3.first_name == "Hugh"
+		# author3.last_name == "Mann"
+		# author3.nickname == "NotAPlatypus"
+
+	This is also possible::
+
+		author4 = Author(first_name="Hugh", last_name="Mann", nickname="NotAPlatypus")
+
+	Attributes
+	----------
+	first_name : str
+		Author's first name.
+
+	last_name : str
+		Author's last name.
+
+	nickname : str
+		Author's nickname.
+
+	middle_name : str, optional
+		Author's middle name.
+
+	home_page : str, optional
+		Author's website.
+
+	email : str, optional
+		Author's email address.
+
+	Raises
+	------
+	ValueError
+		Author must have at least first and last name or nickname.
 	"""
 	def __init__(self, *names: str, first_name = None, last_name = None, nickname = None):
 		self._element = None
@@ -79,6 +129,15 @@ class Author:
 
 	@property
 	def activity(self) -> Optional[AuthorActivities]:
+		"""Defines the activity that a particular author carried out on the comic book.
+
+		Allowed values are defined in :class:`AuthorActivities <libacbf.Constants.AuthorActivities>`.
+
+		Returns
+		-------
+		Optional[AuthorActivities]
+			A value from AuthorActivities Enum.
+		"""
 		return self._activity
 
 	@activity.setter
@@ -94,6 +153,14 @@ class Author:
 
 	@property
 	def lang(self) -> Optional[Language]:
+		"""Defines the language that the author worked in.
+
+		Returns
+		-------
+		Optional[Language]
+			Returns a ``langcodes.Language`` object that can be converted to a string by using
+			``str(Language)``
+		"""
 		return self._lang
 
 	@lang.setter
@@ -106,8 +173,21 @@ class Author:
 			self._lang = Language.get(standardize_tag(val))
 
 class Genre:
-	"""
-	docstring
+	"""The genre of the book.
+
+	Parameters
+	----------
+	genre_type : Genres(Enum) | str | int
+		The genre value. String and integer are converted to a value from
+		:class:`Genres <libacbf.Constants.Genres>` Enum.
+
+	match : int, optional
+		The match value. Must be an integer from 0 to 100.
+
+	See Also
+	--------
+	`ACBF Genre specifications <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#Genre>`_.
+
 	"""
 	def __init__(self, genre_type: Union[str, Genres, int], match: Optional[int] = None):
 		self.Genre: Genres = genre_type
@@ -115,6 +195,15 @@ class Genre:
 
 	@property
 	def Genre(self) -> Genres:
+		"""Defines the activity that a particular author carried out on the comic book.
+
+		Allowed values are defined in `AuthorActivities <libacbf.Constants.AuthorActivities>`.
+
+		Returns
+		-------
+		Optional[AuthorActivities]
+			A value from AuthorActivities Enum.
+		"""
 		return self._genre
 
 	@Genre.setter
@@ -128,6 +217,13 @@ class Genre:
 
 	@property
 	def Match(self) -> Optional[int]:
+		"""Defines the match percentage to that particular genre.
+
+		Returns
+		-------
+		Optional[int]
+			An integer percentage from 0 to 100.
+		"""
 		return self._match
 
 	@Match.setter

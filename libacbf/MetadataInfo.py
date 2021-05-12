@@ -16,6 +16,7 @@ class BookInfo:
 	docstring
 	"""
 	def __init__(self, info, book: ACBFBook):
+		self.book = book
 		self._info = info
 		self._ns: BookNamespace = book.namespace
 
@@ -219,6 +220,7 @@ class PublishInfo:
 	docstring
 	"""
 	def __init__(self, info, book: ACBFBook):
+		self.book = book
 		ns = book.namespace
 
 		self.publisher: str = info.find(f"{ns.ACBFns}publisher").text
@@ -247,6 +249,7 @@ class DocumentInfo:
 	docstring
 	"""
 	def __init__(self, info, book: ACBFBook):
+		self.book = book
 		ns: BookNamespace = book.namespace
 
 		self.authors: List[Author] = update_authors(info.findall(f"{ns.ACBFns}author"), ns)
