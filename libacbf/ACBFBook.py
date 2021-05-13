@@ -142,7 +142,7 @@ class ACBFBook:
 			self.is_open = False
 
 	def save(self, path: str = "", overwrite: bool = False):
-		# To be called by Editor
+		# To be called by Editor class
 		if path == "":
 			path = self.file_path
 		raise NotImplementedError

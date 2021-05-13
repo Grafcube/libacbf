@@ -7,8 +7,7 @@ from libacbf.Constants import BookNamespace
 from libacbf.BodyInfo import Page
 
 class ACBFBody:
-	"""
-	docstring
+	"""[summary]
 	"""
 	def __init__(self, book: ACBFBook):
 		self.book = book
@@ -29,6 +28,8 @@ class ACBFBody:
 
 	@property
 	def total_pages(self) -> int:
+		"""[summary]
+		"""
 		return len(list(self._body))
 
 	def __len__(self):
@@ -59,6 +60,13 @@ class ACBFBody:
 			raise StopIteration
 
 	def next_page(self):
+		"""[summary]
+
+		Returns
+		-------
+		[type]
+			[description]
+		"""
 		if self.page_index is not None:
 			self.page_index += 1
 		else:
@@ -78,6 +86,18 @@ class ACBFBody:
 		return self.page
 
 	def previous_page(self):
+		"""[summary]
+
+		Returns
+		-------
+		[type]
+			[description]
+
+		Raises
+		------
+		StopIteration
+			[description]
+		"""
 		self.page_index -= 1
 		if self.page_index in self.pages.keys():
 			self.page = self.pages[self.page_index]

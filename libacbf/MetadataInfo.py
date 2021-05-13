@@ -16,7 +16,7 @@ class BookInfo:
 
 	See Also
 	--------
-	`Book-info section <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#Book-info_section>`_.
+	`Book-Info section <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#Book-info_section>`_.
 
 	Attributes
 	----------
@@ -51,27 +51,27 @@ class BookInfo:
 		:class:`Page <libacbf.BodyInfo.Page>` except it does not have :class:`title <libacbf.BodyInfo.Page.title>`,
 		:class:`bg_color <libacbf.BodyInfo.Page.bg_color>` and :class:`transition <libacbf.BodyInfo.Page.transition>`.
 
-	languages : List[LanguageLayer]
+	languages : List[LanguageLayer], optional
 		``LanguageLayers`` refer to all :class:`TextLayer <libacbf.BodyInfo.TextLayer>` of a language.
 
 		A list of :class:`LanguageLayer <libacbf.Structs.LanguageLayer>`.
 
-	characters : List[str]
+	characters : List[str], optional
 		List of (main) characters that appear in the book.
 
-	keywords: Dict["_" | langcodes.Language, List[str]]
+	keywords: Dict["_" | langcodes.Language, List[str]], optional
 		For use by search engines.
 
 		A dictionary with keys as ``Language`` objects or ``"_"`` if no language is defined. Keys
 		are a list of string keywords.
 
-	series: Dict[str, Series]
+	series: Dict[str, Series], optional
 		Contains the sequence and number if particular comic book is part of a series.
 
 		A dictionary with keys as the title of the series and values as :class:`Series <libacbf.Structs.Series>`
 		objects.
 
-	content_rating: Dict[str, str]
+	content_rating: Dict[str, str], optional
 		Content rating of the book based on age appropriateness and trigger warnings.
 
 		It is a dictionary with the keys being the rating system or ``"_"`` if not defined and
@@ -81,7 +81,7 @@ class BookInfo:
 				"_": "18+"
 			}
 
-	database_ref : List[DBRef]
+	database_ref : List[DBRef], optional
 		Contains reference to a record in a comic book database (eg: GCD, MAL).
 
 		A list of :class:`DBRef <libacbf.Structs.DBRef>` objects.
@@ -212,9 +212,7 @@ class BookInfo:
 
 		db_items = self._info.findall(f"{self._ns.ACBFns}databaseref")
 		for db in db_items:
-			new_db = DBRef()
-			new_db.dbname = db.attrib["dbname"]
-			new_db.text = db.text
+			new_db = DBRef(db.attrib["dbname"], db.text)
 
 			if "type" in db.keys():
 				new_db.type = db.attrib["type"]
@@ -223,8 +221,35 @@ class BookInfo:
 	#endregion
 
 class PublishInfo:
-	"""
-	docstring
+	"""Metadata about the book's publisher.
+
+	See Also
+	--------
+	`Publish-Info section <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#Publish-Info_Section>`_.
+
+	Attributes
+	----------
+
+	book : ACBFBook
+		Book that the metadata belongs to.
+
+	publisher : str
+		Name of the publisher.
+
+	publish_date_string : str
+		Date when the book was published as a human readable string.
+
+	publish_date : datetime.date, optional
+		Date when the book was published.
+
+	publish_city : str, optional
+		City where the book was published.
+
+	isbn : str, optional
+		International Standard Book Number.
+
+	license : str, optional
+		The license that the book is under.
 	"""
 	def __init__(self, info, book: ACBFBook):
 		self.book = book
@@ -252,8 +277,39 @@ class PublishInfo:
 			self.license = info.find(f"{ns.ACBFns}license").text
 
 class DocumentInfo:
-	"""
-	docstring
+	"""Metadata about the ACBF file itself.
+
+	See Also
+	--------
+	`Document-Info section <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#Document-Info_Section>`_.
+
+	Attributes
+	----------
+
+	book : ACBFBook
+		Book that the metadata belongs to.
+
+	authors : List[libacbf.Structs.Author]
+		List of authors of the ACBF file as :class:`Author <libacbf.Structs.Author>` objects.
+
+	creation_date_string : str
+		Date when the ACBF file was created as a human readable string.
+
+	creation_date : datetime.date, optional
+		Date when the ACBF file was created.
+
+	source : str, optional
+		A multiline string with information if this book is a derivative of another work. May contain
+		URL and other source descriptions.
+
+	document_id : str, optional
+		Unique Document ID. Used to distinctly define ACBF files for cataloguing.
+
+	document_version : str, optional
+		Version of ACBF file.
+
+	document_history : str, optional
+		Change history of the ACBF file with change information in a list of strings.
 	"""
 	def __init__(self, info, book: ACBFBook):
 		self.book = book
@@ -283,15 +339,12 @@ class DocumentInfo:
 		if info.find(f"{ns.ACBFns}version") is not None:
 			self.document_version = info.find(f"{ns.ACBFns}version").text
 
-		self.document_history: List[str] = []
+		self.document_history: Optional[List[str]] = []
 		if info.find(f"{ns.ACBFns}history") is not None:
 			for item in info.findall(f"{ns.ACBFns}history/{ns.ACBFns}p"):
 				self.document_history.append(item.text)
 
 def update_authors(author_items, ns: BookNamespace):
-	"""
-	docstring
-	"""
 	authors = []
 
 	for au in author_items:

@@ -73,6 +73,8 @@ class Genres(Enum):
 	other = 100
 
 class TextAreas(Enum):
+	"""[summary]
+	"""
 	speech = 0
 	commentary = auto()
 	formal = auto()
@@ -84,6 +86,8 @@ class TextAreas(Enum):
 	sign = auto()
 
 class PageTransitions(Enum):
+	"""[summary]
+	"""
 	fade = 0
 	blend = auto()
 	scroll_right = auto()
@@ -91,8 +95,7 @@ class PageTransitions(Enum):
 	none = 100
 
 class ImageRefType(Enum):
-	"""
-	docstring
+	"""[summary]
 	"""
 	Embedded = 0
 	Archived = auto()

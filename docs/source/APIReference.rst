@@ -1,17 +1,17 @@
 API Reference
 =============
 
-.. toctree::
-	:maxdepth: 2
-	:caption: Main Classes
+Main Classes
+------------
 
-	ACBFBook <libacbf.ACBFBook>
-	ACBFMetadata <libacbf.ACBFMetadata.rst>
-	---MetadataInfo <libacbf.MetadataInfo>
+* :doc:`ACBFBook <libacbf.ACBFBook>`
+* :doc:`ACBFMetadata <libacbf.ACBFMetadata>`
+	- :doc:`MetadataInfo <libacbf.MetadataInfo>`
+* :doc:`ACBFBody <libacbf.ACBFBody>`
+	- :doc:`BodyInfo <libacbf.BodyInfo>`
 
-.. toctree::
-	:maxdepth: 2
-	:caption: Helper Classes
+Helper Classes
+--------------
 
-	Structs <libacbf.Structs>
-	Constants and Enums <libacbf.Constants>
+* :doc:`Structs <libacbf.Structs>`
+* :doc:`Constants and Enums <libacbf.Constants>`

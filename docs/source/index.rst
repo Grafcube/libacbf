@@ -3,15 +3,6 @@
 	You can adapt this file completely to your liking, but it should at least
 	contain the root `toctree` directive.
 
-Introduction
-============
-
-	See specifications here.
-	| https://acbf.fandom.com/wiki/Advanced_Comic_Book_Format_Wiki
-
-This is a Python library to read, create and edit ACBF Ebooks.
-Introduction here...
-
 libacbf Documentation
 ===================================
 
@@ -27,6 +18,15 @@ libacbf Documentation
 
 	APIReference
 	moreclasses
+
+Introduction
+============
+
+.. seealso::
+	https://acbf.fandom.com/wiki/Advanced_Comic_Book_Format_Wiki
+
+This is a Python library to read, create and edit ACBF Ebooks.
+Introduction here...
 
 Indices and tables
 ==================

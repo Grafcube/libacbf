@@ -91,11 +91,6 @@ class Author:
 
 	email : str, optional
 		Author's email address.
-
-	Raises
-	------
-	ValueError
-		Author must have at least first and last name or nickname.
 	"""
 	def __init__(self, *names: str, first_name = None, last_name = None, nickname = None):
 		self._element = None
@@ -197,12 +192,12 @@ class Genre:
 	def Genre(self) -> Genres:
 		"""Defines the activity that a particular author carried out on the comic book.
 
-		Allowed values are defined in `AuthorActivities <libacbf.Constants.AuthorActivities>`.
+		Allowed values are defined in :class:`Genres <libacbf.Constants.Genres>`.
 
 		Returns
 		-------
-		Optional[AuthorActivities]
-			A value from AuthorActivities Enum.
+		Optional[libacbf.Constants.Genres]
+			A value from :class:`Genres <libacbf.Constants.Genres>` Enum.
 		"""
 		return self._genre
 
@@ -285,7 +280,23 @@ class Series:
 		self.volume: Optional[str] = volume
 
 class DBRef:
-	"""
+	"""Used by :class:`BookInfo.database_ref <libacbf.MetadataInfo.BookInfo.database_ref>`.
+
+	See Also
+	--------
+	`Book Info section DatabaseRef <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#DatabaseRef>`_.
+
+	Attributes
+	----------
+
+	dbname : str
+		Name of database.
+
+	reference : str
+		Reference of book in database.
+
+	type : str, optional
+		Type of the given reference such as URL, ID etc.
 	"""
 	def __init__(self, dbname: str, ref: str):
 		self.dbname: str = dbname
@@ -293,16 +304,14 @@ class DBRef:
 		self.type: Optional[str] = None
 
 class Frame:
-	"""
-	docstring
+	"""[summary]
 	"""
 	def __init__(self):
 		self.points: List[body.Vec2] = []
 		self.bgcolor: Optional[str] = None
 
 class Jump:
-	"""
-	docstring
+	"""[summary]
 	"""
 	def __init__(self):
 		self.page: Optional[int] = None
