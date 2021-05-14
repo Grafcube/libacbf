@@ -7,7 +7,7 @@ from libacbf.Constants import BookNamespace
 from libacbf.MetadataInfo import BookInfo, PublishInfo, DocumentInfo
 
 class ACBFMetadata:
-	"""Class to read metadata from a book.
+	"""Class to read metadata of the book.
 
 	See Also
 	--------
@@ -21,10 +21,10 @@ class ACBFMetadata:
 	book_info : BookInfo
 		See :class:`BookInfo <libacbf.MetadataInfo.BookInfo>`.
 
-	publisher_info : BookInfo
+	publisher_info : PublishInfo
 		See :class:`PublishInfo <libacbf.MetadataInfo.PublishInfo>`.
 
-	document_info : BookInfo
+	document_info : DocumentInfo
 		See :class:`DocumentInfo <libacbf.MetadataInfo.DocumentInfo>`.
 	"""
 	def __init__(self, book: ACBFBook):

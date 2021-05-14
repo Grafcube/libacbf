@@ -53,7 +53,7 @@ def test_body_pages():
 
 		for tl in pg.text_layers.keys():
 			new_tl = {
-				"lang": str(pg.text_layers[tl].language),
+				"lang": pg.text_layers[tl].language,
 				"bgcolour": pg.text_layers[tl].bg_color,
 				"text_areas": []
 			}

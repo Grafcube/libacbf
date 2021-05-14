@@ -12,7 +12,7 @@ from pathlib import Path
 from magic.magic import from_buffer
 from re import IGNORECASE, fullmatch, split, sub
 import requests
-from langcodes import Language, standardize_tag
+from langcodes import standardize_tag
 from lxml import etree
 from libacbf.BookData import BookData
 from libacbf.Constants import BookNamespace, ImageRefType, PageTransitions, TextAreas
@@ -133,7 +133,7 @@ class TextLayer:
 	docstring
 	"""
 	def __init__(self, layer, ns: BookNamespace):
-		self.language: Language = Language.get(standardize_tag(layer.attrib["lang"]))
+		self.language: str = standardize_tag(layer.attrib["lang"])
 
 		self.bg_color: Optional[str] = None
 		if "bgcolor" in layer.keys():

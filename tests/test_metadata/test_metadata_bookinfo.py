@@ -12,7 +12,7 @@ def test_authors():
 	for i in book.Metadata.book_info.authors:
 		new_op = {
 			"activity": i.activity.name,
-			"lang": str(i.lang) if i.lang is not None else None,
+			"lang": i.lang if i.lang is not None else None,
 			"first_name": i.first_name,
 			"last_name": i.last_name,
 			"middle_name": i.middle_name,
@@ -26,10 +26,7 @@ def test_authors():
 		result.write(json.dumps(op, ensure_ascii=False))
 
 def test_titles():
-	op = {}
-	for i in book.Metadata.book_info.book_title.keys():
-		key = str(i) if type(i) is Language else i
-		op[key] = book.Metadata.book_info.book_title[i]
+	op = book.Metadata.book_info.book_title
 	print(op)
 	with open(dir + "test_bookinfo_titles.json", 'w', encoding="utf-8", newline='\n') as result:
 		result.write(json.dumps(op, ensure_ascii=False))
@@ -43,10 +40,7 @@ def test_genres():
 		result.write(json.dumps(op, ensure_ascii=False))
 
 def test_annotations():
-	op = {}
-	for i in book.Metadata.book_info.annotations.keys():
-		key = str(i) if type(i) is Language else i
-		op[key] = book.Metadata.book_info.annotations[i]
+	op = book.Metadata.book_info.annotations
 	print(op)
 	with open(dir + "test_bookinfo_annotations.json", 'w', encoding="utf-8", newline='\n') as result:
 		result.write(json.dumps(op, ensure_ascii=False))
@@ -55,7 +49,7 @@ def test_languages():
 	op = []
 	for i in book.Metadata.book_info.languages:
 		new_op = {
-			"lang": str(i.lang),
+			"lang": i.lang,
 			"show": i.show
 		}
 		op.append(new_op)
@@ -69,10 +63,7 @@ def test_characters():
 		result.write(json.dumps(book.Metadata.book_info.characters, ensure_ascii=False))
 
 def test_keywords():
-	op = {}
-	for i in book.Metadata.book_info.keywords.keys():
-		key = str(i) if type(i) is Language else i
-		op[key] = book.Metadata.book_info.keywords[i]
+	op = book.Metadata.book_info.keywords
 	print(op)
 	with open(dir + "test_bookinfo_keywords.json", 'w', encoding="utf-8", newline='\n') as result:
 		result.write(json.dumps(op, ensure_ascii=False))
@@ -83,7 +74,6 @@ def test_series():
 		op[i] = {
 			"title": book.Metadata.book_info.series[i].title,
 			"sequence": book.Metadata.book_info.series[i].sequence,
-			"lang": book.Metadata.book_info.series[i].lang,
 			"volume": book.Metadata.book_info.series[i].volume
 		}
 	print(op)

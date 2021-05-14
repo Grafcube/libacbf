@@ -1,12 +1,12 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Dict, List, Literal, Optional, Union
+from typing import TYPE_CHECKING, Dict, List, Optional
 if TYPE_CHECKING:
 	from libacbf.ACBFBook import ACBFBook
 
 from distutils.util import strtobool
 from re import split
 from datetime import date
-from langcodes import Language, standardize_tag
+from langcodes import standardize_tag
 from libacbf.Constants import BookNamespace
 from libacbf.Structs import Author, DBRef, Genre, LanguageLayer, Series
 from libacbf.BodyInfo import Page
@@ -20,36 +20,38 @@ class BookInfo:
 
 	Attributes
 	----------
-
 	book : ACBFBook
 		Book that the metadata belongs to.
 
 	authors : List[libacbf.Structs.Author]
 		A list of :class:`Author <libacbf.Structs.Author>` objects.
 
-	book_titles : Dict["_" | langcodes.Language, str]
-		A dictionary with ``Language`` objects as keys for titles as string. Key is ``"_"`` if no
+	book_titles : Dict[str, str]
+		A dictionary with standard language codes as keys and titles as values. Key is ``"_"`` if no
 		language is defined. ::
 
 			{
 				"_": "book title without language",
-				Language.get("en"): "English title"
+				"en": "English title",
+				"en_GB": "English (UK) title",
+				"en_US": "English (US) title",
+				"en_IN": "English (India) title"
 			}
 
 	genres : Dict[str, libacbf.Structs.Genre]
 		A dictionary with keys being a string representation of :class:`Genres(Enum) <libacbf.Constants.Genres>`
 		and values being :class:`Genre <libacbf.Structs.Genre>` objects.
 
-	annotations : Dict["_" | langcodes.Language, str]
+	annotations : Dict[str, str]
 		A short summary describing the book.
 
-		It is a dictionary with keys being a ``Language`` object or ``"_"`` if no language is defined
-		and values being multiline strings.
+		It is a dictionary with keys being standard language codes or ``"_"`` if no language is
+		defined and values being multiline strings.
 
 	cover_page : Page
 		See :class:`Page <libacbf.BodyInfo.Page>` for more info. ``cover_page`` is the same as
-		:class:`Page <libacbf.BodyInfo.Page>` except it does not have :class:`title <libacbf.BodyInfo.Page.title>`,
-		:class:`bg_color <libacbf.BodyInfo.Page.bg_color>` and :class:`transition <libacbf.BodyInfo.Page.transition>`.
+		:class:`Page <libacbf.BodyInfo.Page>` except it does not have :attr:`title <libacbf.BodyInfo.Page.title>`,
+		:attr:`bg_color <libacbf.BodyInfo.Page.bg_color>` and :attr:`transition <libacbf.BodyInfo.Page.transition>`.
 
 	languages : List[LanguageLayer], optional
 		``LanguageLayers`` refer to all :class:`TextLayer <libacbf.BodyInfo.TextLayer>` of a language.
@@ -59,11 +61,11 @@ class BookInfo:
 	characters : List[str], optional
 		List of (main) characters that appear in the book.
 
-	keywords: Dict["_" | langcodes.Language, List[str]], optional
+	keywords: Dict[str, List[str]], optional
 		For use by search engines.
 
-		A dictionary with keys as ``Language`` objects or ``"_"`` if no language is defined. Keys
-		are a list of string keywords.
+		A dictionary with keys as standard language codes or ``"_"`` if no language is defined.
+		Values are a list of keywords.
 
 	series: Dict[str, Series], optional
 		Contains the sequence and number if particular comic book is part of a series.
@@ -110,12 +112,12 @@ class BookInfo:
 		self.authors: List[Author] = update_authors(self._info.findall(f"{self._ns.ACBFns}author"), self._ns)
 
 	def sync_book_titles(self):
-		self.book_title: Dict[Union[Literal["_"], Language], str] = {}
+		self.book_title: Dict[str, str] = {}
 
 		book_items = self._info.findall(f"{self._ns.ACBFns}book-title")
 		for title in book_items:
 			if "lang" in title.keys():
-				lang = Language.get(standardize_tag(title.attrib["lang"]))
+				lang = standardize_tag(title.attrib["lang"])
 				self.book_title[lang] = title.text
 			else:
 				self.book_title["_"] = title.text
@@ -133,7 +135,7 @@ class BookInfo:
 			self.genres[new_genre.Genre.name] = new_genre
 
 	def sync_annotations(self):
-		self.annotations: Dict[Union[Literal["_"], Language], str] = {}
+		self.annotations: Dict[str, str] = {}
 
 		annotation_items = self._info.findall(f"{self._ns.ACBFns}annotation")
 		for an in annotation_items:
@@ -143,7 +145,7 @@ class BookInfo:
 			p = "\n".join(p)
 
 			if "lang" in an.keys():
-				lang = Language.get(standardize_tag(an.attrib["lang"]))
+				lang = standardize_tag(an.attrib["lang"])
 				self.annotations[lang] = p
 			else:
 				self.annotations["_"] = p
@@ -174,12 +176,12 @@ class BookInfo:
 				self.characters.append(c.text)
 
 	def sync_keywords(self):
-		self.keywords: Dict[Union[Literal["_"], Language], List[str]] = {}
+		self.keywords: Dict[str, List[str]] = {}
 
 		keyword_items = self._info.findall(f"{self._ns.ACBFns}keywords")
 		for k in keyword_items:
 			if "lang" in k.keys():
-				lang = Language.get(standardize_tag(k.attrib["lang"]))
+				lang = standardize_tag(k.attrib["lang"])
 				self.keywords[lang] = split(", |,", k.text)
 			else:
 				if k.text is not None:
@@ -229,7 +231,6 @@ class PublishInfo:
 
 	Attributes
 	----------
-
 	book : ACBFBook
 		Book that the metadata belongs to.
 
@@ -285,7 +286,6 @@ class DocumentInfo:
 
 	Attributes
 	----------
-
 	book : ACBFBook
 		Book that the metadata belongs to.
 

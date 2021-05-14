@@ -4,13 +4,12 @@ if TYPE_CHECKING:
 	from libacbf.ACBFBook import ACBFBook
 
 from pathlib import Path
-from langcodes import Language, standardize_tag
+from langcodes import standardize_tag
 import libacbf.BodyInfo as body
 from libacbf.Constants import AuthorActivities, Genres
 
 class Styles:
-	"""
-	docstring
+	"""docstring
 	"""
 	def __init__(self, book: ACBFBook, style_refs: List[str]):
 		self.book = book
@@ -117,7 +116,7 @@ class Author:
 			raise ValueError("Author must have either First Name and Last Name or Nickname.")
 
 		self._activity: Optional[AuthorActivities] = None
-		self._lang: Optional[Language] = None
+		self._lang: Optional[str] = None
 		self.middle_name: Optional[str] = None
 		self.home_page: Optional[str] = None
 		self.email: Optional[str] = None
@@ -147,25 +146,22 @@ class Author:
 			self._activity = AuthorActivities(val)
 
 	@property
-	def lang(self) -> Optional[Language]:
+	def lang(self) -> Optional[str]:
 		"""Defines the language that the author worked in.
 
 		Returns
 		-------
-		Optional[Language]
-			Returns a ``langcodes.Language`` object that can be converted to a string by using
-			``str(Language)``
+		Optional[str]
+			Returns a standard language code.
 		"""
 		return self._lang
 
 	@lang.setter
-	def lang(self, val: Optional[Union[str, Language]]):
+	def lang(self, val: Optional[str]):
 		if val is None:
 			self._lang = None
-		elif type(val) is Language:
-			self._lang = val
-		elif type(val) is str:
-			self._lang = Language.get(standardize_tag(val))
+		else:
+			self._lang = standardize_tag(val)
 
 class Genre:
 	"""The genre of the book.
@@ -239,20 +235,14 @@ class LanguageLayer:
 
 	Attributes
 	----------
-
-	lang : langcodes.Language
+	lang : str
 		Language of layer.
 
 	show : bool, optional
 		Whether layer is drawn.
 	"""
-	def __init__(self, val: Optional[Union[str, Language]], show: Optional[bool] = None):
-		if type(val) is Language:
-			lang = val
-		elif type(val) is str:
-			lang = Language.get(standardize_tag(val))
-
-		self.lang: Language = lang
+	def __init__(self, val: str, show: Optional[bool] = None):
+		self.lang: str = standardize_tag(val)
 		self.show: Optional[bool] = show
 
 class Series:
@@ -264,7 +254,6 @@ class Series:
 
 	Attributes
 	----------
-
 	title : str
 		Title of the series that this book is part of.
 
@@ -288,7 +277,6 @@ class DBRef:
 
 	Attributes
 	----------
-
 	dbname : str
 		Name of database.
 

@@ -70,9 +70,9 @@ class ACBFBook:
 		see :class:`TextArea<libacbf.BodyInfo.TextArea>`.
 
 	Styles : dict-like object
-		An object that behaves like a dictionary. Use ``Styles[file name]`` to get the
-		contents of the stylesheet as a string. Use ``list_styles()`` to get list of all available
-		styles. All paths are relative. ::
+		An object that behaves like a dictionary. Use ``Styles[file name]`` to get the contents of
+		the stylesheet as a string. Use :meth:`list_styles() <libacbf.Structs.Styles.list_styles()>`
+		to get list of all available styles. All paths are relative. ::
 
 			style = book.Styles["style_name.css"]
 
@@ -81,13 +81,16 @@ class ACBFBook:
 
 	archive : ArchiveReader, optional
 		Can be used to read archive directly if file is not ``.acbf``.
-		``ArchiveReader.archive`` may be ``zipfile.ZipFile``, ``pathlib.Path``, ``tarfile.TarFile`` or ``rarfile.RarFile``.
+
+		``ArchiveReader.archive`` may be ``zipfile.ZipFile``, ``pathlib.Path``, ``tarfile.TarFile``
+		or ``rarfile.RarFile``.
 
 	file_path : str
 		Absolute path to source file.
 
 	namespace : BookNamespace
-		Namespace of ACBF XML file. Use ``BookNamespace.ACBFns_raw`` to get namespace as string.
+		Namespace of ACBF XML file. Use :obj:`BookNamespace.ACBFns_raw <libacbf.Constants.BookNamespace.ACBFns_raw>`
+		to get namespace as string.
 	"""
 	def __init__(self, file_path: str = "libacbf/templates/base_template_1.1.acbf"):
 		self.is_open: bool = True
