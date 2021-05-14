@@ -8,9 +8,9 @@ os.makedirs(dir, exist_ok=True)
 
 def test_body_info():
 	print(book.Body.bgcolor)
-	print(book.Body.total_pages)
+	print(len(book.Body.pages))
 	with open(dir + "test_body_info.json", "w", encoding="utf-8", newline="\n") as result:
-		result.write(json.dumps({"bgcolour": book.Body.bgcolor, "pages": book.Body.total_pages}, ensure_ascii=False))
+		result.write(json.dumps({"bgcolour": book.Body.bgcolor, "pages": len(book.Body.pages)}, ensure_ascii=False))
 
 def test_body_pages():
 	page_output = {}
@@ -19,7 +19,7 @@ def test_body_pages():
 		"frames": {},
 		"jumps": {}
 	}
-	for pg in list(iter(book.Body)):
+	for pg in book.Body.pages:
 		transition = pg.transition.name if pg.transition is not None else None
 		new_pg = {
 			"bgcolour": pg.bg_color,
@@ -83,7 +83,7 @@ def test_body_pages():
 
 def test_body_images():
 	op = {}
-	for pg in list(iter(book.Body)):
+	for pg in book.Body.pages:
 		img = pg.image
 		op[pg.image_ref] = {
 			"id": img.id,

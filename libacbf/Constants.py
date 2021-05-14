@@ -95,10 +95,14 @@ class PageTransitions(Enum):
 	none = 100
 
 class ImageRefType(Enum):
-	"""[summary]
+	"""Types of image references.
+
+	See Also
+	--------
+	`Image Reference Types <https://acbf.fandom.com/wiki/Body_Section_Definition#Image>`_.
 	"""
 	Embedded = 0
-	Archived = auto()
 	SelfArchived = auto()
-	URL = auto()
+	Archived = auto()
 	Local = auto()
+	URL = auto()

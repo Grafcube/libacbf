@@ -3,10 +3,13 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Union
 if TYPE_CHECKING:
 	from libacbf.ACBFBook import ACBFBook
 
+from collections import namedtuple
 from pathlib import Path
 from langcodes import standardize_tag
 import libacbf.BodyInfo as body
 from libacbf.Constants import AuthorActivities, Genres
+
+Vec2 = namedtuple("Vector2", "x y")
 
 class Styles:
 	"""docstring
@@ -295,7 +298,7 @@ class Frame:
 	"""[summary]
 	"""
 	def __init__(self):
-		self.points: List[body.Vec2] = []
+		self.points: List[Vec2] = []
 		self.bgcolor: Optional[str] = None
 
 class Jump:
@@ -303,4 +306,4 @@ class Jump:
 	"""
 	def __init__(self):
 		self.page: Optional[int] = None
-		self.points: List[body.Vec2] = []
+		self.points: List[Vec2] = []

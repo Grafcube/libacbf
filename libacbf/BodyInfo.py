@@ -7,7 +7,6 @@ if TYPE_CHECKING:
 	from libacbf.ACBFBook import ACBFBook
 
 from distutils.util import strtobool
-from collections import namedtuple
 from pathlib import Path
 from magic.magic import from_buffer
 from re import IGNORECASE, fullmatch, split, sub
@@ -18,18 +17,48 @@ from libacbf.BookData import BookData
 from libacbf.Constants import BookNamespace, ImageRefType, PageTransitions, TextAreas
 import libacbf.Structs as structs
 
-Vec2 = namedtuple("Vector2", "x y")
 url_pattern = r'(((ftp|http|https):\/\/)|(\/)|(..\/))(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?'
 
 class Page:
-	"""
-	docstring
+	"""A page in the book.
+
+	See Also
+	--------
+	`Page Definition <https://acbf.fandom.com/wiki/Body_Section_Definition#Page>`_.
+
+	Attributes
+	----------
+	book : ACBFBook
+		Book that this page belongs to.
+
+	image_ref : str
+		Reference to the image file. May be embedded in the ACBF file, in the ACBF archive, in an
+		external archive, a local path or a URL.
+
+	ref_type : ImageRefType(Enum)
+		A value from :class:`ImageRefType <libacbf.Constants.ImageRefType>` indicating the type of
+		reference in ``image_ref``.
+
+	title : Dict[str, str], optional
+		It is used to define beginning of chapters, sections of the book and can be used to create a
+		table of contents.
+
+		Keys are standard language codes or ``"_"`` if not defined. Values are titles as string.
+
+	bgcolor : str, optional
+		Defines the background colour for the page. Inherits from :attr:`ACBFBody.bgcolor <libacbf.ACBFBody.ACBFBody.bgcolor>`
+		if ``None``.
+
+	transition: PageTransitions(Enum), optional
+		Defines the type of transition from the previous page to this one. Allowed values are
+		:class:`PageTransitions <libacf.Constants.PageTransitions>`
 	"""
 	def __init__(self, page, book: ACBFBook, coverpage: bool = False):
 		self._image: Optional[BookData] = None
 
 		self.book = book
 
+		self._page = page
 		ns: BookNamespace = book.namespace
 
 		# Optional
@@ -95,14 +124,84 @@ class Page:
 				else:
 					self.title["_"] = t.text
 
-		self.text_layers: Dict[str, TextLayer] = get_textlayers(page, ns)
+		self._text_layers = None
+		self._frames = None
+		self._jumps = None
 
-		self.frames: List[structs.Frame] = get_frames(page, ns)
+	@property
+	def text_layers(self) -> Dict[str, TextLayer]:
+		"""[summary]
 
-		self.jumps: List[structs.Jump] = get_jumps(page, ns)
+		Returns
+		-------
+		Dict[str, TextLayer]
+			[description]
+		"""
+		if self._text_layers is None:
+			item = self._page
+			ns = self.book.namespace
+			text_layers = {}
+			textlayer_items = item.findall(f"{ns.ACBFns}text-layer")
+			for lr in textlayer_items:
+				new_lr = TextLayer(lr, ns)
+				text_layers[new_lr.language] = new_lr
+			self._text_layers = text_layers
+		return self._text_layers
+
+	@property
+	def frames(self) -> List[structs.Frame]:
+		"""[summary]
+
+		Returns
+		-------
+		List[Frame]
+			[description]
+		"""
+		if self._frames is None:
+			item = self._page
+			ns = self.book.namespace
+			frames = []
+			frame_items = item.findall(f"{ns.ACBFns}frame")
+			for fr in frame_items:
+				frame = structs.Frame()
+				frame.points = get_points(fr.attrib["points"])
+				if "bgcolor" in fr.keys():
+					frame.bgcolor = fr.attrib["bgcolor"]
+				frames.append(frame)
+			self._frames = frames
+		return self._frames
+
+	@property
+	def jumps(self) -> List[structs.Jump]:
+		"""[summary]
+
+		Returns
+		-------
+		List[Jump]
+			[description]
+		"""
+		if self._jumps is None:
+			item = self._page
+			ns = self.book.namespace
+			jumps = []
+			jump_items = item.findall(f"{ns.ACBFns}jump")
+			for jp in jump_items:
+				jump = structs.Jump()
+				jump.points = get_points(jp.attrib["points"])
+				jump.page = jp.attrib["page"]
+				jumps.append(jump)
+			self._jumps = jumps
+		return self._jumps
 
 	@property
 	def image(self) -> Optional[BookData]:
+		"""[summary]
+
+		Returns
+		-------
+		Optional[BookData]
+			[description]
+		"""
 		if self._image is None:
 			if self.image_ref.startswith("#"):
 				self._image = self.book.Data[self._file_id]
@@ -129,8 +228,7 @@ class Page:
 		return self._image
 
 class TextLayer:
-	"""
-	docstring
+	"""[summary]
 	"""
 	def __init__(self, layer, ns: BookNamespace):
 		self.language: str = standardize_tag(layer.attrib["lang"])
@@ -146,11 +244,10 @@ class TextLayer:
 			self.text_areas.append(TextArea(ar, ns))
 
 class TextArea:
-	"""
-	docstring
+	"""[summary]
 	"""
 	def __init__(self, area, ns: BookNamespace):
-		self.points: List[Vec2] = get_points(area.attrib["points"])
+		self.points: List[structs.Vec2] = get_points(area.attrib["points"])
 
 		self.paragraph: str = ""
 		pa = []
@@ -184,44 +281,10 @@ class TextArea:
 		if "transparent" in area.keys():
 			self.transparent = bool(strtobool(area.attrib["transparent"]))
 
-def get_textlayers(item, ns: BookNamespace):
-	text_layers = {}
-	textlayer_items = item.findall(f"{ns.ACBFns}text-layer")
-	for lr in textlayer_items:
-		new_lr = TextLayer(lr, ns)
-		text_layers[new_lr.language] = new_lr
-	return text_layers
-
-def get_frames(item, ns: BookNamespace):
-	frames = []
-	frame_items = item.findall(f"{ns.ACBFns}frame")
-	for fr in frame_items:
-		frame = structs.Frame()
-		frame.points = get_points(fr.attrib["points"])
-
-		if "bgcolor" in fr.keys():
-			frame.bgcolor = fr.attrib["bgcolor"]
-
-		frames.append(frame)
-
-	return frames
-
-def get_jumps(item, ns: BookNamespace):
-	jumps = []
-	jump_items = item.findall(f"{ns.ACBFns}jump")
-	for jp in jump_items:
-		jump = structs.Jump()
-		jump.points = get_points(jp.attrib["points"])
-		jump.page = jp.attrib["page"]
-
-		jumps.append(jump)
-
-	return jumps
-
 def get_points(pts_str: str):
 	pts = []
 	pts_l = split(" ", pts_str)
 	for pt in pts_l:
 		ls = split(",", pt)
-		pts.append(Vec2(int(ls[0]), int(ls[1])))
+		pts.append(structs.Vec2(int(ls[0]), int(ls[1])))
 	return pts
