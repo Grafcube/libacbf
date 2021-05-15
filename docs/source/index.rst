@@ -3,21 +3,18 @@
 	You can adapt this file completely to your liking, but it should at least
 	contain the root `toctree` directive.
 
+Getting Started
+===============
+See :class:`libacbf.ACBFBook <libacbf.libacbf.ACBFBook>` to learn how to read ACBF ebooks.
+
 libacbf Documentation
-===================================
+=====================
 
 .. toctree::
-	:maxdepth: 1
-	:caption: Manual
+	:maxdepth: 2
 
-	installation
-
-.. toctree::
-	:maxdepth: 1
-	:caption: API Reference
-
-	APIReference
-	moreclasses
+	install
+	libacbf
 
 Introduction
 ============

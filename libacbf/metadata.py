@@ -23,8 +23,8 @@ class BookInfo:
 	book : ACBFBook
 		Book that the metadata belongs to.
 
-	authors : List[libacbf.Structs.Author]
-		A list of :class:`Author <libacbf.Structs.Author>` objects.
+	authors : List[Author]
+		A list of :class:`Author <libacbf.structs.Author>` objects.
 
 	book_titles : Dict[str, str]
 		A dictionary with standard language codes as keys and titles as values. Key is ``"_"`` if no
@@ -34,13 +34,12 @@ class BookInfo:
 				"_": "book title without language",
 				"en": "English title",
 				"en_GB": "English (UK) title",
-				"en_US": "English (US) title",
-				"en_IN": "English (India) title"
+				"en_US": "English (US) title"
 			}
 
-	genres : Dict[str, libacbf.Structs.Genre]
-		A dictionary with keys being a string representation of :class:`Genres(Enum) <libacbf.Constants.Genres>`
-		and values being :class:`Genre <libacbf.Structs.Genre>` objects.
+	genres : Dict[str, Genre]
+		A dictionary with keys being a string representation of :class:`Genres <libacbf.constants.Genres>`
+		Enum and values being :class:`Genre <libacbf.structs.Genre>` objects.
 
 	annotations : Dict[str, str]
 		A short summary describing the book.
@@ -49,14 +48,14 @@ class BookInfo:
 		defined and values being multiline strings.
 
 	cover_page : Page
-		See :class:`Page <libacbf.BodyInfo.Page>` for more info. ``cover_page`` is the same as
-		:class:`Page <libacbf.BodyInfo.Page>` except it does not have :attr:`title <libacbf.BodyInfo.Page.title>`,
-		:attr:`bg_color <libacbf.BodyInfo.Page.bg_color>` and :attr:`transition <libacbf.BodyInfo.Page.transition>`.
+		``cover_page`` is the same as :class:`Page <libacbf.body.Page>` except it does not have
+		:attr:`title <libacbf.body.Page.title>`, :attr:`bgcolor <libacbf.body.Page.bgcolor>`
+		and :attr:`transition <libacbf.body.Page.transition>`.
 
 	languages : List[LanguageLayer], optional
-		``LanguageLayers`` refer to all :class:`TextLayer <libacbf.BodyInfo.TextLayer>` of a language.
+		``LanguageLayer`` represents all :class:`TextLayer <libacbf.body.TextLayer>` objects of a language.
 
-		A list of :class:`LanguageLayer <libacbf.Structs.LanguageLayer>`.
+		A list of :class:`LanguageLayer <libacbf.structs.LanguageLayer>` objects.
 
 	characters : List[str], optional
 		List of (main) characters that appear in the book.
@@ -70,7 +69,7 @@ class BookInfo:
 	series: Dict[str, Series], optional
 		Contains the sequence and number if particular comic book is part of a series.
 
-		A dictionary with keys as the title of the series and values as :class:`Series <libacbf.Structs.Series>`
+		A dictionary with keys as the title of the series and values as :class:`Series <libacbf.structs.Series>`
 		objects.
 
 	content_rating: Dict[str, str], optional
@@ -86,7 +85,7 @@ class BookInfo:
 	database_ref : List[DBRef], optional
 		Contains reference to a record in a comic book database (eg: GCD, MAL).
 
-		A list of :class:`DBRef <libacbf.Structs.DBRef>` objects.
+		A list of :class:`DBRef <libacbf.structs.DBRef>` objects.
 	"""
 	def __init__(self, info, book: ACBFBook):
 		self.book = book
@@ -289,8 +288,8 @@ class DocumentInfo:
 	book : ACBFBook
 		Book that the metadata belongs to.
 
-	authors : List[libacbf.Structs.Author]
-		List of authors of the ACBF file as :class:`Author <libacbf.Structs.Author>` objects.
+	authors : List[Author]
+		List of authors of the ACBF file as :class:`Author <libacbf.structs.Author>` objects.
 
 	creation_date_string : str
 		Date when the ACBF file was created as a human readable string.

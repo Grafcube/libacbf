@@ -104,9 +104,9 @@ class Page:
 
 		# Optional
 		if not coverpage:
-			self.bg_color: Optional[str] = None
+			self.bgcolor: Optional[str] = None
 			if "bgcolor" in page.keys():
-				self.bg_color = page.attrib["bgcolor"]
+				self.bgcolor = page.attrib["bgcolor"]
 
 			self.transition: Optional[PageTransitions] = None
 			if "transition" in page.keys():
@@ -191,8 +191,7 @@ class Page:
 			frames = []
 			frame_items = item.findall(f"{ns.ACBFns}frame")
 			for fr in frame_items:
-				frame = structs.Frame()
-				frame.points = get_points(fr.attrib["points"])
+				frame = structs.Frame(get_points(fr.attrib["points"]))
 				if "bgcolor" in fr.keys():
 					frame.bgcolor = fr.attrib["bgcolor"]
 				frames.append(frame)
@@ -214,9 +213,7 @@ class Page:
 			jumps = []
 			jump_items = item.findall(f"{ns.ACBFns}jump")
 			for jp in jump_items:
-				jump = structs.Jump()
-				jump.points = get_points(jp.attrib["points"])
-				jump.page = jp.attrib["page"]
+				jump = structs.Jump(get_points(jp.attrib["points"]), int(jp.attrib["page"]))
 				jumps.append(jump)
 			self._jumps = jumps
 		return self._jumps

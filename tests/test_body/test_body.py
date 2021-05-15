@@ -22,7 +22,7 @@ def test_body_pages():
 	for pg in book.Body.pages:
 		transition = pg.transition.name if pg.transition is not None else None
 		new_pg = {
-			"bgcolour": pg.bg_color,
+			"bgcolour": pg.bgcolor,
 			"transition": transition,
 			"ref_type": pg.ref_type.name,
 			"titles": pg.title

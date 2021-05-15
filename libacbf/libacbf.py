@@ -28,7 +28,7 @@ class ACBFBook:
 	A book object can be opened, read and then closed. It can read files with the extensions
 	``.acbf``, ``.cbz``, ``.cb7``, ``.cbt``, ``.cbr``. ::
 
-		from libacbf.ACBFBook import ACBFBook
+		from libacbf import ACBFBook
 
 		book = ACBFBook("path/to/file.cbz")
 		# Read data from book
@@ -36,7 +36,7 @@ class ACBFBook:
 
 	``ACBFBook`` is also a context manager and can be used in with statements. ::
 
-		from libacbf.ACBFBook import ACBFBook
+		from libacbf import ACBFBook
 
 		with ACBFBook("path/to/file.cbz") as book:
 			# Read data from book
@@ -44,13 +44,13 @@ class ACBFBook:
 	Attributes
 	----------
 	Metadata : ACBFMetadata
-		See :class:`ACBFMetadata<libacbf.ACBFMetadata.ACBFMetadata>` for more information.
+		See :class:`ACBFMetadata <libacbf.libacbf.ACBFMetadata>` for more information.
 
 	Body : ACBFBody
-		See :class:`ACBFBody<libacbf.ACBFBody.ACBFBody>` for more information.
+		See :class:`ACBFBody <libacbf.libacbf.ACBFBody>` for more information.
 
 	Data : ACBFData
-		See :class:`ACBFData<libacbf.ACBFData.ACBFData>` for more information.
+		See :class:`ACBFData <libacbf.libacbf.ACBFData>` for more information.
 
 	References : dict
 		A dictionary that contains a list of particular references that occur inside the
@@ -67,32 +67,34 @@ class ACBFBook:
 			}
 
 		``paragraph`` can contain special tags for formatting. For more information and a full list,
-		see :class:`TextArea<libacbf.BodyInfo.TextArea>`.
+		see :class:`TextArea <libacbf.body.TextArea>`.
 
 	Styles : dict-like object
+		Get styles linked in the ACBF file.
+
 		An object that behaves like a dictionary. Use ``Styles[file name]`` to get the contents of
-		the stylesheet as a string. Use :meth:`list_styles() <libacbf.Structs.Styles.list_styles()>`
-		to get list of all available styles. All paths are relative. ::
+		the stylesheet as a string. Use ``list_styles()`` to get list of all available styles. All
+		paths are relative. ::
 
 			style = book.Styles["style_name.css"]
 
 	Stylesheet : str, optional
 		Embedded stylesheet, if exists, as a string.
 
-	archive : ArchiveReader, optional
-		Can be used to read archive directly if file is not ``.acbf``.
-
-		:attr:`ArchiveReader.archive <libacbf.ArchiveReader.ArchiveReader.archive>` may be
-		``zipfile.ZipFile``, ``pathlib.Path``, ``tarfile.TarFile`` or ``rarfile.RarFile``.
-
 	file_path : str
 		Absolute path to source file.
 
-	namespace : BookNamespace
-		Namespace of ACBF XML file. Use :obj:`BookNamespace.ACBFns_raw <libacbf.Constants.BookNamespace.ACBFns_raw>`
-		to get namespace as string.
+	archive : ArchiveReader, optional
+		Can be used to read archive directly if file is not ``.acbf``. There probably wont be any
+		reasonn to use this.
+
+		:attr:`ArchiveReader.archive <libacbf.archivereader.ArchiveReader.archive>` may be
+		``zipfile.ZipFile``, ``pathlib.Path``, ``tarfile.TarFile`` or ``rarfile.RarFile``.
 	"""
 	def __init__(self, file_path: str = "libacbf/templates/base_template_1.1.acbf"):
+		if file_path == "libacbf/templates/base_template_1.1.acbf":
+			raise NotImplementedError("Create new books TBD")
+
 		self.is_open: bool = True
 
 		self.book_path = Path(file_path)
@@ -136,6 +138,25 @@ class ACBFBook:
 
 		self.References: Dict[str, Dict[str, str]] = self.sync_references()
 
+	def save(self, path: str = "", overwrite: bool = False):
+		"""Save as file.
+
+		Parameters
+		----------
+		path : str, optional
+			Path to save to.
+		overwrite : bool, optional
+			Whether to overwrite if file already exists at path. ``False`` by default.
+
+		Raises
+		------
+		NotImplementedError
+			To do when making editor.py
+		"""
+		if path == "":
+			path = self.file_path
+		raise NotImplementedError
+
 	def close(self):
 		"""Closes open archives if file is ``.cbz``, ``.cbt`` or ``.cbr``. Removes temporary
 		directory for ``.cb7`` files.
@@ -143,12 +164,6 @@ class ACBFBook:
 		if self.archive is not None:
 			self.archive.close()
 			self.is_open = False
-
-	def save(self, path: str = "", overwrite: bool = False):
-		# To be called by Editor class
-		if path == "":
-			path = self.file_path
-		raise NotImplementedError
 
 	def sync_references(self) -> Dict[str, Dict[str, str]]:
 		ns = self.namespace
@@ -200,13 +215,13 @@ class ACBFMetadata:
 		Book that this metadata belongs to.
 
 	book_info : BookInfo
-		See :class:`BookInfo <libacbf.MetadataInfo.BookInfo>`.
+		See :class:`BookInfo <libacbf.metadata.BookInfo>`.
 
 	publisher_info : PublishInfo
-		See :class:`PublishInfo <libacbf.MetadataInfo.PublishInfo>`.
+		See :class:`PublishInfo <libacbf.metadata.PublishInfo>`.
 
 	document_info : DocumentInfo
-		See :class:`DocumentInfo <libacbf.MetadataInfo.DocumentInfo>`.
+		See :class:`DocumentInfo <libacbf.metadata.DocumentInfo>`.
 	"""
 	def __init__(self, book: ACBFBook):
 		self.book = book
@@ -230,8 +245,8 @@ class ACBFBody:
 	book : ACBFBook
 		Book that this body section belongs to.
 
-	pages : List[libacbf.BodyInfo.Page]
-		A list of :class:`Page <libacbf.BodyInfo.Page>` objects in order.
+	pages : List[Page]
+		A list of :class:`Page <libacbf.body.Page>` objects in order.
 
 	bgcolor : str, optional
 		Defines a background colour for the whole book. Can be overridden by ``bgcolor`` in pages,
@@ -256,8 +271,31 @@ class ACBFBody:
 			self.bgcolor = body.attrib["bgcolor"]
 
 class ACBFData:
-	"""
-	docstring
+	"""Get any binary data embedded in the ACBF file.
+
+	See Also
+	--------
+	`Data Section Definition <https://acbf.fandom.com/wiki/Data_Section_Definition>`_.
+
+	Returns
+	-------
+	BookData
+		A file as a :class:`BookData <libacbf.bookdata.BookData>` object.
+
+	Raises
+	------
+	FileNotFoundError
+		Raised if file is not found embedded in the ACBF file.
+
+	Examples
+	--------
+	To get a file embedded in the ACBF file::
+
+		from libacbf import ACBFBook
+
+		with ACBFBook("path/to/book.cbz") as book:
+			image = book.Data["image.png"]
+			font = book.Data["font.ttf"]
 	"""
 	def __init__(self, book: ACBFBook):
 		self._ns = book.namespace
@@ -269,18 +307,26 @@ class ACBFData:
 
 		self.sync_data()
 
+	def list_files(self) -> List[str]:
+		"""Returns a list of all the names of the files embedded in the ACBF file. May be images,
+		fonts etc.
+
+		Returns
+		-------
+		List[str]
+			A list of file names.
+		"""
+		fl = []
+		for i in self.files.keys():
+			fl.append(str(i))
+		return fl
+
 	def sync_data(self):
 		self._base = self._root.find(f"{self._ns.ACBFns}data")
 		if self._base is not None:
 			self._data_elements = self._base.findall(f"{self._ns.ACBFns}binary")
 		for i in self._data_elements:
 			self.files[i.attrib["id"]] = None
-
-	def list_files(self) -> List[str]:
-		fl = []
-		for i in self.files.keys():
-			fl.append(str(i))
-		return fl
 
 	def __len__(self):
 		return len(self.files.keys())

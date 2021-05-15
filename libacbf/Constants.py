@@ -1,32 +1,16 @@
+import re
 from enum import Enum, auto
-from re import sub
 
 class BookNamespace:
-	"""Book's XML namespace as an object.
-	"""
 	def __init__(self, ns: str):
 		self.ACBFns: str = ns
 
 	@property
 	def ACBFns_raw(self) -> str:
-		"""The XML namespace as a string.
-
-		Returns
-		-------
-		str
-		"""
-		return sub(r'\{|\}', "", self.ACBFns)
-
-class ArchiveTypes(Enum):
-	"""[summary]
-	"""
-	Zip = 0
-	SevenZip = auto()
-	Tar = auto()
-	Rar = auto()
+		return re.sub(r'\{|\}', "", self.ACBFns)
 
 class AuthorActivities(Enum):
-	"""List of accepted values for :class:`Author.activity<libacbf.Structs.Author.activity>`.
+	"""List of accepted values for :attr:`Author.activity<libacbf.structs.Author.activity>`.
 
 	See Also
 	--------
@@ -47,7 +31,7 @@ class AuthorActivities(Enum):
 	Other = 100
 
 class Genres(Enum):
-	"""List of accepted values for :class:`Genre.Genre <libacbf.Structs.Genre.Genre>`.
+	"""List of accepted values for :attr:`Genre.Genre <libacbf.structs.Genre.Genre>`.
 
 	See Also
 	--------
@@ -114,3 +98,11 @@ class ImageRefType(Enum):
 	Archived = auto()
 	Local = auto()
 	URL = auto()
+
+class ArchiveTypes(Enum):
+	"""[summary]
+	"""
+	Zip = 0
+	SevenZip = auto()
+	Tar = auto()
+	Rar = auto()

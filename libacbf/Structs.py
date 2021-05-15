@@ -1,19 +1,16 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, Dict, List, Optional, Union
-if TYPE_CHECKING:
-	from libacbf import ACBFBook
-
 from collections import namedtuple
 from pathlib import Path
 from langcodes import standardize_tag
 
+if TYPE_CHECKING:
+	from libacbf import ACBFBook
 from libacbf.constants import AuthorActivities, Genres
 
 Vec2 = namedtuple("Vector2", "x y")
 
 class Styles:
-	"""[summary]
-	"""
 	def __init__(self, book: ACBFBook, style_refs: List[str]):
 		self.book = book
 
@@ -50,13 +47,13 @@ class Author:
 
 	See Also
 	--------
-	`ACBF Author specifications <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#Author>`_.
+	`Body Info Author specifications <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#Author>`_.
 
 	Examples
 	--------
 	An ``Author`` object can be created with either a nickname, a first and last name or both. ::
 
-		from libacbf.Structs import Author
+		from libacbf.structs import Author
 
 		author1 = Author("Hugh", "Mann")
 		# author1.first_name == "Hugh"
@@ -128,12 +125,12 @@ class Author:
 	def activity(self) -> Optional[AuthorActivities]:
 		"""Defines the activity that a particular author carried out on the comic book.
 
-		Allowed values are defined in :class:`AuthorActivities <libacbf.Constants.AuthorActivities>`.
+		Allowed values are defined in :class:`AuthorActivities <libacbf.constants.AuthorActivities>`.
 
 		Returns
 		-------
 		Optional[AuthorActivities]
-			A value from AuthorActivities Enum.
+			A value from :class:`AuthorActivities <libacbf.constants.AuthorActivities>` Enum.
 		"""
 		return self._activity
 
@@ -169,19 +166,18 @@ class Author:
 class Genre:
 	"""The genre of the book.
 
+	See Also
+	--------
+	`Body Info Genre specifications <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#Genre>`_.
+
 	Parameters
 	----------
 	genre_type : Genres(Enum) | str | int
 		The genre value. String and integer are converted to a value from
-		:class:`Genres <libacbf.Constants.Genres>` Enum.
+		:class:`Genres <libacbf.constants.Genres>` Enum.
 
 	match : int, optional
 		The match value. Must be an integer from 0 to 100.
-
-	See Also
-	--------
-	`ACBF Genre specifications <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#Genre>`_.
-
 	"""
 	def __init__(self, genre_type: Union[str, Genres, int], match: Optional[int] = None):
 		self.Genre: Genres = genre_type
@@ -191,12 +187,12 @@ class Genre:
 	def Genre(self) -> Genres:
 		"""Defines the activity that a particular author carried out on the comic book.
 
-		Allowed values are defined in :class:`Genres <libacbf.Constants.Genres>`.
+		Allowed values are defined in :class:`Genres <libacbf.constants.Genres>`.
 
 		Returns
 		-------
-		Optional[libacbf.Constants.Genres]
-			A value from :class:`Genres <libacbf.Constants.Genres>` Enum.
+		Optional[Genres]
+			A value from :class:`Genres <libacbf.constants.Genres>` Enum.
 		"""
 		return self._genre
 
@@ -230,16 +226,16 @@ class Genre:
 				raise ValueError("Match must be an int from 0 to 100.")
 
 class LanguageLayer:
-	"""Used by :class:`BookInfo.languages <libacbf.MetadataInfo.BookInfo.languages>`.
+	"""Used by :attr:`BookInfo.languages <libacbf.metadata.BookInfo.languages>`.
 
 	See Also
 	--------
-	`Book Info section Languages <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#Languages>`_.
+	`Body Info Languages specifications <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#Languages>`_.
 
 	Attributes
 	----------
 	lang : str
-		Language of layer.
+		Language of layer as a standard language code.
 
 	show : bool, optional
 		Whether layer is drawn.
@@ -249,11 +245,11 @@ class LanguageLayer:
 		self.show: Optional[bool] = show
 
 class Series:
-	"""Used by :class:`BookInfo.series <libacbf.MetadataInfo.BookInfo.series>`.
+	"""Used by :attr:`BookInfo.series <libacbf.metadata.BookInfo.series>`.
 
 	See Also
 	--------
-	`Book Info section Sequence <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#Sequence>`_.
+	`Body Info Sequence specifications <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#Sequence>`_.
 
 	Attributes
 	----------
@@ -272,11 +268,11 @@ class Series:
 		self.volume: Optional[str] = volume
 
 class DBRef:
-	"""Used by :class:`BookInfo.database_ref <libacbf.MetadataInfo.BookInfo.database_ref>`.
+	"""Used by :attr:`BookInfo.database_ref <libacbf.metadata.BookInfo.database_ref>`.
 
 	See Also
 	--------
-	`Book Info section DatabaseRef <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#DatabaseRef>`_.
+	`Book Info DatabaseRef specifications <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#DatabaseRef>`_.
 
 	Attributes
 	----------
@@ -295,15 +291,46 @@ class DBRef:
 		self.type: Optional[str] = None
 
 class Frame:
-	"""[summary]
+	"""A subsection of a page.
+
+	See Also
+	--------
+	`Body Info Frame specifications <https://acbf.fandom.com/wiki/Body_Section_Definition#Frame>`_.
+
+	Attributes
+	----------
+	points : List[2D Vectors]
+		A list of named tuples with ``x`` and ``y`` values representing a 2-dimensional vector. ::
+
+			sixth_point = frame.points[5]
+			sixth_point.x # x-coordinate of point
+			sixth_point.y # y-coordinate of point
+
+	bgcolor : str, optional
+		Defines the background colour for the page. Inherits from :attr:`Page.bgcolor <libacbf.body.Page.bgcolor>`
+		if ``None``.
 	"""
-	def __init__(self):
-		self.points: List[Vec2] = []
+	def __init__(self, points: List[Vec2]):
+		self.points: List[Vec2] = points
 		self.bgcolor: Optional[str] = None
 
 class Jump:
-	"""[summary]
+	"""Clickable area on a page which navigates to another page.
+
+	See Also
+	--------
+	`Body Info Jump specifications <https://acbf.fandom.com/wiki/Body_Section_Definition#Jump>`_.
+
+	Attributes
+	----------
+	points : List[2D Vectors]
+		A list of named tuples with ``x`` and ``y`` values representing a 2-dimensional vector. Same
+		as :attr:`Frame.points <libacbf.structs.Frame.points>`.
+
+	page : int
+		Target page to go to when clicked. Pages start from 1 so first page is ``1``, second page is
+		``2`` and so on.
 	"""
-	def __init__(self):
-		self.page: Optional[int] = None
-		self.points: List[Vec2] = []
+	def __init__(self, points: List[Vec2], page: int):
+		self.points: List[Vec2] = points
+		self.page: int = page
