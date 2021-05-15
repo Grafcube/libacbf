@@ -1,15 +1,15 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, Dict, List, Optional
-if TYPE_CHECKING:
-	from libacbf.ACBFBook import ACBFBook
-
-from distutils.util import strtobool
-from re import split
+import distutils.util
+import re
 from datetime import date
-from langcodes import standardize_tag
-from libacbf.Constants import BookNamespace
-from libacbf.Structs import Author, DBRef, Genre, LanguageLayer, Series
-from libacbf.BodyInfo import Page
+import langcodes
+
+if TYPE_CHECKING:
+	from libacbf import ACBFBook
+from libacbf.body import Page
+from libacbf.structs import Author, DBRef, Genre, LanguageLayer, Series
+from libacbf.constants import BookNamespace
 
 class BookInfo:
 	"""Metadata about the book itself.
@@ -117,7 +117,7 @@ class BookInfo:
 		book_items = self._info.findall(f"{self._ns.ACBFns}book-title")
 		for title in book_items:
 			if "lang" in title.keys():
-				lang = standardize_tag(title.attrib["lang"])
+				lang = langcodes.standardize_tag(title.attrib["lang"])
 				self.book_title[lang] = title.text
 			else:
 				self.book_title["_"] = title.text
@@ -145,7 +145,7 @@ class BookInfo:
 			p = "\n".join(p)
 
 			if "lang" in an.keys():
-				lang = standardize_tag(an.attrib["lang"])
+				lang = langcodes.standardize_tag(an.attrib["lang"])
 				self.annotations[lang] = p
 			else:
 				self.annotations["_"] = p
@@ -163,7 +163,7 @@ class BookInfo:
 				new_lang = LanguageLayer(layer.attrib["lang"])
 
 				if "show" in layer.keys():
-					new_lang.show = bool(strtobool(layer.attrib["show"]))
+					new_lang.show = bool(distutils.util.strtobool(layer.attrib["show"]))
 
 				self.languages.append(new_lang)
 
@@ -181,11 +181,11 @@ class BookInfo:
 		keyword_items = self._info.findall(f"{self._ns.ACBFns}keywords")
 		for k in keyword_items:
 			if "lang" in k.keys():
-				lang = standardize_tag(k.attrib["lang"])
-				self.keywords[lang] = split(", |,", k.text)
+				lang = langcodes.standardize_tag(k.attrib["lang"])
+				self.keywords[lang] = re.split(", |,", k.text)
 			else:
 				if k.text is not None:
-					self.keywords["_"] = split(", |,", k.text)
+					self.keywords["_"] = re.split(", |,", k.text)
 
 	def sync_series(self):
 		self.series: Dict[str, Series] = {}

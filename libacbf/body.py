@@ -1,21 +1,20 @@
 from __future__ import annotations
-from libacbf.ArchiveReader import ArchiveReader
-import os
 from typing import TYPE_CHECKING, List, Dict, Optional
+import os
+import distutils.util
+from pathlib import Path
+import re
+import magic
+import requests
+import langcodes
+from lxml import etree
 
 if TYPE_CHECKING:
-	from libacbf.ACBFBook import ACBFBook
-
-from distutils.util import strtobool
-from pathlib import Path
-from magic.magic import from_buffer
-from re import IGNORECASE, fullmatch, split, sub
-import requests
-from langcodes import standardize_tag
-from lxml import etree
-from libacbf.BookData import BookData
-from libacbf.Constants import BookNamespace, ImageRefType, PageTransitions, TextAreas
-import libacbf.Structs as structs
+	from libacbf import ACBFBook
+import libacbf.structs as structs
+from libacbf.constants import BookNamespace, ImageRefType, PageTransitions, TextAreas
+from libacbf.archivereader import ArchiveReader
+from libacbf.bookdata import BookData
 
 url_pattern = r'(((ftp|http|https):\/\/)|(\/)|(..\/))(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?'
 
@@ -54,46 +53,35 @@ class Page:
 		:class:`PageTransitions <libacf.Constants.PageTransitions>`
 	"""
 	def __init__(self, page, book: ACBFBook, coverpage: bool = False):
-		self._image: Optional[BookData] = None
+		ns: BookNamespace = book.namespace
+		self._page = page
+		self._text_layers = None
+		self._frames = None
+		self._jumps = None
+		self._image = None
 
 		self.book = book
-
-		self._page = page
-		ns: BookNamespace = book.namespace
-
-		# Optional
-		if not coverpage:
-			self.bg_color: Optional[str] = None
-			if "bgcolor" in page.keys():
-				self.bg_color = page.attrib["bgcolor"]
-
-			self.transition: Optional[PageTransitions] = None
-			if "transition" in page.keys():
-				self.transition = PageTransitions[page.attrib["transition"]]
 
 		# Sub
 		self.image_ref: str = page.find(f"{ns.ACBFns}image").attrib["href"]
 
 		ref_t = None
-		self._image = None
-
 		if self.image_ref.startswith("#"):
-			self._file_id = sub("#", "", self.image_ref)
 			ref_t = ImageRefType.Embedded
+			self._file_id = re.sub("#", "", self.image_ref)
 
 		elif self.image_ref.startswith("zip:"):
 			ref_t = ImageRefType.Archived
-
-			ref_path = sub("zip:", "", self.image_ref)
-			self._arch_path = Path(split("!", ref_path)[0])
-			self._file_path = Path(split("!", ref_path)[1])
+			ref_path = re.sub("zip:", "", self.image_ref)
+			self._arch_path = Path(re.split("!", ref_path)[0])
+			self._file_path = Path(re.split("!", ref_path)[1])
 			self._file_id = self._file_path.name
 			if not os.path.isabs(self._arch_path):
 				self._arch_path = Path(os.path.abspath(str(self._arch_path)))
 
-		elif fullmatch(url_pattern, self.image_ref, IGNORECASE):
-			self._file_id = split("/", self.image_ref)[-1]
+		elif re.fullmatch(url_pattern, self.image_ref, re.IGNORECASE):
 			ref_t = ImageRefType.URL
+			self._file_id = re.split("/", self.image_ref)[-1]
 
 		else:
 			if self.image_ref.startswith("file://"):
@@ -114,6 +102,16 @@ class Page:
 
 		self.ref_type: ImageRefType = ref_t
 
+		# Optional
+		if not coverpage:
+			self.bg_color: Optional[str] = None
+			if "bgcolor" in page.keys():
+				self.bg_color = page.attrib["bgcolor"]
+
+			self.transition: Optional[PageTransitions] = None
+			if "transition" in page.keys():
+				self.transition = PageTransitions[page.attrib["transition"]]
+
 		## Optional
 		if not coverpage:
 			self.title: Dict[str, str] = {}
@@ -124,9 +122,39 @@ class Page:
 				else:
 					self.title["_"] = t.text
 
-		self._text_layers = None
-		self._frames = None
-		self._jumps = None
+	@property
+	def image(self) -> Optional[BookData]:
+		"""[summary]
+
+		Returns
+		-------
+		Optional[BookData]
+			[description]
+		"""
+		if self._image is None:
+			if self.ref_type == ImageRefType.Embedded:
+				self._image = self.book.Data[self._file_id]
+				return self._image
+
+			elif self.ref_type == ImageRefType.Archived:
+				with ArchiveReader(self._arch_path) as ext_archive:
+					contents = ext_archive.read(str(self._file_path))
+
+			elif self.ref_type == ImageRefType.URL:
+				response = requests.get(self.image_ref)
+				contents = response.content
+
+			else:
+				if self.ref_type == ImageRefType.SelfArchived:
+					contents = self.book.archive.read(str(self._file_path))
+				elif self.ref_type == ImageRefType.Local:
+					with open(str(self._file_path), "rb") as image:
+						contents = image.read()
+
+			contents_type = magic.from_buffer(contents, True)
+			self._image = BookData(self._file_id, contents_type, contents)
+
+		return self._image
 
 	@property
 	def text_layers(self) -> Dict[str, TextLayer]:
@@ -193,45 +221,11 @@ class Page:
 			self._jumps = jumps
 		return self._jumps
 
-	@property
-	def image(self) -> Optional[BookData]:
-		"""[summary]
-
-		Returns
-		-------
-		Optional[BookData]
-			[description]
-		"""
-		if self._image is None:
-			if self.image_ref.startswith("#"):
-				self._image = self.book.Data[self._file_id]
-				return self._image
-
-			elif self.image_ref.startswith("zip:"):
-				with ArchiveReader(self._arch_path) as ext_archive:
-					contents = ext_archive.read(str(self._file_path))
-
-			elif fullmatch(url_pattern, self.image_ref, IGNORECASE):
-				response = requests.get(self.image_ref)
-				contents = response.content
-
-			else:
-				if self.ref_type == ImageRefType.SelfArchived:
-					contents = self.book.archive.read(str(self._file_path))
-				elif self.ref_type == ImageRefType.Local:
-					with open(str(self._file_path), "rb") as image:
-						contents = image.read()
-
-			contents_type = from_buffer(contents, True)
-			self._image = BookData(self._file_id, contents_type, contents)
-
-		return self._image
-
 class TextLayer:
 	"""[summary]
 	"""
 	def __init__(self, layer, ns: BookNamespace):
-		self.language: str = standardize_tag(layer.attrib["lang"])
+		self.language: str = langcodes.standardize_tag(layer.attrib["lang"])
 
 		self.bg_color: Optional[str] = None
 		if "bgcolor" in layer.keys():
@@ -252,7 +246,7 @@ class TextArea:
 		self.paragraph: str = ""
 		pa = []
 		for p in area.findall(f"{ns.ACBFns}p"):
-			text = sub(r"<\/?p[^>]*>", "", str(etree.tostring(p, encoding="utf-8"), encoding="utf-8").strip())
+			text = re.sub(r"<\/?p[^>]*>", "", str(etree.tostring(p, encoding="utf-8"), encoding="utf-8").strip())
 			pa.append(text)
 		self.paragraph = "\n".join(pa)
 
@@ -275,16 +269,16 @@ class TextArea:
 
 		self.inverted: Optional[bool] = None
 		if "inverted" in area.keys():
-			self.inverted = bool(strtobool(area.attrib["inverted"]))
+			self.inverted = bool(distutils.util.strtobool(area.attrib["inverted"]))
 
 		self.transparent: Optional[bool] = None
 		if "transparent" in area.keys():
-			self.transparent = bool(strtobool(area.attrib["transparent"]))
+			self.transparent = bool(distutils.util.strtobool(area.attrib["transparent"]))
 
 def get_points(pts_str: str):
 	pts = []
-	pts_l = split(" ", pts_str)
+	pts_l = re.split(" ", pts_str)
 	for pt in pts_l:
-		ls = split(",", pt)
+		ls = re.split(",", pt)
 		pts.append(structs.Vec2(int(ls[0]), int(ls[1])))
 	return pts

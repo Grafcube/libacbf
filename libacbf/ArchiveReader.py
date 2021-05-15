@@ -1,12 +1,12 @@
 import shutil
-from enum import Enum, auto
 from pathlib import Path
 from typing import Optional, Union
-from tempfile import mkdtemp
+import tempfile
 from zipfile import ZipFile
 from py7zr import SevenZipFile
 import tarfile as Tar
 from rarfile import RarFile
+from libacbf.constants import ArchiveTypes
 
 class ArchiveReader:
 	"""Class to directly read from archives.
@@ -34,7 +34,7 @@ class ArchiveReader:
 
 		elif archive_path.suffix in [".cb7", ".7z"]:
 			ar = ArchiveTypes.SevenZip
-			archive = Path(mkdtemp())
+			archive = Path(tempfile.mkdtemp())
 			with SevenZipFile(str(archive_path), 'r') as sarchive:
 				sarchive.extractall(str(archive))
 
@@ -49,26 +49,6 @@ class ArchiveReader:
 		self.archive: Union[ZipFile, Path, Tar.TarFile, RarFile] = archive
 
 		self.type: ArchiveTypes = ar
-
-	def _get_acbf_contents(self) -> Optional[str]:
-		contents = None
-		if self.type in [ArchiveTypes.Zip, ArchiveTypes.Rar]:
-			for i in self.archive.infolist():
-				if not i.is_dir() and '/' not in i.filename and i.filename.endswith(".acbf"):
-					with self.archive.open(i, 'r') as book:
-						contents = str(book.read(), "utf-8")
-					break
-		elif self.type == ArchiveTypes.SevenZip:
-			acbf_files = list(self.archive.glob("*.acbf"))
-			if len(acbf_files) > 0:
-				with open(acbf_files[0], 'r', encoding="utf-8") as book:
-					contents = book.read()
-		elif self.type == ArchiveTypes.Tar:
-			for i in self.archive.getmembers():
-				if i.isfile() and '/' not in i.name and i.name.endswith(".acbf"):
-					contents = str(self.archive.extractfile(i).read(), encoding="utf-8")
-					break
-		return contents
 
 	def read(self, file_path: str) -> bytes:
 		"""Get file as bytes from archive.
@@ -102,14 +82,28 @@ class ArchiveReader:
 		elif self.type == ArchiveTypes.SevenZip:
 			shutil.rmtree(str(self.archive))
 
+	def _get_acbf_contents(self) -> Optional[str]:
+		contents = None
+		if self.type in [ArchiveTypes.Zip, ArchiveTypes.Rar]:
+			for i in self.archive.infolist():
+				if not i.is_dir() and '/' not in i.filename and i.filename.endswith(".acbf"):
+					with self.archive.open(i, 'r') as book:
+						contents = str(book.read(), "utf-8")
+					break
+		elif self.type == ArchiveTypes.SevenZip:
+			acbf_files = list(self.archive.glob("*.acbf"))
+			if len(acbf_files) > 0:
+				with open(acbf_files[0], 'r', encoding="utf-8") as book:
+					contents = book.read()
+		elif self.type == ArchiveTypes.Tar:
+			for i in self.archive.getmembers():
+				if i.isfile() and '/' not in i.name and i.name.endswith(".acbf"):
+					contents = str(self.archive.extractfile(i).read(), encoding="utf-8")
+					break
+		return contents
+
 	def __enter__(self):
 		return self
 
 	def __exit__(self, exception_type, exception_value, traceback):
 		self.close()
-
-class ArchiveTypes(Enum):
-	Zip = 0
-	SevenZip = auto()
-	Tar = auto()
-	Rar = auto()

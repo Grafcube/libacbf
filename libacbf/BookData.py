@@ -1,6 +1,6 @@
+from typing import Optional, Union
 from io import BytesIO
 from base64 import b64decode
-from typing import Optional, Union
 
 class BookData:
 	"""

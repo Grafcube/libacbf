@@ -17,6 +17,14 @@ class BookNamespace:
 		"""
 		return sub(r'\{|\}', "", self.ACBFns)
 
+class ArchiveTypes(Enum):
+	"""[summary]
+	"""
+	Zip = 0
+	SevenZip = auto()
+	Tar = auto()
+	Rar = auto()
+
 class AuthorActivities(Enum):
 	"""List of accepted values for :class:`Author.activity<libacbf.Structs.Author.activity>`.
 

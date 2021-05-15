@@ -1,18 +1,18 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, Dict, List, Optional, Union
 if TYPE_CHECKING:
-	from libacbf.ACBFBook import ACBFBook
+	from libacbf import ACBFBook
 
 from collections import namedtuple
 from pathlib import Path
 from langcodes import standardize_tag
-import libacbf.BodyInfo as body
-from libacbf.Constants import AuthorActivities, Genres
+
+from libacbf.constants import AuthorActivities, Genres
 
 Vec2 = namedtuple("Vector2", "x y")
 
 class Styles:
-	"""docstring
+	"""[summary]
 	"""
 	def __init__(self, book: ACBFBook, style_refs: List[str]):
 		self.book = book

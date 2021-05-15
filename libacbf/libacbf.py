@@ -1,15 +1,15 @@
 import os
 from pathlib import Path
-from typing import Dict, Optional
-from re import sub, findall, IGNORECASE
+from typing import List, Dict, Optional
+import re
 from lxml import etree
 
-from libacbf.Constants import BookNamespace
-from libacbf.ACBFMetadata import ACBFMetadata
-from libacbf.ACBFBody import ACBFBody
-from libacbf.ACBFData import ACBFData
-from libacbf.Structs import Styles
-from libacbf.ArchiveReader import ArchiveReader
+from libacbf.structs import Styles
+from libacbf.constants import BookNamespace
+from libacbf.metadata import BookInfo, PublishInfo, DocumentInfo
+from libacbf.body import Page
+from libacbf.bookdata import BookData
+from libacbf.archivereader import ArchiveReader
 
 class ACBFBook:
 	"""Base class for reading ACBF ebooks.
@@ -118,11 +118,11 @@ class ACBFBook:
 		self._root = etree.fromstring(bytes(contents, encoding="utf-8"))
 		self._tree = self._root.getroottree()
 
-		self._validate_acbf()
-
 		self.namespace: BookNamespace = BookNamespace(f"{{{self._root.nsmap[None]}}}")
 
-		self.Styles: Styles = Styles(self, findall(r'<\?xml-stylesheet type="text\/css" href="(.+)"\?>', contents, IGNORECASE))
+		self.validate_acbf()
+
+		self.Styles: Styles = Styles(self, re.findall(r'<\?xml-stylesheet type="text\/css" href="(.+)"\?>', contents, re.IGNORECASE))
 
 		self.Metadata: ACBFMetadata = ACBFMetadata(self)
 
@@ -160,13 +160,13 @@ class ACBFBook:
 		for ref in reference_items:
 			pa = []
 			for p in ref.findall(f"{ns.ACBFns}p"):
-				text = sub(r"<\/?p[^>]*>", "", str(etree.tostring(p, encoding="utf-8"), encoding="utf-8").strip())
+				text = re.sub(r"<\/?p[^>]*>", "", str(etree.tostring(p, encoding="utf-8"), encoding="utf-8").strip())
 				pa.append(text)
 			references[ref.attrib["id"]] = {"paragraph": "\n".join(pa)}
 		return references
 
-	def _validate_acbf(self):
-		version = self._tree.docinfo.xml_version
+	def validate_acbf(self):
+		version = re.split(r'/', self.namespace.ACBFns_raw)[-1]
 		xsd_path = f"libacbf/schema/acbf-{version}.xsd"
 
 		with open(xsd_path, encoding="utf-8") as file:
@@ -186,3 +186,114 @@ class ACBFBook:
 
 	def __exit__(self, exception_type, exception_value, traceback):
 		self.close()
+
+class ACBFMetadata:
+	"""Class to read metadata of the book.
+
+	See Also
+	--------
+	`Meta-data Section Definition <https://acbf.fandom.com/wiki/Meta-data_Section_Definition>`_.
+
+	Attributes
+	----------
+	book : ACBFBook
+		Book that this metadata belongs to.
+
+	book_info : BookInfo
+		See :class:`BookInfo <libacbf.MetadataInfo.BookInfo>`.
+
+	publisher_info : PublishInfo
+		See :class:`PublishInfo <libacbf.MetadataInfo.PublishInfo>`.
+
+	document_info : DocumentInfo
+		See :class:`DocumentInfo <libacbf.MetadataInfo.DocumentInfo>`.
+	"""
+	def __init__(self, book: ACBFBook):
+		self.book = book
+		ns: BookNamespace = book.namespace
+		meta_root = book._root.find(f"{ns.ACBFns}meta-data")
+
+		self.book_info: BookInfo = BookInfo(meta_root.find(f"{ns.ACBFns}book-info"), book)
+		self.publisher_info: PublishInfo = PublishInfo(meta_root.find(f"{ns.ACBFns}publish-info"), book)
+		self.document_info: DocumentInfo = DocumentInfo(meta_root.find(f"{ns.ACBFns}document-info"), book)
+
+class ACBFBody:
+	"""Body section contains the definition of individual book pages, text layers, frames and jumps
+	inside those pages.
+
+	See Also
+	--------
+	`Body Section Definition <https://acbf.fandom.com/wiki/Body_Section_Definition>`_.
+
+	Attributes
+	----------
+	book : ACBFBook
+		Book that this body section belongs to.
+
+	pages : List[libacbf.BodyInfo.Page]
+		A list of :class:`Page <libacbf.BodyInfo.Page>` objects in order.
+
+	bgcolor : str, optional
+		Defines a background colour for the whole book. Can be overridden by ``bgcolor`` in pages,
+		text layers and text areas.
+	"""
+	def __init__(self, book: ACBFBook):
+		self.book = book
+
+		ns = book.namespace
+		body = book._root.find(f"{ns.ACBFns}body")
+		page_items = body.findall(f"{ns.ACBFns}page")
+
+		pgs = []
+		for pg in page_items:
+			pgs.append(Page(pg, book))
+
+		self.pages: List[Page] = pgs
+
+		# Optional
+		self.bgcolor: Optional[str] = None
+		if "bgcolor" in body.keys():
+			self.bgcolor = body.attrib["bgcolor"]
+
+class ACBFData:
+	"""
+	docstring
+	"""
+	def __init__(self, book: ACBFBook):
+		self._ns = book.namespace
+		self._root = book._root
+		self._base = book._root.find(f"{self._ns.ACBFns}data")
+		self._data_elements = []
+
+		self.files: Dict[str, Optional[BookData]] = {}
+
+		self.sync_data()
+
+	def sync_data(self):
+		self._base = self._root.find(f"{self._ns.ACBFns}data")
+		if self._base is not None:
+			self._data_elements = self._base.findall(f"{self._ns.ACBFns}binary")
+		for i in self._data_elements:
+			self.files[i.attrib["id"]] = None
+
+	def list_files(self) -> List[str]:
+		fl = []
+		for i in self.files.keys():
+			fl.append(str(i))
+		return fl
+
+	def __len__(self):
+		return len(self.files.keys())
+
+	def __getitem__(self, key: str):
+		if key in self.files.keys():
+			if self.files[key] is not None:
+				return self.files[key]
+			else:
+				for i in self._data_elements:
+					if i.attrib["id"] == key:
+						new_data = BookData(key, i.attrib["content-type"], i.text)
+						self.files[key] = new_data
+						return new_data
+		else:
+			raise FileNotFoundError

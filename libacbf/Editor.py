@@ -1,14 +1,14 @@
 from typing import Union
-from re import split
+import re
 from pathlib import Path
 from base64 import b64encode
-from langcodes import Language, standardize_tag
-from magic import from_buffer
+import langcodes
+import magic
 from lxml import etree
-from libacbf.ACBFBook import ACBFBook
-from libacbf.ACBFMetadata import ACBFMetadata
-from libacbf.Structs import Author, Genre
-from libacbf.Constants import BookNamespace, Genres
+
+from libacbf import ACBFBook, ACBFMetadata
+from libacbf.structs import Author, Genre
+from libacbf.constants import BookNamespace, Genres
 
 class BookManager:
 	"""
@@ -49,7 +49,7 @@ class BookManager:
 		ref_element = etree.Element(f"{self.book.namespace.ACBFns}reference")
 		ref_element.set("id", id)
 
-		p_list = split(r"\n", paragraph)
+		p_list = re.split(r"\n", paragraph)
 		for ref in p_list:
 			p = f"<p>{ref}</p>"
 			p_element = etree.fromstring(bytes(p, encoding="utf-8"))
@@ -92,7 +92,7 @@ class BookManager:
 		id = dat_path.name
 		with open(file_path, 'rb') as file:
 			contents = file.read()
-			content_type = from_buffer(contents, True)
+			content_type = magic.from_buffer(contents, True)
 			data64 = str(b64encode(contents), encoding="utf-8")
 
 		bin_element = etree.Element(f"{self.book.namespace.ACBFns}binary")
@@ -268,7 +268,7 @@ class MetadataManager:
 
 		self.metadata.book_info.sync_authors()
 
-	def edit_book_title(self, title: str, lang: Union[str, Language] = "_"):
+	def edit_book_title(self, title: str, lang: str = "_"):
 		"""
 		docstring
 		"""
@@ -290,15 +290,12 @@ class MetadataManager:
 				t_element.text = title
 				info_section.insert(idx, t_element)
 				found = True
-
-		elif type(lang) is Language:
-			key = str(lang)
-		elif type(lang) is str:
-			key = standardize_tag(lang)
+		else:
+			key = langcodes.standardize_tag(lang)
 
 		if not found:
 			for i in title_elements:
-				if key == standardize_tag(i.attrib["lang"]):
+				if key == langcodes.standardize_tag(i.attrib["lang"]):
 					i.text == title
 					found = True
 					break
@@ -311,7 +308,7 @@ class MetadataManager:
 
 		self.metadata.book_info.sync_book_titles()
 
-	def remove_book_title(self, lang: Union[str, Language] = "_"):
+	def remove_book_title(self, lang: str = "_"):
 		"""
 		docstring
 		"""
@@ -329,14 +326,12 @@ class MetadataManager:
 						i.getparent().remove(i)
 						complete = True
 						break
-			elif type(lang) is Language:
-				key = str(lang)
-			elif type(lang) is str:
-				key = standardize_tag(lang)
+			else:
+				key = langcodes.standardize_tag(lang)
 
 			if not complete:
 				for i in title_elements:
-					if key == standardize_tag(i.attrib["lang"]):
+					if key == langcodes.standardize_tag(i.attrib["lang"]):
 						i.clear()
 						i.getparent().remove(i)
 						complete = True
@@ -427,7 +422,7 @@ class MetadataManager:
 				self.metadata.book_info.sync_genres()
 				break
 
-	def edit_annotation(self, text: str, lang: Union[str, Language] = "_"):
+	def edit_annotation(self, text: str, lang: str = "_"):
 		"""
 		docstring
 		"""
@@ -447,14 +442,12 @@ class MetadataManager:
 				an_element = etree.Element(f"{self.ns.ACBFns}annotation")
 				info_section.insert(idx, an_element)
 
-		elif type(lang) is Language:
-			key = str(lang)
-		elif type(lang) is str:
-			key = standardize_tag(lang)
+		else:
+			key = langcodes.standardize_tag(lang)
 
 		if an_element is None:
 			for i in annotation_elements:
-				if standardize_tag(i.attrib["lang"]) == key:
+				if langcodes.standardize_tag(i.attrib["lang"]) == key:
 					an_element = i
 					break
 			if an_element is None:
@@ -469,7 +462,7 @@ class MetadataManager:
 
 		self.metadata.book_info.sync_annotations()
 
-	def remove_annotation(self, lang: Union[str, Language] = "_"):
+	def remove_annotation(self, lang: str = "_"):
 		"""
 		docstring
 		"""
@@ -484,14 +477,12 @@ class MetadataManager:
 					an_element = i
 					break
 
-		elif type(lang) is Language:
-			key = str(lang)
-		elif type(lang) is str:
-			key = standardize_tag(lang)
+		else:
+			key = langcodes.standardize_tag(lang)
 
 		if an_element is None:
 			for i in annotation_elements:
-				if standardize_tag(i.attrib["lang"]) == key:
+				if langcodes.standardize_tag(i.attrib["lang"]) == key:
 					an_element = i
 					break
 
