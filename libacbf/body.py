@@ -1,8 +1,8 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, List, Dict, Optional
+from pathlib import Path
 import os
 import distutils.util
-from pathlib import Path
 import re
 import magic
 import requests

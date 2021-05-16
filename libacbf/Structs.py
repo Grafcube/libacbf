@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Dict, List, Optional, Union
 from collections import namedtuple
 from pathlib import Path
-from langcodes import standardize_tag
+import langcodes
 
 if TYPE_CHECKING:
 	from libacbf import ACBFBook
@@ -161,7 +161,7 @@ class Author:
 		if val is None:
 			self._lang = None
 		else:
-			self._lang = standardize_tag(val)
+			self._lang = langcodes.standardize_tag(val)
 
 class Genre:
 	"""The genre of the book.
@@ -241,7 +241,7 @@ class LanguageLayer:
 		Whether layer is drawn.
 	"""
 	def __init__(self, val: str, show: Optional[bool] = None):
-		self.lang: str = standardize_tag(val)
+		self.lang: str = langcodes.standardize_tag(val)
 		self.show: Optional[bool] = show
 
 class Series:

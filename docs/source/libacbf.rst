@@ -1,77 +1,22 @@
 API Reference
 =============
 
-.. automodule:: libacbf
-   :members:
-   :show-inheritance:
+.. toctree::
+   :maxdepth: 2
 
-Main Modules
-------------
+   mainmodules
 
-libacbf module
-~~~~~~~~~~~~~~~~~~~~~~
+.. toctree::
+   :maxdepth: 2
 
-.. automodule:: libacbf.libacbf
-   :members:
-   :show-inheritance:
+   helpermodules
 
-libacbf.metadata module
-~~~~~~~~~~~~~~~~~~~~~~~
+.. toctree::
+   :maxdepth: 2
 
-.. automodule:: libacbf.metadata
-   :members:
-   :show-inheritance:
+   editor
 
-libacbf.body module
-~~~~~~~~~~~~~~~~~~~
+.. toctree::
+   :maxdepth: 2
 
-.. automodule:: libacbf.body
-   :members:
-   :show-inheritance:
-
-libacbf.bookdata module
-~~~~~~~~~~~~~~~~~~~~~~~
-
-.. automodule:: libacbf.bookdata
-   :members:
-   :show-inheritance:
-
-Helper Modules
---------------
-
-libacbf.structs module
-~~~~~~~~~~~~~~~~~~~~~~
-
-.. automodule:: libacbf.structs
-   :members:
-   :exclude-members: Vec2
-   :show-inheritance:
-
-libacbf.constants module
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. automodule:: libacbf.constants
-   :members:
-   :exclude-members: BookNamespace
-   :undoc-members:
-   :show-inheritance:
-
-Editor
-------
-
-libacbf.editor module
-~~~~~~~~~~~~~~~~~~~~~
-
-.. automodule:: libacbf.editor
-   :members:
-   :show-inheritance:
-
-Other
------
-
-libacbf.archivereader module
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. automodule:: libacbf.archivereader
-   :members:
-   :show-inheritance:
+   othermodules

@@ -1,7 +1,7 @@
 import os
+import re
 from pathlib import Path
 from typing import List, Dict, Optional
-import re
 from lxml import etree
 
 from libacbf.structs import Styles
