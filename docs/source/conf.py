@@ -34,6 +34,14 @@ extensions = ["sphinx.ext.napoleon",
 	"sphinx.ext.viewcode"
 ]
 
+html_sidebars = { '**': [
+		'globaltoc.html',
+		'relations.html',
+		'sourcelink.html',
+		'searchbox.html'
+	]
+}
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
