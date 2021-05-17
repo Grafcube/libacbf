@@ -35,8 +35,8 @@ class Page:
 		external archive, a local path or a URL.
 
 	ref_type : ImageRefType(Enum)
-		A value from :class:`ImageRefType <libacbf.Constants.ImageRefType>` indicating the type of
-		reference in ``image_ref``.
+		A value from :class:`ImageRefType <libacbf.constants.ImageRefType>` indicating the type of
+		reference in :attr:`image_ref`.
 
 	title : Dict[str, str], optional
 		It is used to define beginning of chapters, sections of the book and can be used to create a
@@ -45,12 +45,12 @@ class Page:
 		Keys are standard language codes or ``"_"`` if not defined. Values are titles as string.
 
 	bgcolor : str, optional
-		Defines the background colour for the page. Inherits from :attr:`ACBFBody.bgcolor <libacbf.ACBFBody.ACBFBody.bgcolor>`
+		Defines the background colour for the page. Inherits from :attr:`ACBFBody.bgcolor <libacbf.libacbf.ACBFBody.bgcolor>`
 		if ``None``.
 
 	transition: PageTransitions(Enum), optional
-		Defines the type of transition from the previous page to this one. Allowed values are
-		:class:`PageTransitions <libacf.Constants.PageTransitions>`
+		Defines the type of transition from the previous page to this one. Allowed values are in
+		:class:`PageTransitions <libacbf.constants.PageTransitions>`.
 	"""
 	def __init__(self, page, book: ACBFBook, coverpage: bool = False):
 		ns: BookNamespace = book.namespace
@@ -123,13 +123,13 @@ class Page:
 					self.title["_"] = t.text
 
 	@property
-	def image(self) -> Optional[BookData]:
-		"""[summary]
+	def image(self) -> BookData:
+		"""Gets the image data from the source.
 
 		Returns
 		-------
-		Optional[BookData]
-			[description]
+		BookData
+			A :class:`BookData <libacbf.bookdata.BookData>` object.
 		"""
 		if self._image is None:
 			if self.ref_type == ImageRefType.Embedded:
@@ -158,12 +158,17 @@ class Page:
 
 	@property
 	def text_layers(self) -> Dict[str, TextLayer]:
-		"""[summary]
+		"""Gets the textlayers for this page.
+
+		See Also
+		--------
+		`Text Layers <https://acbf.fandom.com/wiki/Body_Section_Definition#Text-layer>`_.
 
 		Returns
 		-------
 		Dict[str, TextLayer]
-			[description]
+			A dictionary with keys being a standard language object and values being
+			:class:`TextLayer` objects.
 		"""
 		if self._text_layers is None:
 			item = self._page
@@ -178,12 +183,16 @@ class Page:
 
 	@property
 	def frames(self) -> List[structs.Frame]:
-		"""[summary]
+		"""Gets the frames on this page.
+
+		See Also
+		--------
+		`Frame specifications <https://acbf.fandom.com/wiki/Body_Section_Definition#Frame>`_.
 
 		Returns
 		-------
 		List[Frame]
-			[description]
+			A list of :class:`Frame <libacbf.structs.Frame>` objects.
 		"""
 		if self._frames is None:
 			item = self._page
@@ -200,12 +209,16 @@ class Page:
 
 	@property
 	def jumps(self) -> List[structs.Jump]:
-		"""[summary]
+		"""Gets the jumps on this page.
+
+		See Also
+		--------
+		`Jump specifications <https://acbf.fandom.com/wiki/Body_Section_Definition#Jump>`_.
 
 		Returns
 		-------
 		List[Jump]
-			[description]
+			A list of :class:`Jump <libacbf.structs.Jump>` objects.
 		"""
 		if self._jumps is None:
 			item = self._page
@@ -219,14 +232,29 @@ class Page:
 		return self._jumps
 
 class TextLayer:
-	"""[summary]
+	"""Defines a text layer drawn on a page.
+
+	See Also
+	--------
+	`Text Layer specifications <https://acbf.fandom.com/wiki/Body_Section_Definition#Text-layer>`_.
+
+	Attributes
+	----------
+	language : str
+		A standard language code that defines the language of the text in this layer.
+
+	text_areas : List[TextArea]
+		A list of :class:`TextArea` objects in order (order matters for text-to-speech).
+
+	bgcolor : str, optional
+		Defines the background colour of the text areas or inherits from :attr:`Page.bgcolor` if ``None``.
 	"""
 	def __init__(self, layer, ns: BookNamespace):
 		self.language: str = langcodes.standardize_tag(layer.attrib["lang"])
 
-		self.bg_color: Optional[str] = None
+		self.bgcolor: Optional[str] = None
 		if "bgcolor" in layer.keys():
-			self.bg_color = layer.attrib["bgcolor"]
+			self.bgcolor = layer.attrib["bgcolor"]
 
 		# Sub
 		self.text_areas: List[TextArea] = []
@@ -235,7 +263,57 @@ class TextLayer:
 			self.text_areas.append(TextArea(ar, ns))
 
 class TextArea:
-	"""[summary]
+	"""Defines an area where text is drawn.
+
+	See Also
+	--------
+	`Text Area specifications <https://acbf.fandom.com/wiki/Body_Section_Definition#Text-area>`_.
+
+	Attributes
+	----------
+	points : List[2D Vectors]
+		A list of named tuples with ``x`` and ``y`` values representing a 2-dimensional vector. Same
+		as :attr:`Frame.points <libacbf.structs.Frame.points>`.
+
+	paragraph : str
+		A multiline string of what text to show in the are. Can have special tags for formatting.
+
+		<strong>...</strong>
+			Bold letters.
+
+		<emphasis>...</emphasis>
+			Italicised or cursive text.
+
+		<strikethrough>...</strikethrough>
+			Striked-through text.
+
+		<sub>...</sub>
+			Subscript text.
+
+		<sup>...</sup>
+			Superscript text.
+
+		<a href=“...“>...</a>
+			A link. Internal or external.
+
+	bgcolor : str, optional
+		Defines the background colour of the text area or inherits from :attr:`TextLayer.bgcolor` if ``None``.
+
+	rotation : int, optional
+		Defines the rotation of the text layer.
+
+		Can be an integer from 0 to 360.
+
+	type : TextAreas(Enum), optional
+		The type of text area. Rendering can be changed based on type.
+
+		Allowed values are defined in :class:`TextAreas <libacbf.constants.TextAreas>`.
+
+	inverted : bool, optional
+		Whether text is rendered with inverted colour.
+
+	transparent : bool, optional
+		Whether text is drawn.
 	"""
 	def __init__(self, area, ns: BookNamespace):
 		self.points: List[structs.Vec2] = get_points(area.attrib["points"])
@@ -248,9 +326,9 @@ class TextArea:
 		self.paragraph = "\n".join(pa)
 
 		# Optional
-		self.bg_color: Optional[str] = None
+		self.bgcolor: Optional[str] = None
 		if "bgcolor" in area.keys():
-			self.bg_color = area.attrib["bgcolor"]
+			self.bgcolor = area.attrib["bgcolor"]
 
 		self.rotation: Optional[int] = None
 		if "text-rotation" in area.keys():
@@ -258,7 +336,7 @@ class TextArea:
 			if rot >= 0 and rot <= 360:
 				self.rotation = rot
 			else:
-				raise ValueError("Rotation must be an integer from0 to 360.")
+				raise ValueError("Rotation must be an integer from 0 to 360.")
 
 		self.type: Optional[TextAreas] = None
 		if "type" in area.keys():

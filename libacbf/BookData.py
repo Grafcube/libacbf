@@ -3,8 +3,7 @@ from io import BytesIO
 from base64 import b64decode
 
 class BookData:
-	"""
-	docstring
+	"""[summary]
 	"""
 	def __init__(self, id: str, file_type: str, data: Union[str, bytes, BytesIO]):
 		self._base64data: Optional[str] = None
@@ -28,4 +27,11 @@ class BookData:
 
 	@property
 	def filesize(self):
+		"""[summary]
+
+		Returns
+		-------
+		[type]
+			[description]
+		"""
 		return self.data.getbuffer().nbytes

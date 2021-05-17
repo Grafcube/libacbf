@@ -65,7 +65,11 @@ class Genres(Enum):
 	other = 100
 
 class TextAreas(Enum):
-	"""[summary]
+	"""Types of text areas. Used by :attr:`TextArea.type <libacbf.body.TextArea.type>`.
+
+	See Also
+	--------
+	`Text Area types <https://acbf.fandom.com/wiki/Body_Section_Definition#Text-area>`_.
 	"""
 	speech = 0
 	commentary = auto()
@@ -78,7 +82,11 @@ class TextAreas(Enum):
 	sign = auto()
 
 class PageTransitions(Enum):
-	"""[summary]
+	"""Allowed values for :attr:`Page.transition <libacbf.body.Page.transition>`.
+
+	See Also
+	--------
+	`Page Transitions <https://acbf.fandom.com/wiki/Body_Section_Definition#Page>`_.
 	"""
 	fade = 0
 	blend = auto()
@@ -87,7 +95,7 @@ class PageTransitions(Enum):
 	none = 100
 
 class ImageRefType(Enum):
-	"""Types of image references.
+	"""Types of image references. Used by :attr:`ref_type <libacbf.body.Page.ref_type>`.
 
 	See Also
 	--------
@@ -100,7 +108,8 @@ class ImageRefType(Enum):
 	URL = auto()
 
 class ArchiveTypes(Enum):
-	"""[summary]
+	"""The type of the source archive file.
+	Used by :attr:`ArchiveReader.type <libacbf.archivereader.ArchiveReader.type>`.
 	"""
 	Zip = 0
 	SevenZip = auto()

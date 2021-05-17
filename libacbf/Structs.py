@@ -325,7 +325,7 @@ class Jump:
 	----------
 	points : List[2D Vectors]
 		A list of named tuples with ``x`` and ``y`` values representing a 2-dimensional vector. Same
-		as :attr:`Frame.points <libacbf.structs.Frame.points>`.
+		as :attr:`Frame.points`.
 
 	page : int
 		Target page to go to when clicked. Pages start from 1 so first page is ``1``, second page is

@@ -54,7 +54,7 @@ def test_body_pages():
 		for tl in pg.text_layers.keys():
 			new_tl = {
 				"lang": pg.text_layers[tl].language,
-				"bgcolour": pg.text_layers[tl].bg_color,
+				"bgcolour": pg.text_layers[tl].bgcolor,
 				"text_areas": []
 			}
 			for ta in pg.text_layers[tl].text_areas:
@@ -66,7 +66,7 @@ def test_body_pages():
 				new_ta = {
 					"points": pts,
 					"p": ta.paragraph,
-					"bgcolour": ta.bg_color,
+					"bgcolour": ta.bgcolor,
 					"rotation": ta.rotation,
 					"type": type,
 					"inverted": ta.inverted,

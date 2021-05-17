@@ -111,7 +111,7 @@ def test_coverpage():
 	for i in book.Metadata.book_info.cover_page.text_layers.keys():
 		op_tlayers[i] = {
 			"language": book.Metadata.book_info.cover_page.text_layers[i].language,
-			"bg_color": book.Metadata.book_info.cover_page.text_layers[i].bg_color,
+			"bg_color": book.Metadata.book_info.cover_page.text_layers[i].bgcolor,
 			"text_areas": None
 		}
 		op_tareas = []
@@ -119,7 +119,7 @@ def test_coverpage():
 			new_tarea = {
 				"points": j.points,
 				"paragraph": j.paragraph,
-				"bg_color": j.bg_color,
+				"bg_color": j.bgcolor,
 				"rotation": j.rotation,
 				"type": j.type,
 				"inverted": j.inverted,

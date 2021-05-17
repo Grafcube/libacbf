@@ -19,6 +19,11 @@ class ACBFBook:
 	file_path : str, default=Empty book template
 		Path to ACBF book. May be absolute or relative.
 
+	Raises
+	------
+	ValueError (File is not an ACBF Ebook.)
+		Raised if the XML does not match ACBF schema or if archive does not contain ACBF file.
+
 	See Also
 	--------
 	`ACBF Specifications <https://acbf.fandom.com/wiki/Advanced_Comic_Book_Format_Wiki>`_.
@@ -67,7 +72,7 @@ class ACBFBook:
 			}
 
 		``paragraph`` can contain special tags for formatting. For more information and a full list,
-		see :class:`TextArea <libacbf.body.TextArea>`.
+		see :attr:`TextArea.paragraph <libacbf.body.TextArea.paragraph>`.
 
 	Styles : dict-like object
 		Get styles linked in the ACBF file.
