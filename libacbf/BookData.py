@@ -3,7 +3,25 @@ from io import BytesIO
 from base64 import b64decode
 
 class BookData:
-	"""[summary]
+	"""Binary data referenced or stored in the book.
+
+	See Also
+	--------
+	`Binary data <https://acbf.fandom.com/wiki/Data_Section_Definition#Binary>`_.
+
+	Attributes
+	----------
+	id : str
+		Name of the file with extension.
+
+	type : str
+		Mime type of the file.
+
+	is_embedded : bool
+		Whether the file is embedded in the ACBD file.
+
+	data : BytesIO
+		The actual file's data.
 	"""
 	def __init__(self, id: str, file_type: str, data: Union[str, bytes, BytesIO]):
 		self._base64data: Optional[str] = None
@@ -27,11 +45,11 @@ class BookData:
 
 	@property
 	def filesize(self):
-		"""[summary]
+		"""Gets the size of the file.
 
 		Returns
 		-------
-		[type]
-			[description]
+		int
+			The size of the file in bytes.
 		"""
 		return self.data.getbuffer().nbytes

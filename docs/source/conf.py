@@ -35,7 +35,7 @@ extensions = ["sphinx.ext.napoleon",
 ]
 
 html_sidebars = { '**': [
-		'globaltoc.html',
+		'fulltoc.html',
 		'relations.html',
 		'sourcelink.html',
 		'searchbox.html'
