@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Dict, List, Optional, Union
 from collections import namedtuple
 from pathlib import Path
+import re
 import langcodes
 
 if TYPE_CHECKING:
@@ -11,18 +12,24 @@ from libacbf.constants import AuthorActivities, Genres
 Vec2 = namedtuple("Vector2", "x y")
 
 class Styles:
-	def __init__(self, book: ACBFBook, style_refs: List[str]):
+	def __init__(self, book: ACBFBook, contents: str):
 		self.book = book
+		self._contents = contents
 
 		self.styles: Dict[str, Optional[str]] = {}
+		self.sync_styles()
+
+	def list_styles(self) -> List[str]:
+		return [str(x) for x in self.styles.keys()]
+
+	def sync_styles(self):
+		self.styles.clear()
+		style_refs = re.findall(r'<\?xml-stylesheet type="text\/css" href="(.+)"\?>', self._contents, re.IGNORECASE)
 		for i in style_refs:
 			self.styles[i] = None
 
-	def list_styles(self) -> List[str]:
-		fl = []
-		for i in self.styles.keys():
-			fl.append(str(i))
-		return fl
+		if self.book._root.find(f"{self.book.namespace.ACBFns}style") is not None:
+			self.styles["_"] = None
 
 	def __len__(self):
 		len(self.styles.keys())
@@ -31,6 +38,8 @@ class Styles:
 		if key in self.styles.keys():
 			if self.styles[key] is not None:
 				return self.styles[key]
+			elif key == "_":
+				self.styles["_"] = self.book._root.find(f"{self.book.namespace.ACBFns}style").text.strip()
 			else:
 				if self.book.archive is None:
 					st_path = self.book.book_path.parent/Path(key)

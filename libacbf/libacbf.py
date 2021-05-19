@@ -83,8 +83,9 @@ class ACBFBook:
 
 			style = book.Styles["style_name.css"]
 
-	Stylesheet : str, optional
-		Embedded stylesheet, if exists, as a string.
+		If a style is embedded in the ACBF file, use ``Styles["_"]`` to get its contents. ::
+
+			embedded_stylesheet = book.Styles["_"]
 
 	file_path : str
 		Absolute path to source file.
@@ -129,17 +130,13 @@ class ACBFBook:
 
 		self.validate_acbf()
 
-		self.Styles: Styles = Styles(self, re.findall(r'<\?xml-stylesheet type="text\/css" href="(.+)"\?>', contents, re.IGNORECASE))
+		self.Styles: Styles = Styles(self, contents)
 
 		self.Metadata: ACBFMetadata = ACBFMetadata(self)
 
 		self.Body: ACBFBody = ACBFBody(self)
 
 		self.Data: ACBFData = ACBFData(self)
-
-		self.Stylesheet: Optional[str] = None
-		if self._root.find(f"{self.namespace.ACBFns}style") is not None:
-			self.Stylesheet = self._root.find(f"{self.namespace.ACBFns}style").text.strip()
 
 		self.References: Dict[str, Dict[str, str]] = self.sync_references()
 
