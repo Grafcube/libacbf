@@ -8,15 +8,18 @@ from lxml import etree
 
 from libacbf import ACBFBook, ACBFMetadata
 from libacbf.structs import Author, Genre
-from libacbf.constants import BookNamespace, Genres
+from libacbf.constants import ArchiveTypes, BookNamespace, Genres
 
-class BookManager:
+class Editor:
 	"""
 	docstring
 	"""
 	def __init__(self, book: ACBFBook):
+		if book.archive.type == ArchiveTypes.Rar:
+			raise ValueError("Editing RAR Archives is not supported by this module.")
 		if book.is_open:
 			self.book = book
+			self.ns: BookNamespace = book.namespace
 		else:
 			raise ValueError("I/O operation on closed file.")
 
@@ -118,8 +121,14 @@ class BookManager:
 			self.book.Data.sync_data()
 
 	def edit_styles(self, stylesheet: str, file_name: str = "_"):
-		"""
-		docstring
+		"""[summary]
+
+		Parameters
+		----------
+		stylesheet : str
+			[description]
+		file_name : str, optional
+			[description], by default "_"
 		"""
 		pass
 
