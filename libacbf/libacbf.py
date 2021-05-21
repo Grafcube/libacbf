@@ -229,12 +229,13 @@ class ACBFBook:
 				text = re.sub(r"<\/?p[^>]*>", "", str(etree.tostring(p, encoding="utf-8"), encoding="utf-8").strip())
 				pa.append(text)
 			references[ref.attrib["id"]] = {"paragraph": "\n".join(pa)}
-		return
-def __enter__(self):
-	return self
+		return references
 
-def __exit__(self, exception_type, exception_value, traceback):
-	self.close()
+	def __enter__(self):
+		return self
+
+	def __exit__(self, exception_type, exception_value, traceback):
+		self.close()
 
 class ACBFMetadata:
 	"""Class to read metadata of the book.
