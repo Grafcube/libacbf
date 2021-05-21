@@ -6,7 +6,7 @@ import langcodes
 import magic
 from lxml import etree
 
-from libacbf import *
+from libacbf import ACBFBook
 from libacbf.structs import Author, Genre
 from libacbf.constants import ArchiveTypes, Genres
 

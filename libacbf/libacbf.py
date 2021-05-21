@@ -12,17 +12,18 @@ from libacbf.bookdata import BookData
 from libacbf.archivereader import ArchiveReader, get_archive_type
 
 def is_book_archive(file: Union[str, Path]) -> Optional[bool]:
-	"""[summary]
+	"""Check if file is a valid ACBF Ebook and if it is a text file or archive.
 
 	Parameters
 	----------
 	file : Union[str, Path]
-		[description]
+		Path to file.
 
 	Returns
 	-------
-	bool
-		[description]
+	bool | None
+		Returns ``None`` if file is not a valid ACBF book. Returns ``True`` if book is an archive.
+		Returns ``False`` if file is a text file.
 	"""
 	if isinstance(file, str):
 		file = Path(file)
