@@ -1,7 +1,7 @@
 import os
 import re
 from pathlib import Path
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Union
 from lxml import etree
 
 from libacbf.structs import Styles
@@ -9,7 +9,54 @@ from libacbf.constants import BookNamespace
 from libacbf.metadata import BookInfo, PublishInfo, DocumentInfo
 from libacbf.body import Page
 from libacbf.bookdata import BookData
-from libacbf.archivereader import ArchiveReader
+from libacbf.archivereader import ArchiveReader, get_archive_type
+
+def is_book_archive(file: Union[str, Path]) -> Optional[bool]:
+	"""[summary]
+
+	Parameters
+	----------
+	file : Union[str, Path]
+		[description]
+
+	Returns
+	-------
+	bool
+		[description]
+	"""
+	if isinstance(file, str):
+		file = Path(file)
+
+	if file.suffix == ".acbf":
+		return False
+
+	try:
+		get_archive_type(file)
+	except ValueError:
+		return None
+	else:
+		with ArchiveReader(file) as arc:
+			acbf = arc._get_acbf_contents()
+		if acbf is not None:
+			return True
+		else:
+			return None
+
+def _validate_acbf(tree, ns: BookNamespace):
+	version = re.split(r'/', ns.ACBFns_raw)[-1]
+	xsd_path = f"libacbf/schema/acbf-{version}.xsd"
+
+	with open(xsd_path, encoding="utf-8") as file:
+		acbf_root = etree.fromstring(bytes(file.read(), encoding="utf-8"))
+		acbf_tree = acbf_root.getroottree()
+		acbf_schema = etree.XMLSchema(acbf_tree)
+
+	# TODO fix schema error. When fixed, remove try/except
+	try:
+		acbf_schema.assertValid(tree)
+	except etree.DocumentInvalid as err:
+		print("Validation failed. File may be valid (bug)")
+		print(err)
 
 class ACBFBook:
 	"""Base class for reading ACBF ebooks.
@@ -97,30 +144,32 @@ class ACBFBook:
 		:attr:`ArchiveReader.archive <libacbf.archivereader.ArchiveReader.archive>` may be
 		``zipfile.ZipFile``, ``pathlib.Path``, ``tarfile.TarFile`` or ``rarfile.RarFile``.
 	"""
-	def __init__(self, file_path: str = "libacbf/templates/base_template_1.1.acbf"):
+	def __init__(self, file_path: Union[str, Path] = "libacbf/templates/base_template_1.1.acbf"):
 		if file_path == "libacbf/templates/base_template_1.1.acbf":
 			raise NotImplementedError("Create new books TBD")
 
 		self.is_open: bool = True
 
-		self.book_path = Path(file_path)
+		if isinstance(file_path, str):
+			file_path = Path(os.path.abspath(file_path))
 
-		self.file_path = os.path.abspath(file_path)
+		self.book_path = file_path
+
+		self.file_path = str(file_path)
 
 		self.archive: Optional[ArchiveReader] = None
 
 		contents = None
-		if self.book_path.suffix == ".acbf":
+		type = is_book_archive(file_path)
+		if type == False:
 			with open(file_path, encoding="utf-8") as book:
 				contents = book.read()
-
-		elif self.book_path.suffix in [".cbz", ".cb7", ".cbt", ".cbr"]:
+		elif type == True:
 			self.archive = ArchiveReader(file_path)
 			contents = self.archive._get_acbf_contents()
 			if contents is None:
 				raise ValueError("File is not an ACBF Ebook.")
-
-		else:
+		elif type == None:
 			raise ValueError("File is not an ACBF Ebook.")
 
 		self._root = etree.fromstring(bytes(contents, encoding="utf-8"))
@@ -128,7 +177,7 @@ class ACBFBook:
 
 		self.namespace: BookNamespace = BookNamespace(f"{{{self._root.nsmap[None]}}}")
 
-		self.validate_acbf()
+		_validate_acbf(self._tree, self.namespace)
 
 		self.Styles: Styles = Styles(self, contents)
 
@@ -180,29 +229,12 @@ class ACBFBook:
 				text = re.sub(r"<\/?p[^>]*>", "", str(etree.tostring(p, encoding="utf-8"), encoding="utf-8").strip())
 				pa.append(text)
 			references[ref.attrib["id"]] = {"paragraph": "\n".join(pa)}
-		return references
+		return
+def __enter__(self):
+	return self
 
-	def validate_acbf(self):
-		version = re.split(r'/', self.namespace.ACBFns_raw)[-1]
-		xsd_path = f"libacbf/schema/acbf-{version}.xsd"
-
-		with open(xsd_path, encoding="utf-8") as file:
-			acbf_root = etree.fromstring(bytes(file.read(), encoding="utf-8"))
-			acbf_tree = acbf_root.getroottree()
-			acbf_schema = etree.XMLSchema(acbf_tree)
-
-		# TODO fix schema error. When fixed, remove try/except
-		try:
-			acbf_schema.assertValid(self._tree)
-		except etree.DocumentInvalid as err:
-			print("Validation failed. File may be valid (bug)")
-			print(err)
-
-	def __enter__(self):
-		return self
-
-	def __exit__(self, exception_type, exception_value, traceback):
-		self.close()
+def __exit__(self, exception_type, exception_value, traceback):
+	self.close()
 
 class ACBFMetadata:
 	"""Class to read metadata of the book.

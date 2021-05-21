@@ -1,12 +1,42 @@
 import shutil
+import tempfile
 from pathlib import Path
 from typing import Optional, Union
-import tempfile
-from zipfile import ZipFile
-from py7zr import SevenZipFile
+from zipfile import ZipFile, is_zipfile
+from py7zr import SevenZipFile, is_7zfile
 import tarfile as Tar
-from rarfile import RarFile
+from rarfile import RarFile, is_rarfile
+
 from libacbf.constants import ArchiveTypes
+
+def get_archive_type(file: Union[str, Path]) -> ArchiveTypes:
+	"""[summary]
+
+	Parameters
+	----------
+	file : Union[str, Path]
+		[description]
+
+	Returns
+	-------
+	ArchiveTypes
+		[description]
+
+	Raises
+	------
+	ValueError
+		[description]
+	"""
+	if is_zipfile(file):
+		return ArchiveTypes.Zip
+	elif is_7zfile(file):
+		return ArchiveTypes.SevenZip
+	elif Tar.is_tarfile(file):
+		return ArchiveTypes.Tar
+	elif is_rarfile(file):
+		return ArchiveTypes.Rar
+	else:
+		raise ValueError("File is not a supported archive type.")
 
 class ArchiveReader:
 	"""Class to directly read from archives.
@@ -23,32 +53,25 @@ class ArchiveReader:
 	type : ArchiveTypes(Enum)
 		The type of archive.
 	"""
-	def __init__(self, archive_path: Union[str, Path]):
-		if type(archive_path) is str:
-			archive_path = Path(archive_path)
+	def __init__(self, archive: Union[str, Path]):
+		self.type: ArchiveTypes = get_archive_type(archive)
 
-		archive = None
-		if archive_path.suffix in [".cbz", ".zip"]:
-			ar = ArchiveTypes.Zip
-			archive = ZipFile(str(archive_path), 'r')
+		if isinstance(archive, str):
+			archive = Path(archive)
 
-		elif archive_path.suffix in [".cb7", ".7z"]:
-			ar = ArchiveTypes.SevenZip
-			archive = Path(tempfile.mkdtemp())
-			with SevenZipFile(str(archive_path), 'r') as sarchive:
-				sarchive.extractall(str(archive))
+		arc = None
+		if self.type == ArchiveTypes.Zip:
+			arc = ZipFile(str(archive), 'r')
+		if self.type == ArchiveTypes.SevenZip:
+			arc = Path(tempfile.mkdtemp())
+			with SevenZipFile(str(archive), 'r') as sarchive:
+				sarchive.extractall(str(arc))
+		if self.type == ArchiveTypes.Tar:
+			arc = Tar.open(str(archive), 'r')
+		if self.type == ArchiveTypes.Rar:
+			arc = RarFile(str(archive), errors="strict")
 
-		elif archive_path.suffix in [".cbt", ".tar", ".gz"]:
-			ar = ArchiveTypes.Tar
-			archive = Tar.open(str(archive_path), 'r')
-
-		elif archive_path.suffix in [".cbr", ".rar"]:
-			ar = ArchiveTypes.Rar
-			archive = RarFile(str(archive_path), errors="strict")
-
-		self.archive: Union[ZipFile, Path, Tar.TarFile, RarFile] = archive
-
-		self.type: ArchiveTypes = ar
+		self.archive: Union[ZipFile, Path, Tar.TarFile, RarFile] = arc
 
 	def read(self, file_path: str) -> bytes:
 		"""Get file as bytes from archive.
