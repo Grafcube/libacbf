@@ -246,12 +246,12 @@ class LanguageLayer:
 	lang : str
 		Language of layer as a standard language code.
 
-	show : bool, optional
+	show : bool
 		Whether layer is drawn.
 	"""
-	def __init__(self, val: str, show: Optional[bool] = None):
+	def __init__(self, val: str, show: bool):
 		self.lang: str = langcodes.standardize_tag(val)
-		self.show: Optional[bool] = show
+		self.show: bool = show
 
 class Series:
 	"""Used by :attr:`BookInfo.series <libacbf.metadata.BookInfo.series>`.

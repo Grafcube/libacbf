@@ -1,7 +1,7 @@
 import re
 import langcodes
 import magic
-from typing import Union
+from typing import Optional, Union
 from functools import wraps
 from pathlib import Path
 from base64 import b64encode
@@ -45,610 +45,685 @@ def _check_reference_section(book: ACBFBook, create: bool = True):
 class book:
 	"""[summary]
 	"""
-	@staticmethod
-	@check_book
-	def add_data(book: ACBFBook, file_path: Union[str, Path], embed: bool = False):
-		# TODO: Option to choose whether to embed in xml or add to archive
-		"""[summary]
+	class data:
+		@staticmethod
+		@check_book
+		def add(book: ACBFBook, file_path: Union[str, Path], embed: bool = False):
+			# TODO: Option to choose whether to embed in xml or add to archive
+			"""[summary]
 
-		Parameters
-		----------
-		book : ACBFBook
-			[description]
-		file_path : str
-			[description]
-		"""
+			Parameters
+			----------
+			book : ACBFBook
+				[description]
+			file_path : str
+				[description]
+			"""
 
-		file_path = Path(file_path) if isinstance(file_path, str) else file_path
+			file_path = Path(file_path) if isinstance(file_path, str) else file_path
 
-		dat_section = _check_data_section(book)
+			dat_section = _check_data_section(book)
 
-		id = file_path.name
-		with open(file_path, 'rb') as file:
-			contents = file.read()
-			content_type = magic.from_buffer(contents, True)
-			data64 = str(b64encode(contents), encoding="utf-8")
+			id = file_path.name
+			with open(file_path, 'rb') as file:
+				contents = file.read()
+				content_type = magic.from_buffer(contents, True)
+				data64 = str(b64encode(contents), encoding="utf-8")
 
-		bin_element = etree.Element(f"{book.namespace.ACBFns}binary")
-		bin_element.set("id", id)
-		bin_element.set("content-type", content_type)
-		bin_element.text = data64
+			bin_element = etree.Element(f"{book.namespace.ACBFns}binary")
+			bin_element.set("id", id)
+			bin_element.set("content-type", content_type)
+			bin_element.text = data64
 
-		dat_section.append(bin_element)
-		book.Data.sync_data()
-
-	@staticmethod
-	@check_book
-	def remove_data(book: ACBFBook, id: str):
-		"""[summary]
-
-		Parameters
-		----------
-		book : ACBFBook
-			[description]
-		id : str
-			[description]
-		"""
-		dat_section = _check_data_section(book, False)
-		if dat_section is not None:
-			for i in dat_section.findall(f"{book.namespace.ACBFns}binary"):
-				if i.attrib["id"] == id:
-					i.clear()
-					i.getparent().remove(i)
-					break
-
+			dat_section.append(bin_element)
 			book.Data.sync_data()
 
-	@staticmethod
-	@check_book
-	def edit_styles(book: ACBFBook, stylesheet: str, style_name: str = "_"):
-		"""[summary]
+		@staticmethod
+		@check_book
+		def remove(book: ACBFBook, id: str):
+			"""[summary]
 
-		Parameters
-		----------
-		stylesheet : str
-			[description]
-		style_name : str, optional
-			[description], by default "_"
-		"""
+			Parameters
+			----------
+			book : ACBFBook
+				[description]
+			id : str
+				[description]
+			"""
+			dat_section = _check_data_section(book, False)
+			if dat_section is not None:
+				for i in dat_section.findall(f"{book.namespace.ACBFns}binary"):
+					if i.attrib["id"] == id:
+						i.clear()
+						i.getparent().remove(i)
+						break
 
-		book.Styles.sync_styles()
+				book.Data.sync_data()
 
-	@staticmethod
-	@check_book
-	def remove_style(book: ACBFBook, style_name: str = "_"):
-		"""[summary]
+	class styles:
+		@staticmethod
+		@check_book
+		def edit(book: ACBFBook, stylesheet: str, style_name: str = "_"):
+			"""[summary]
 
-		Parameters
-		----------
-		book : ACBFBook
-			[description]
-		style_name : str, optional
-			[description], by default "_"
-		"""
+			Parameters
+			----------
+			stylesheet : str
+				[description]
+			style_name : str, optional
+				[description], by default "_"
+			"""
 
-		book.Styles.sync_styles()
+			book.Styles.sync_styles()
 
-	@staticmethod
-	@check_book
-	def add_reference(book: ACBFBook, id: str, paragraph: str, idx: int = -1):
-		"""[summary]
+		@staticmethod
+		@check_book
+		def remove(book: ACBFBook, style_name: str = "_"):
+			"""[summary]
 
-		Parameters
-		----------
-		book : ACBFBook
-			[description]
-		id : str
-			[description]
-		paragraph : str
-			[description]
-		idx : int, optional
-			[description], by default -1
-		"""
-		ref_section = _check_reference_section(book)
+			Parameters
+			----------
+			book : ACBFBook
+				[description]
+			style_name : str, optional
+				[description], by default "_"
+			"""
 
-		ref_element = etree.Element(f"{book.namespace.ACBFns}reference")
-		ref_element.set("id", id)
+			book.Styles.sync_styles()
 
-		p_list = re.split(r"\n", paragraph)
-		for ref in p_list:
-			p = f"<p>{ref}</p>"
-			p_element = etree.fromstring(bytes(p, encoding="utf-8"))
-			for i in list(p_element.iter()):
-				i.tag = book.namespace.ACBFns + i.tag
-			ref_element.append(p_element)
+	class references:
+		@staticmethod
+		@check_book
+		def add(book: ACBFBook, id: str, paragraph: str, idx: int = -1):
+			"""[summary]
 
-		if idx == -1:
-			ref_section.append(ref_element)
-		elif idx < 0:
-			ref_section.insert(idx+1, ref_element)
-		else:
-			ref_section.insert(idx, ref_element)
+			Parameters
+			----------
+			book : ACBFBook
+				[description]
+			id : str
+				[description]
+			paragraph : str
+				[description]
+			idx : int, optional
+				[description], by default -1
+			"""
+			ref_section = _check_reference_section(book)
 
-		book.References = book.sync_references()
+			ref_element = etree.Element(f"{book.namespace.ACBFns}reference")
+			ref_element.set("id", id)
 
-	@staticmethod
-	@check_book
-	def remove_reference(book: ACBFBook, id: str):
-		"""[summary]
+			p_list = re.split(r"\n", paragraph)
+			for ref in p_list:
+				p = f"<p>{ref}</p>"
+				p_element = etree.fromstring(bytes(p, encoding="utf-8"))
+				for i in list(p_element.iter()):
+					i.tag = book.namespace.ACBFns + i.tag
+				ref_element.append(p_element)
 
-		Parameters
-		----------
-		book : ACBFBook
-			[description]
-		id : str
-			[description]
-		"""
-		ref_section = _check_reference_section(book, False)
-		if ref_section is not None:
-			for i in ref_section.findall(f"{book.namespace.ACBFns}reference"):
-				if i.attrib["id"] == id:
-					i.clear()
-					i.getparent().remove(i)
-					break
+			if idx == -1:
+				ref_section.append(ref_element)
+			elif idx < 0:
+				ref_section.insert(idx+1, ref_element)
+			else:
+				ref_section.insert(idx, ref_element)
 
 			book.References = book.sync_references()
 
-class book_metadata:
+		@staticmethod
+		@check_book
+		def remove(book: ACBFBook, id: str):
+			"""[summary]
+
+			Parameters
+			----------
+			book : ACBFBook
+				[description]
+			id : str
+				[description]
+			"""
+			ref_section = _check_reference_section(book, False)
+			if ref_section is not None:
+				for i in ref_section.findall(f"{book.namespace.ACBFns}reference"):
+					if i.attrib["id"] == id:
+						i.clear()
+						i.getparent().remove(i)
+						break
+
+				book.References = book.sync_references()
+
+class metadata:
 	"""[summary]
 	"""
-	@staticmethod
-	@check_book
-	def add_book_author(book: ACBFBook, author: Author):
-		"""[summary]
+	class bookinfo:
+		class authors:
+			@staticmethod
+			@check_book
+			def add(book: ACBFBook, author: Author):
+				"""[summary]
 
-		Parameters
-		----------
-		book : ACBFBook
-			[description]
-		author : Author
-			[description]
-		"""
-		info_section = book.Metadata.book_info._info
+				Parameters
+				----------
+				book : ACBFBook
+					[description]
+				author : Author
+					[description]
+				"""
+				info_section = book.Metadata.book_info._info
 
-		au_element = etree.Element(f"{book.namespace.ACBFns}author")
+				au_element = etree.Element(f"{book.namespace.ACBFns}author")
 
-		if author.activity is not None:
-			au_element.set("activity", author.activity.name)
-		if author.lang is not None:
-			au_element.set("lang", str(author.lang))
+				if author.activity is not None:
+					au_element.set("activity", author.activity.name)
+				if author.lang is not None:
+					au_element.set("lang", str(author.lang))
 
-		if author.first_name is not None:
-			element = etree.Element(f"{book.namespace.ACBFns}first-name")
-			element.text = author.first_name
-			au_element.append(element)
-		if author.last_name is not None:
-			element = etree.Element(f"{book.namespace.ACBFns}last-name")
-			element.text = author.last_name
-			au_element.append(element)
-		if author.nickname is not None:
-			element = etree.Element(f"{book.namespace.ACBFns}nickname")
-			element.text = author.nickname
-			au_element.append(element)
-		if author.middle_name is not None:
-			element = etree.Element(f"{book.namespace.ACBFns}middle-name")
-			element.text = author.middle_name
-			au_element.append(element)
-		if author.home_page is not None:
-			element = etree.Element(f"{book.namespace.ACBFns}home-page")
-			element.text = author.home_page
-			au_element.append(element)
-		if author.email is not None:
-			element = etree.Element(f"{book.namespace.ACBFns}email")
-			element.text = author.email
-			au_element.append(element)
+				if author.first_name is not None:
+					element = etree.Element(f"{book.namespace.ACBFns}first-name")
+					element.text = author.first_name
+					au_element.append(element)
+				if author.last_name is not None:
+					element = etree.Element(f"{book.namespace.ACBFns}last-name")
+					element.text = author.last_name
+					au_element.append(element)
+				if author.nickname is not None:
+					element = etree.Element(f"{book.namespace.ACBFns}nickname")
+					element.text = author.nickname
+					au_element.append(element)
+				if author.middle_name is not None:
+					element = etree.Element(f"{book.namespace.ACBFns}middle-name")
+					element.text = author.middle_name
+					au_element.append(element)
+				if author.home_page is not None:
+					element = etree.Element(f"{book.namespace.ACBFns}home-page")
+					element.text = author.home_page
+					au_element.append(element)
+				if author.email is not None:
+					element = etree.Element(f"{book.namespace.ACBFns}email")
+					element.text = author.email
+					au_element.append(element)
 
-		last_au_idx = 0
-		if len(info_section.findall(f"{book.namespace.ACBFns}author")) > 0:
-			last_au_idx = info_section.index(info_section.findall(f"{book.namespace.ACBFns}author")[-1])
-		info_section.insert(last_au_idx+1, au_element)
+				last_au_idx = 0
+				if len(info_section.findall(f"{book.namespace.ACBFns}author")) > 0:
+					last_au_idx = info_section.index(info_section.findall(f"{book.namespace.ACBFns}author")[-1])
+				info_section.insert(last_au_idx+1, au_element)
 
-		book.Metadata.book_info.sync_authors()
+				book.Metadata.book_info.sync_authors()
 
-	@staticmethod
-	@check_book
-	def edit_book_author(book: ACBFBook, original_author: Union[Author, int], new_author: Author):
-		"""[summary]
+			@staticmethod
+			@check_book
+			def edit(book: ACBFBook, original_author: Union[Author, int], new_author: Author):
+				"""[summary]
 
-		Parameters
-		----------
-		book : ACBFBook
-			[description]
-		original_author : Union[Author, int]
-			[description]
-		new_author : Author
-			[description]
+				Parameters
+				----------
+				book : ACBFBook
+					[description]
+				original_author : Union[Author, int]
+					[description]
+				new_author : Author
+					[description]
 
-		Raises
-		------
-		ValueError
-			[description]
-		"""
-		au_list = book.Metadata.book_info._info.findall(f"{book.namespace.ACBFns}author")
+				Raises
+				------
+				ValueError
+					[description]
+				"""
+				au_list = book.Metadata.book_info._info.findall(f"{book.namespace.ACBFns}author")
 
-		if type(original_author) is Author:
-			if original_author._element is None:
-				raise ValueError("`original_author` is not part of the book.")
-			else:
-				au_element = original_author._element
-
-		elif type(original_author) is int:
-			au_element = au_list[original_author]
-			original_author = book.Metadata.book_info.authors[original_author]
-
-		if new_author.activity is not None:
-			au_element.set("activity", new_author.activity.name)
-		if new_author.lang is not None:
-			au_element.set("lang", str(new_author.lang))
-
-		if new_author.first_name is not None:
-			element = au_element.find(f"{book.namespace.ACBFns}first-name")
-			if element is None:
-				element = etree.Element(f"{book.namespace.ACBFns}first-name")
-				au_element.insert(0, element)
-			element.text = new_author.first_name
-
-		if new_author.last_name is not None:
-			element = au_element.find(f"{book.namespace.ACBFns}last-name")
-			if element is None:
-				element = etree.Element(f"{book.namespace.ACBFns}last-name")
-				if au_element.find(f"{book.namespace.ACBFns}middle-name") is not None:
-					au_element.insert(2, element)
-				else:
-					au_element.insert(1, element)
-			element.text = new_author.last_name
-
-		if new_author.nickname is not None:
-			element = au_element.find(f"{book.namespace.ACBFns}nickname")
-			if element is None:
-				element = etree.Element(f"{book.namespace.ACBFns}nickname")
-				if au_element.find(f"{book.namespace.ACBFns}last-name") is not None:
-					if au_element.find(f"{book.namespace.ACBFns}middle-name"):
-						idx = 3
+				if isinstance(original_author, Author):
+					if original_author._element is None:
+						raise ValueError("`original_author` is not part of the book.")
 					else:
-						idx = 2
-				elif au_element.find(f"{book.namespace.ACBFns}middle-name") is not None:
-					idx = 1
+						au_element = original_author._element
+
+				elif isinstance(original_author, int):
+					au_element = au_list[original_author]
+					original_author = book.Metadata.book_info.authors[original_author]
+
+				if new_author.activity is not None:
+					au_element.set("activity", new_author.activity.name)
+				if new_author.lang is not None:
+					au_element.set("lang", str(new_author.lang))
+
+				if new_author.first_name is not None:
+					element = au_element.find(f"{book.namespace.ACBFns}first-name")
+					if element is None:
+						element = etree.Element(f"{book.namespace.ACBFns}first-name")
+						au_element.insert(0, element)
+					element.text = new_author.first_name
+
+				if new_author.last_name is not None:
+					element = au_element.find(f"{book.namespace.ACBFns}last-name")
+					if element is None:
+						element = etree.Element(f"{book.namespace.ACBFns}last-name")
+						if au_element.find(f"{book.namespace.ACBFns}middle-name") is not None:
+							au_element.insert(2, element)
+						else:
+							au_element.insert(1, element)
+					element.text = new_author.last_name
+
+				if new_author.nickname is not None:
+					element = au_element.find(f"{book.namespace.ACBFns}nickname")
+					if element is None:
+						element = etree.Element(f"{book.namespace.ACBFns}nickname")
+						if au_element.find(f"{book.namespace.ACBFns}last-name") is not None:
+							if au_element.find(f"{book.namespace.ACBFns}middle-name"):
+								idx = 3
+							else:
+								idx = 2
+						elif au_element.find(f"{book.namespace.ACBFns}middle-name") is not None:
+							idx = 1
+						else:
+							idx = 0
+						au_element.insert(idx, element)
+					element.text = new_author.nickname
+
+				if new_author.middle_name is not None:
+					element = au_element.find(f"{book.namespace.ACBFns}middle-name")
+					if element is None:
+						element = etree.Element(f"{book.namespace.ACBFns}middle-name")
+						if au_element.find(f"{book.namespace.ACBFns}first-name") is not None:
+							au_element.insert(1, element)
+						else:
+							au_element.insert(0, element)
+					element.text = new_author.middle_name
+
+				if new_author.home_page is not None:
+					element = au_element.find(f"{book.namespace.ACBFns}home-page")
+					if element is None:
+						element = etree.Element(f"{book.namespace.ACBFns}home-page")
+						au_element.append(element)
+					element.text = new_author.home_page
+
+				if new_author.email is not None:
+					element = au_element.find(f"{book.namespace.ACBFns}email")
+					if element is None:
+						element = etree.Element(f"{book.namespace.ACBFns}email")
+						au_element.append(element)
+					element.text = new_author.email
+
+				book.Metadata.book_info.sync_authors()
+
+			@staticmethod
+			@check_book
+			def remove(book: ACBFBook, index: int):
+				"""[summary]
+
+				Parameters
+				----------
+				book : ACBFBook
+					[description]
+				index : int
+					[description]
+				"""
+				info_section = book.Metadata.book_info._info
+
+				au_items = info_section.findall(f"{book.namespace.ACBFns}author")
+				au_items[index].clear()
+				au_items[index].getparent().remove(au_items[index])
+
+				book.Metadata.book_info.sync_authors()
+
+		class title:
+			@staticmethod
+			@check_book
+			def edit(book: ACBFBook, title: str, lang: str = "_"):
+				"""[summary]
+
+				Parameters
+				----------
+				book : ACBFBook
+					[description]
+				title : str
+					[description]
+				lang : str, optional
+					[description], by default "_"
+				"""
+				info_section = book.Metadata.book_info._info
+
+				title_elements = info_section.findall(f"{book.namespace.ACBFns}book-title")
+				idx = info_section.index(title_elements[-1]) + 1
+				found = False
+				key = None
+
+				if lang == "_":
+					for i in title_elements:
+						if "lang" not in i.keys():
+							i.text = title
+							found = True
+							break
+					if not found:
+						t_element = etree.Element(f"{book.namespace.ACBFns}book-title")
+						t_element.text = title
+						info_section.insert(idx, t_element)
+						found = True
 				else:
-					idx = 0
-				au_element.insert(idx, element)
-			element.text = new_author.nickname
+					key = langcodes.standardize_tag(lang)
 
-		if new_author.middle_name is not None:
-			element = au_element.find(f"{book.namespace.ACBFns}middle-name")
-			if element is None:
-				element = etree.Element(f"{book.namespace.ACBFns}middle-name")
-				if au_element.find(f"{book.namespace.ACBFns}first-name") is not None:
-					au_element.insert(1, element)
-				else:
-					au_element.insert(0, element)
-			element.text = new_author.middle_name
+				if not found:
+					for i in title_elements:
+						if key == langcodes.standardize_tag(i.attrib["lang"]):
+							i.text == title
+							found = True
+							break
+					if not found:
+						t_element = etree.Element(f"{book.namespace.ACBFns}book-title")
+						t_element.set("lang", key)
+						t_element.text = title
+						info_section.insert(idx, t_element)
+						found = True
 
-		if new_author.home_page is not None:
-			element = au_element.find(f"{book.namespace.ACBFns}home-page")
-			if element is None:
-				element = etree.Element(f"{book.namespace.ACBFns}home-page")
-				au_element.append(element)
-			element.text = new_author.home_page
+				book.Metadata.book_info.sync_book_titles()
 
-		if new_author.email is not None:
-			element = au_element.find(f"{book.namespace.ACBFns}email")
-			if element is None:
-				element = etree.Element(f"{book.namespace.ACBFns}email")
-				au_element.append(element)
-			element.text = new_author.email
+			@staticmethod
+			@check_book
+			def remove(book: ACBFBook, lang: str = "_"):
+				"""[summary]
 
-		book.Metadata.book_info.sync_authors()
+				Parameters
+				----------
+				book : ACBFBook
+					[description]
+				lang : str, optional
+					[description], by default "_"
+				"""
+				info_section = book.Metadata.book_info._info
 
-	@staticmethod
-	@check_book
-	def remove_book_author(book: ACBFBook, index: int):
-		"""[summary]
+				title_elements = info_section.findall(f"{book.namespace.ACBFns}book-title")
 
-		Parameters
-		----------
-		book : ACBFBook
-			[description]
-		index : int
-			[description]
-		"""
-		info_section = book.Metadata.book_info._info
+				key = None
+				complete = False
+				if len(title_elements) > 1:
+					if lang == "_":
+						for i in title_elements:
+							if "lang" not in i.keys():
+								i.clear()
+								i.getparent().remove(i)
+								complete = True
+								break
+					else:
+						key = langcodes.standardize_tag(lang)
 
-		au_items = info_section.findall(f"{book.namespace.ACBFns}author")
-		au_items[index].clear()
-		au_items[index].getparent().remove(au_items[index])
+					if not complete:
+						for i in title_elements:
+							if key == langcodes.standardize_tag(i.attrib["lang"]):
+								i.clear()
+								i.getparent().remove(i)
+								complete = True
+								break
 
-		book.Metadata.book_info.sync_authors()
+					book.Metadata.book_info.sync_book_titles()
 
-	@staticmethod
-	@check_book
-	def edit_book_title(book: ACBFBook, title: str, lang: str = "_"):
-		"""[summary]
+		class genres:
+			@staticmethod
+			@check_book
+			def edit(book: ACBFBook, genre: Union[Genre, Genres], match: Optional[int] = None):
+				"""[summary]
 
-		Parameters
-		----------
-		book : ACBFBook
-			[description]
-		title : str
-			[description]
-		lang : str, optional
-			[description], by default "_"
-		"""
-		info_section = book.Metadata.book_info._info
+				Parameters
+				----------
+				book : ACBFBook
+					[description]
+				genre : Genre | Genres(Enum)
+					[description]
+				match : int, optional
+					[description]
 
-		title_elements = info_section.findall(f"{book.namespace.ACBFns}book-title")
-		idx = info_section.index(title_elements[-1]) + 1
-		found = False
-		key = None
+				Raises
+				------
+				ValueError
+					[description]
+				"""
+				info_section = book.Metadata.book_info._info
+				gn_elements = info_section.findall(f"{book.namespace.ACBFns}genre")
 
-		if lang == "_":
-			for i in title_elements:
-				if "lang" not in i.keys():
-					i.text = title
-					found = True
-					break
-			if not found:
-				t_element = etree.Element(f"{book.namespace.ACBFns}book-title")
-				t_element.text = title
-				info_section.insert(idx, t_element)
-				found = True
-		else:
-			key = langcodes.standardize_tag(lang)
+				name = None
+				if type(genre) is Genres:
+					name = genre.name
+				elif isinstance(genre, Genre):
+					name = genre.Genre.name
 
-		if not found:
-			for i in title_elements:
-				if key == langcodes.standardize_tag(i.attrib["lang"]):
-					i.text == title
-					found = True
-					break
-			if not found:
-				t_element = etree.Element(f"{book.namespace.ACBFns}book-title")
-				t_element.set("lang", key)
-				t_element.text = title
-				info_section.insert(idx, t_element)
-				found = True
-
-		book.Metadata.book_info.sync_book_titles()
-
-	@staticmethod
-	@check_book
-	def remove_book_title(book: ACBFBook, lang: str = "_"):
-		"""[summary]
-
-		Parameters
-		----------
-		book : ACBFBook
-			[description]
-		lang : str, optional
-			[description], by default "_"
-		"""
-		info_section = book.Metadata.book_info._info
-
-		title_elements = info_section.findall(f"{book.namespace.ACBFns}book-title")
-
-		key = None
-		complete = False
-		if len(title_elements) > 1:
-			if lang == "_":
-				for i in title_elements:
-					if "lang" not in i.keys():
-						i.clear()
-						i.getparent().remove(i)
-						complete = True
+				gn_element = None
+				for i in gn_elements:
+					if i.text == name:
+						gn_element = i
 						break
-			else:
-				key = langcodes.standardize_tag(lang)
 
-			if not complete:
-				for i in title_elements:
-					if key == langcodes.standardize_tag(i.attrib["lang"]):
-						i.clear()
-						i.getparent().remove(i)
-						complete = True
-						break
+				if gn_element is None:
+					idx = info_section.index(gn_elements[-1]) + 1
+					gn_element = etree.Element(f"{book.namespace.ACBFns}genre")
+					gn_element.text = name
+					info_section.insert(idx, gn_element)
 
-			book.Metadata.book_info.sync_book_titles()
+				if match is not None:
+					gn_element.set("match", str(match))
 
-	@staticmethod
-	@check_book
-	def add_genre(book: ACBFBook, genre: Union[Genre, Genres]):
-		"""[summary]
-
-		Parameters
-		----------
-		book : ACBFBook
-			[description]
-		genre : Union[Genre, Genres]
-			[description]
-		"""
-		info_section = book.Metadata.book_info._info
-
-		gn_elements = info_section.findall(f"{book.namespace.ACBFns}genre")
-		idx = info_section.index(gn_elements[-1]) + 1
-
-		name = None
-		match = None
-
-		if type(genre) is Genres:
-			if genre.name in book.Metadata.book_info.genres.keys():
-				return
-			else:
-				name = genre.name
-		elif type(genre) is Genre:
-			if genre.Genre.name in book.Metadata.book_info.genres.keys():
-				if genre.Match is not None:
-					edit_genre_match(genre.Match, genre)
-					return
-				else:
-					return
-			else:
-				name = genre.Genre.name
-				match = genre.Match
-
-		gn_element = etree.Element(f"{book.namespace.ACBFns}genre")
-		gn_element.text = name
-		if match is not None:
-			gn_element.set("match", str(match))
-		info_section.insert(idx, gn_element)
-
-		book.Metadata.book_info.sync_genres()
-
-	@staticmethod
-	@check_book
-	def edit_genre_match(book: ACBFBook, match: int, genre: Union[Genre, Genres]):
-		"""[summary]
-
-		Parameters
-		----------
-		book : ACBFBook
-			[description]
-		match : int
-			[description]
-		genre : Union[Genre, Genres]
-			[description]
-
-		Raises
-		------
-		ValueError
-			[description]
-		"""
-		info_section = book.Metadata.book_info._info
-		gn_elements = info_section.findall(f"{book.namespace.ACBFns}genre")
-		name = None
-
-		if type(genre) is Genres:
-			if genre.name not in book.Metadata.book_info.genres.keys():
-				raise ValueError("The specified Genre was not found.")
-			else:
-				name = genre.name
-		elif type(genre) is Genre:
-			if genre.Genre.name not in book.Metadata.book_info.genres.keys():
-				raise ValueError("The specified Genre was not found.")
-			else:
-				name = genre.Genre.name
-
-		for i in gn_elements:
-			if i.text == name:
-				gn_element = i
-				break
-		gn_element.set("match", str(match))
-
-		book.Metadata.book_info.sync_genres()
-
-	@staticmethod
-	@check_book
-	def remove_genre(book: ACBFBook, genre: Union[Genre, Genres]):
-		"""[summary]
-
-		Parameters
-		----------
-		book : ACBFBook
-			[description]
-		genre : Union[Genre, Genres]
-			[description]
-		"""
-		info_section = book.Metadata.book_info._info
-		gn_elements = info_section.findall(f"{book.namespace.ACBFns}genre")
-		name = None
-
-		if type(genre) is Genres:
-			name = genre.name
-		elif type(genre) is Genre:
-			name = genre.Genre.name
-
-		for i in gn_elements:
-			if i.text == name:
-				i.clear()
-				i.getparent().remove(i)
 				book.Metadata.book_info.sync_genres()
-				break
 
-	@staticmethod
-	@check_book
-	def edit_annotation(book: ACBFBook, text: str, lang: str = "_"):
-		"""[summary]
+			@staticmethod
+			@check_book
+			def remove(book: ACBFBook, genre: Union[Genre, Genres]):
+				"""[summary]
 
-		Parameters
-		----------
-		book : ACBFBook
-			[description]
-		text : str
-			[description]
-		lang : str, optional
-			[description], by default "_"
-		"""
-		info_section = book.Metadata.book_info._info
+				Parameters
+				----------
+				book : ACBFBook
+					[description]
+				genre : Union[Genre, Genres]
+					[description]
+				"""
+				info_section = book.Metadata.book_info._info
+				gn_elements = info_section.findall(f"{book.namespace.ACBFns}genre")
 
-		annotation_elements = info_section.findall(f"{book.namespace.ACBFns}annotation")
-		an_element = None
-		key = None
-		idx = info_section.index(annotation_elements[-1]) + 1
+				name = None
+				if type(genre) is Genres:
+					name = genre.name
+				elif type(genre) is Genre:
+					name = genre.Genre.name
 
-		if lang == "_":
-			for i in annotation_elements:
-				if "lang" not in i.keys():
-					an_element = i
-					break
-			if an_element is None:
-				an_element = etree.Element(f"{book.namespace.ACBFns}annotation")
-				info_section.insert(idx, an_element)
+				for i in gn_elements:
+					if i.text == name:
+						i.clear()
+						i.getparent().remove(i)
+						book.Metadata.book_info.sync_genres()
+						break
 
-		else:
-			key = langcodes.standardize_tag(lang)
+		class annotation:
+			@staticmethod
+			@check_book
+			def edit(book: ACBFBook, text: str, lang: str = "_"):
+				"""[summary]
 
-		if an_element is None:
-			for i in annotation_elements:
-				if langcodes.standardize_tag(i.attrib["lang"]) == key:
-					an_element = i
-					break
-			if an_element is None:
-				an_element = etree.Element(f"{book.namespace.ACBFns}annotation")
-				an_element.set("lang", key)
-				info_section.insert(idx, an_element)
+				Parameters
+				----------
+				book : ACBFBook
+					[description]
+				text : str
+					[description]
+				lang : str, optional
+					[description], by default "_"
+				"""
+				info_section = book.Metadata.book_info._info
+				annotation_elements = info_section.findall(f"{book.namespace.ACBFns}annotation")
+				key = None
+				idx = info_section.index(annotation_elements[-1]) + 1
 
-		for pt in text.split(r"\n"):
-			p = etree.Element(f"{book.namespace.ACBFns}p")
-			p.text = pt
-			an_element.append(p)
+				an_element = None
+				if lang == "_":
+					for i in annotation_elements:
+						if "lang" not in i.keys():
+							an_element = i
+							break
+					if an_element is None:
+						an_element = etree.Element(f"{book.namespace.ACBFns}annotation")
+						info_section.insert(idx, an_element)
 
-		book.Metadata.book_info.sync_annotations()
+				else:
+					key = langcodes.standardize_tag(lang)
 
-	@staticmethod
-	@check_book
-	def remove_annotation(book: ACBFBook, lang: str = "_"):
-		"""[summary]
+				if an_element is None:
+					for i in annotation_elements:
+						if langcodes.standardize_tag(i.attrib["lang"]) == key:
+							an_element = i
+							break
+					if an_element is None:
+						an_element = etree.Element(f"{book.namespace.ACBFns}annotation")
+						an_element.set("lang", key)
+						info_section.insert(idx, an_element)
 
-		Parameters
-		----------
-		book : ACBFBook
-			[description]
-		lang : str, optional
-			[description], by default "_"
-		"""
-		info_section = book.Metadata.book_info._info
-		annotation_elements = info_section.findall(f"{book.namespace.ACBFns}annotation")
-		an_element = None
-		key = None
+				for pt in text.split(r"\n"):
+					p = etree.Element(f"{book.namespace.ACBFns}p")
+					p.text = pt
+					an_element.append(p)
 
-		if lang == "_":
-			for i in annotation_elements:
-				if "lang" not in i.keys():
-					an_element = i
-					break
+				book.Metadata.book_info.sync_annotations()
 
-		else:
-			key = langcodes.standardize_tag(lang)
+			@staticmethod
+			@check_book
+			def remove(book: ACBFBook, lang: str = "_"):
+				"""[summary]
 
-		if an_element is None:
-			for i in annotation_elements:
-				if langcodes.standardize_tag(i.attrib["lang"]) == key:
-					an_element = i
-					break
+				Parameters
+				----------
+				book : ACBFBook
+					[description]
+				lang : str, optional
+					[description], by default "_"
+				"""
+				info_section = book.Metadata.book_info._info
+				annotation_elements = info_section.findall(f"{book.namespace.ACBFns}annotation")
+				an_element = None
+				key = None
 
-		if an_element is None:
-			return
-		else:
-			an_element.clear()
-			an_element.getparent().remove(an_element)
+				if lang == "_":
+					for i in annotation_elements:
+						if "lang" not in i.keys():
+							an_element = i
+							break
 
-		book.Metadata.book_info.sync_annotations()
+				else:
+					key = langcodes.standardize_tag(lang)
+
+				if an_element is None:
+					for i in annotation_elements:
+						if langcodes.standardize_tag(i.attrib["lang"]) == key:
+							an_element = i
+							break
+
+				if an_element is None:
+					return
+				else:
+					an_element.clear()
+					an_element.getparent().remove(an_element)
+
+				book.Metadata.book_info.sync_annotations()
+
+		class coverpage:
+			@staticmethod
+			@check_book
+			def edit(book: ACBFBook):
+				raise NotImplementedError("TODO when making Page editor")
+
+		class language_layers:
+			@staticmethod
+			@check_book
+			def edit(book: ACBFBook, lang: str, show: bool):
+				"""[summary]
+
+				Parameters
+				----------
+				book : ACBFBook
+					[description]
+				lang : str
+					[description]
+				show : bool
+					[description]
+				"""
+				ln_section = book.Metadata.book_info._info.find(f"{book.namespace.ACBFns}languages")
+				ln_elements = ln_section.findall(f"{book.namespace.ACBFns}text-layer")
+				lang = langcodes.standardize_tag(lang)
+
+				ln_item = None
+				for i in ln_elements:
+					if langcodes.standardize_tag(i.attrib["lang"]) == lang:
+						ln_item = i
+						break
+
+				if ln_item is None:
+					ln_item = etree.Element(f"{book.namespace.ACBFns}text-layer")
+					ln_item.set("lang", lang)
+					ln_section.append(ln_item)
+
+				ln_item.set("show", str(show))
+
+				book.Metadata.book_info.sync_languages()
+
+			@staticmethod
+			@check_book
+			def remove(book: ACBFBook, lang: str):
+				"""[summary]
+
+				Parameters
+				----------
+				book : ACBFBook
+					[description]
+				lang : str
+					[description]
+				"""
+				ln_section = book.Metadata.book_info._info.find(f"{book.namespace.ACBFns}languages")
+				ln_elements = ln_section.findall(f"{book.namespace.ACBFns}text-layer")
+				lang = langcodes.standardize_tag(lang)
+
+				for i in ln_elements:
+					if langcodes.standardize_tag(i.attrib["lang"]) == lang:
+						i.clear()
+						ln_section.remove(i)
+						book.Metadata.book_info.sync_languages()
+						break
+
+		class characters:
+			@staticmethod
+			@check_book
+			def add(book: ACBFBook, name: str):
+				"""[summary]
+
+				Parameters
+				----------
+				book : ACBFBook
+					[description]
+				name : str
+					[description]
+				"""
+				char_section = book.Metadata.book_info._info.find(f"{book.namespace.ACBFns}characters")
+				char = etree.Element(f"{book.namespace.ACBFns}name")
+				char.text = name
+				char_section.append(char)
+				book.Metadata.book_info.sync_characters()
+
+			@staticmethod
+			@check_book
+			def remove(book: ACBFBook, item: Union[str, int]):
+				"""[summary]
+
+				Parameters
+				----------
+				book : ACBFBook
+					[description]
+				item : str | int
+					[description]
+				"""
+				char_section = book.Metadata.book_info._info.find(f"{book.namespace.ACBFns}characters")
+				char_elements = char_section.findall(f"{book.namespace.ACBFns}name")
+
+				if isinstance(item, int):
+					char_elements[item].clear()
+					char_section.remove(char_elements[item])
+					book.Metadata.book_info.sync_characters()
+				elif isinstance(item, str):
+					for i in char_elements:
+						if i.text == item:
+							i.clear()
+							char_section.remove(i)
+							book.Metadata.book_info.sync_characters()
+							break

@@ -153,16 +153,15 @@ class BookInfo:
 		cpage = self._info.find(f"{self._ns.ACBFns}coverpage")
 		self.cover_page: Page = Page(cpage, self.book, True)
 
+	# Optional
 	def sync_languages(self):
 		self.languages: List[LanguageLayer] = []
 
 		if self._info.find(f"{self._ns.ACBFns}languages") is not None:
 			text_layers = self._info.find(f"{self._ns.ACBFns}languages").findall(f"{self._ns.ACBFns}text-layer")
 			for layer in text_layers:
-				new_lang = LanguageLayer(layer.attrib["lang"])
-
-				if "show" in layer.keys():
-					new_lang.show = bool(distutils.util.strtobool(layer.attrib["show"]))
+				show = bool(distutils.util.strtobool(layer.attrib["show"]))
+				new_lang = LanguageLayer(layer.attrib["lang"], show)
 
 				self.languages.append(new_lang)
 
