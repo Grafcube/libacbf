@@ -1,7 +1,7 @@
 import re
 import langcodes
 import magic
-from typing import Optional, Union
+from typing import List, Optional, Union
 from functools import wraps
 from pathlib import Path
 from base64 import b64encode
@@ -403,7 +403,7 @@ class metadata:
 
 				if not found:
 					for i in title_elements:
-						if key == langcodes.standardize_tag(i.attrib["lang"]):
+						if "lang" in i.keys() and langcodes.standardize_tag(i.attrib["lang"]) == key:
 							i.text == title
 							found = True
 							break
@@ -447,7 +447,7 @@ class metadata:
 
 					if not complete:
 						for i in title_elements:
-							if key == langcodes.standardize_tag(i.attrib["lang"]):
+							if "lang" in i.keys() and langcodes.standardize_tag(i.attrib["lang"]) == key:
 								i.clear()
 								i.getparent().remove(i)
 								complete = True
@@ -564,7 +564,7 @@ class metadata:
 
 				if an_element is None:
 					for i in annotation_elements:
-						if langcodes.standardize_tag(i.attrib["lang"]) == key:
+						if "lang" in i.keys() and langcodes.standardize_tag(i.attrib["lang"]) == key:
 							an_element = i
 							break
 					if an_element is None:
@@ -607,7 +607,7 @@ class metadata:
 
 				if an_element is None:
 					for i in annotation_elements:
-						if langcodes.standardize_tag(i.attrib["lang"]) == key:
+						if "lang" in i.keys() and langcodes.standardize_tag(i.attrib["lang"]) == key:
 							an_element = i
 							break
 
@@ -727,3 +727,135 @@ class metadata:
 							char_section.remove(i)
 							book.Metadata.book_info.sync_characters()
 							break
+
+		class keywords:
+			@staticmethod
+			@check_book
+			def edit(book: ACBFBook, keywords: List[str], lang: str = "_"):
+				"""[summary]
+
+				Parameters
+				----------
+				book : ACBFBook
+					[description]
+				keywords : List[str]
+					[description]
+				lang : str, optional
+					[description], by default "_"
+				"""
+				info_section = book.Metadata.book_info._info
+				key_elements = info_section.findall(f"{book.namespace.ACBFns}keywords")
+
+				if len(key_elements) > 0:
+					idx = info_section.index(key_elements[-1]) + 1
+				else:
+					idx = info_section.index(info_section.find(f"{book.namespace.ACBFns}coverpage")) + 1
+
+				key_element = None
+				if lang == "_":
+					for i in key_elements:
+						if "lang" not in i.keys():
+							key_element = i
+							break
+					if key_element is None:
+						key_element = etree.Element(f"{book.namespace.ACBFns}keywords")
+						info_section.insert(idx, key_element)
+				else:
+					lang = langcodes.standardize_tag(lang)
+					for i in key_elements:
+						if "lang" in i.keys() and langcodes.standardize_tag(i.attrib["lang"]) == lang:
+							key_element = i
+							break
+					if key_element is None:
+						key_element = etree.Element(f"{book.namespace.ACBFns}keywords")
+						key_element.set("lang", lang)
+						info_section.insert(idx, key_element)
+
+				key_element.text = ", ".join(keywords)
+
+				book.Metadata.book_info.sync_keywords()
+
+			@staticmethod
+			@check_book
+			def remove(book: ACBFBook, lang: str = "_"):
+				"""[summary]
+
+				Parameters
+				----------
+				book : ACBFBook
+					[description]
+				lang : str, optional
+					[description], by default "_"
+				"""
+				key_elements = book.Metadata.book_info._info.findall(f"{book.namespace.ACBFns}keywords")
+
+				key_element = None
+				if lang == "_":
+					for i in key_elements:
+						if "lang" not in i.keys():
+							key_element = i
+							break
+				else:
+					lang = langcodes.standardize_tag(lang)
+					for i in key_elements:
+						if "lang" in i.keys() and langcodes.standardize_tag(i.attrib["lang"]) == lang:
+							key_element = i
+							break
+				if key_element is not None:
+					key_element.clear()
+					key_element.getparent().remove(key_element)
+					book.Metadata.book_info.sync_keywords()
+
+		class series:
+			@staticmethod
+			@check_book
+			def edit(book: ACBFBook, title: str, sequence: str, volume: Optional[str] = None):
+				"""[summary]
+
+				Parameters
+				----------
+				book : ACBFBook
+					[description]
+				title : str
+					[description]
+				sequence : str
+					[description]
+				volume : str, optional
+					[description], by default None
+				"""
+				info_section = book.Metadata.book_info._info
+				ser_items = info_section.findall(f"{book.namespace.ACBFns}sequence")
+
+				if len(ser_items) > 0:
+					idx = info_section.index(ser_items[-1]) + 1
+				else:
+					idx = info_section.index(info_section.find(f"{book.namespace.ACBFns}coverpage")) + 1
+
+				ser_element = None
+				for i in ser_items:
+					if i.attrib["title"] == title:
+						ser_element = i
+						break
+				if ser_element is None:
+					ser_element = etree.Element(f"{book.namespace.ACBFns}sequence")
+					ser_element.set("title", title)
+					info_section.insert(idx, ser_element)
+
+				ser_element.text = sequence
+
+				if volume is not None:
+					ser_element.set("volume", volume)
+
+				book.Metadata.book_info.sync_series()
+
+			def remove(book: ACBFBook, title: str):
+				"""[summary]
+
+				Parameters
+				----------
+				book : ACBFBook
+					[description]
+				title : str
+					[description]
+				"""
+				pass
