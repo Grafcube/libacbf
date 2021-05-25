@@ -858,4 +858,80 @@ class metadata:
 				title : str
 					[description]
 				"""
-				pass
+				seq_items = book.Metadata.book_info._info.findall(f"{book.namespace.ACBFns}sequence")
+
+				for i in seq_items:
+					if i.attrib["title"] == title:
+						i.clear()
+						i.getparent().remove(i)
+						book.Metadata.book_info.sync_series()
+						break
+
+		class content_rating:
+			@staticmethod
+			@check_book
+			def edit(book: ACBFBook, rating: str, type: str = "_"):
+				"""[summary]
+
+				Parameters
+				----------
+				book : ACBFBook
+					[description]
+				rating : str
+					[description]
+				type : str, optional
+					[description], by default "_"
+				"""
+				info_section = book.Metadata.book_info._info
+				rt_items = info_section.findall(f"{book.namespace.ACBFns}content-rating")
+
+				if len(rt_items) > 0:
+					idx = info_section.index(rt_items[-1]) + 1
+				else:
+					idx = info_section.index(info_section.find(f"{book.namespace.ACBFns}coverpage")) + 1
+
+				rt_element = None
+				if type != "_":
+					for i in rt_items:
+						if "type" in i.keys() and i.attrib["type"] == type:
+							rt_element = i
+							break
+				else:
+					for i in rt_items:
+						if "type" not in i.keys():
+							rt_element = i
+							break
+
+				if rt_element is None:
+					rt_element = etree.Element(f"{book.namespace.ACBFns}content-rating")
+					info_section.insert(idx, rt_element)
+					if type != "_":
+						rt_element.set("type", type)
+
+				rt_element.text = rating
+				book.Metadata.book_info.sync_content_rating()
+
+			@staticmethod
+			@check_book
+			def remove(book: ACBFBook, type: str = "_"):
+				"""[summary]
+
+				Parameters
+				----------
+				book : ACBFBook
+					[description]
+				type : str, optional
+					[description], by default "_"
+				"""
+				rt_items = book.Metadata.book_info._info.findall(f"{book.namespace.ACBFns}sequence")
+
+				rt_element = None
+				for i in rt_items:
+					if (type == "_" and "type" not in i.keys()) or (type != "_" and "type" in i.keys() and i.attrib["type"] == type):
+						rt_element = i
+						break
+
+				if rt_element is not None:
+					rt_element.clear()
+					rt_element.getparent().remove(rt_element)
+					book.Metadata.book_info.sync_content_rating()
