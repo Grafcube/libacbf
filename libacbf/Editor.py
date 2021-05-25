@@ -8,7 +8,7 @@ from base64 import b64encode
 from lxml import etree
 
 from libacbf import ACBFBook
-from libacbf.structs import Author, Genre
+from libacbf.structs import Author, DBRef, Genre
 from libacbf.constants import ArchiveTypes, Genres
 
 def check_book(func):
@@ -625,7 +625,7 @@ class metadata:
 			def edit(book: ACBFBook):
 				raise NotImplementedError("TODO when making Page editor")
 
-		class language_layers:
+		class languagelayers:
 			@staticmethod
 			@check_book
 			def edit(book: ACBFBook, lang: str, show: bool):
@@ -641,7 +641,13 @@ class metadata:
 					[description]
 				"""
 				ln_section = book.Metadata.book_info._info.find(f"{book.namespace.ACBFns}languages")
+
+				if ln_section is None:
+					ln_section = etree.Element(f"{book.namespace.ACBFns}languages")
+					book.Metadata.book_info._info.append(ln_section)
+
 				ln_elements = ln_section.findall(f"{book.namespace.ACBFns}text-layer")
+
 				lang = langcodes.standardize_tag(lang)
 
 				ln_item = None
@@ -672,15 +678,17 @@ class metadata:
 					[description]
 				"""
 				ln_section = book.Metadata.book_info._info.find(f"{book.namespace.ACBFns}languages")
-				ln_elements = ln_section.findall(f"{book.namespace.ACBFns}text-layer")
-				lang = langcodes.standardize_tag(lang)
 
-				for i in ln_elements:
-					if langcodes.standardize_tag(i.attrib["lang"]) == lang:
-						i.clear()
-						ln_section.remove(i)
-						book.Metadata.book_info.sync_languages()
-						break
+				if ln_section is not None:
+					ln_elements = ln_section.findall(f"{book.namespace.ACBFns}text-layer")
+					lang = langcodes.standardize_tag(lang)
+
+					for i in ln_elements:
+						if langcodes.standardize_tag(i.attrib["lang"]) == lang:
+							i.clear()
+							ln_section.remove(i)
+							book.Metadata.book_info.sync_languages()
+							break
 
 		class characters:
 			@staticmethod
@@ -696,6 +704,10 @@ class metadata:
 					[description]
 				"""
 				char_section = book.Metadata.book_info._info.find(f"{book.namespace.ACBFns}characters")
+
+				if char_section is None:
+					char_section = etree.Element(f"{book.namespace.ACBFns}characters")
+
 				char = etree.Element(f"{book.namespace.ACBFns}name")
 				char.text = name
 				char_section.append(char)
@@ -714,19 +726,21 @@ class metadata:
 					[description]
 				"""
 				char_section = book.Metadata.book_info._info.find(f"{book.namespace.ACBFns}characters")
-				char_elements = char_section.findall(f"{book.namespace.ACBFns}name")
 
-				if isinstance(item, int):
-					char_elements[item].clear()
-					char_section.remove(char_elements[item])
-					book.Metadata.book_info.sync_characters()
-				elif isinstance(item, str):
-					for i in char_elements:
-						if i.text == item:
-							i.clear()
-							char_section.remove(i)
-							book.Metadata.book_info.sync_characters()
-							break
+				if char_section is not None:
+					char_elements = char_section.findall(f"{book.namespace.ACBFns}name")
+
+					if isinstance(item, int):
+						char_elements[item].clear()
+						char_section.remove(char_elements[item])
+						book.Metadata.book_info.sync_characters()
+					elif isinstance(item, str):
+						for i in char_elements:
+							if i.text == item:
+								i.clear()
+								char_section.remove(i)
+								book.Metadata.book_info.sync_characters()
+								break
 
 		class keywords:
 			@staticmethod
@@ -745,11 +759,10 @@ class metadata:
 				"""
 				info_section = book.Metadata.book_info._info
 				key_elements = info_section.findall(f"{book.namespace.ACBFns}keywords")
+				idx = None
 
 				if len(key_elements) > 0:
 					idx = info_section.index(key_elements[-1]) + 1
-				else:
-					idx = info_section.index(info_section.find(f"{book.namespace.ACBFns}coverpage")) + 1
 
 				key_element = None
 				if lang == "_":
@@ -759,7 +772,10 @@ class metadata:
 							break
 					if key_element is None:
 						key_element = etree.Element(f"{book.namespace.ACBFns}keywords")
-						info_section.insert(idx, key_element)
+						if idx is not None:
+							info_section.insert(idx, key_element)
+						else:
+							info_section.append(key_element)
 				else:
 					lang = langcodes.standardize_tag(lang)
 					for i in key_elements:
@@ -769,7 +785,10 @@ class metadata:
 					if key_element is None:
 						key_element = etree.Element(f"{book.namespace.ACBFns}keywords")
 						key_element.set("lang", lang)
-						info_section.insert(idx, key_element)
+						if idx is not None:
+							info_section.insert(idx, key_element)
+						else:
+							info_section.append(key_element)
 
 				key_element.text = ", ".join(keywords)
 
@@ -825,11 +844,10 @@ class metadata:
 				"""
 				info_section = book.Metadata.book_info._info
 				ser_items = info_section.findall(f"{book.namespace.ACBFns}sequence")
+				idx = None
 
 				if len(ser_items) > 0:
 					idx = info_section.index(ser_items[-1]) + 1
-				else:
-					idx = info_section.index(info_section.find(f"{book.namespace.ACBFns}coverpage")) + 1
 
 				ser_element = None
 				for i in ser_items:
@@ -839,7 +857,10 @@ class metadata:
 				if ser_element is None:
 					ser_element = etree.Element(f"{book.namespace.ACBFns}sequence")
 					ser_element.set("title", title)
-					info_section.insert(idx, ser_element)
+					if idx is not None:
+						info_section.insert(idx, ser_element)
+					else:
+						info_section.append(ser_element)
 
 				ser_element.text = sequence
 
@@ -867,7 +888,7 @@ class metadata:
 						book.Metadata.book_info.sync_series()
 						break
 
-		class content_rating:
+		class contentrating:
 			@staticmethod
 			@check_book
 			def edit(book: ACBFBook, rating: str, type: str = "_"):
@@ -884,11 +905,10 @@ class metadata:
 				"""
 				info_section = book.Metadata.book_info._info
 				rt_items = info_section.findall(f"{book.namespace.ACBFns}content-rating")
+				idx = None
 
 				if len(rt_items) > 0:
 					idx = info_section.index(rt_items[-1]) + 1
-				else:
-					idx = info_section.index(info_section.find(f"{book.namespace.ACBFns}coverpage")) + 1
 
 				rt_element = None
 				if type != "_":
@@ -904,7 +924,10 @@ class metadata:
 
 				if rt_element is None:
 					rt_element = etree.Element(f"{book.namespace.ACBFns}content-rating")
-					info_section.insert(idx, rt_element)
+					if idx is not None:
+						info_section.insert(idx, rt_element)
+					else:
+						info_section.append(rt_element)
 					if type != "_":
 						rt_element.set("type", type)
 
@@ -935,3 +958,84 @@ class metadata:
 					rt_element.clear()
 					rt_element.getparent().remove(rt_element)
 					book.Metadata.book_info.sync_content_rating()
+
+		class databaseref:
+			@staticmethod
+			@check_book
+			def add(book: ACBFBook, dbname: str, ref: str, type: Optional[str] = None):
+				"""[summary]
+
+				Parameters
+				----------
+				book : ACBFBook
+					[description]
+				dbname : str
+					[description]
+				ref : str
+					[description]
+				type : str | None, optional
+					[description], by default None
+				"""
+				info_section = book.Metadata.book_info._info
+				db_items = info_section.findall(f"{book.namespace.ACBFns}databaseref")
+				idx = None
+
+				if len(db_items) > 0:
+					idx = info_section.index(db_items[-1]) + 1
+
+				db_element = etree.Element(f"{book.namespace.ACBFns}databaseref")
+				db_element.set("dbname", dbname)
+				db_element.text = ref
+				if type is not None:
+					db_element.set("type", type)
+
+				if idx is not None:
+					info_section.insert(idx, db_element)
+				else:
+					info_section.append(db_element)
+
+				book.Metadata.book_info.sync_database_ref()
+
+			@staticmethod
+			@check_book
+			def edit(book: ACBFBook, dbref: DBRef, dbname: Optional[str] = None, ref: Optional[str] = None, type: Optional[str] = None):
+				"""[summary]
+
+				Parameters
+				----------
+				book : ACBFBook
+					[description]
+				dbref : DBRef
+					[description]
+				dbname : str
+					[description]
+				ref : str
+					[description]
+				type : str | None, optional
+					[description], by default None
+				"""
+				if dbname is not None:
+					dbref._element.set("dbname", dbname)
+				if ref is not None:
+					dbref._element.text = ref
+				if type is not None:
+					dbref._element.set("type", type)
+
+				if dbname is not None or ref is not None or type is not None:
+					book.Metadata.book_info.sync_database_ref()
+
+			@staticmethod
+			@check_book
+			def remove(book: ACBFBook, dbref: DBRef):
+				"""[summary]
+
+				Parameters
+				----------
+				book : ACBFBook
+					[description]
+				dbref : DBRef
+					[description]
+				"""
+				dbref._element.clear()
+				dbref._element.getparent().remove(dbref._element)
+				book.Metadata.book_info.sync_database_ref()

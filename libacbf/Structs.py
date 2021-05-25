@@ -295,6 +295,8 @@ class DBRef:
 		Type of the given reference such as URL, ID etc.
 	"""
 	def __init__(self, dbname: str, ref: str):
+		self._element = None
+
 		self.dbname: str = dbname
 		self.reference: str = ref
 		self.type: Optional[str] = None

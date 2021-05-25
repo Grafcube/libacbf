@@ -213,6 +213,7 @@ class BookInfo:
 		db_items = self._info.findall(f"{self._ns.ACBFns}databaseref")
 		for db in db_items:
 			new_db = DBRef(db.attrib["dbname"], db.text)
+			new_db._element = db
 
 			if "type" in db.keys():
 				new_db.type = db.attrib["type"]
