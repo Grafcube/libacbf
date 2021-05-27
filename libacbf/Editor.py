@@ -22,26 +22,6 @@ def check_book(func):
 		func(*args, **kwargs)
 	return wrapper
 
-def _check_data_section(book: ACBFBook, create: bool = True):
-	dat_section = book._root.find(f"{book.namespace.ACBFns}data")
-	if dat_section is None and create:
-		ref_section = book._root.find(f"{book.namespace.ACBFns}references")
-		if ref_section is None:
-			idx = book._root.index(book._root.find(f"{book.namespace.ACBFns}body"))
-		else:
-			idx = book._root.index(ref_section)
-		dat_section = etree.Element(f"{book.namespace.ACBFns}data")
-		book._root.insert(idx+1, dat_section)
-	return dat_section
-
-def _check_reference_section(book: ACBFBook, create: bool = True):
-	ref_section = book._root.find(f"{book.namespace.ACBFns}references")
-	if ref_section is None and create:
-		idx = book._root.index(book._root.find(f"{book.namespace.ACBFns}body"))
-		ref_section = etree.Element(f"{book.namespace.ACBFns}references")
-		book._root.insert(idx+1, ref_section)
-	return ref_section
-
 class book:
 	"""[summary]
 	"""
@@ -62,7 +42,10 @@ class book:
 
 			file_path = Path(file_path) if isinstance(file_path, str) else file_path
 
-			dat_section = _check_data_section(book)
+			dat_section = book._root.find(f"{book.namespace.ACBFns}data")
+			if dat_section is None:
+				dat_section = etree.Element(f"{book.namespace.ACBFns}data")
+				book._root.append(dat_section)
 
 			id = file_path.name
 			with open(file_path, 'rb') as file:
@@ -90,46 +73,20 @@ class book:
 			id : str
 				[description]
 			"""
-			dat_section = _check_data_section(book, False)
+			dat_section = book._root.find(f"{book.namespace.ACBFns}data")
+
 			if dat_section is not None:
 				for i in dat_section.findall(f"{book.namespace.ACBFns}binary"):
 					if i.attrib["id"] == id:
 						i.clear()
-						i.getparent().remove(i)
+						dat_section.remove(i)
 						break
 
+				if len(dat_section.findall(f"{book.namespace.ACBFns}binary")) == 0:
+					dat_section.clear()
+					dat_section.getparent().remove(dat_section)
+
 				book.Data.sync_data()
-
-	class styles:
-		@staticmethod
-		@check_book
-		def edit(book: ACBFBook, stylesheet: str, style_name: str = "_"):
-			"""[summary]
-
-			Parameters
-			----------
-			stylesheet : str
-				[description]
-			style_name : str, optional
-				[description], by default "_"
-			"""
-
-			book.Styles.sync_styles()
-
-		@staticmethod
-		@check_book
-		def remove(book: ACBFBook, style_name: str = "_"):
-			"""[summary]
-
-			Parameters
-			----------
-			book : ACBFBook
-				[description]
-			style_name : str, optional
-				[description], by default "_"
-			"""
-
-			book.Styles.sync_styles()
 
 	class references:
 		@staticmethod
@@ -148,7 +105,9 @@ class book:
 			idx : int, optional
 				[description], by default -1
 			"""
-			ref_section = _check_reference_section(book)
+			ref_section = book._root.find(f"{book.namespace.ACBFns}references")
+			if ref_section is None:
+				book._root.append(ref_section)
 
 			ref_element = etree.Element(f"{book.namespace.ACBFns}reference")
 			ref_element.set("id", id)
@@ -182,15 +141,50 @@ class book:
 			id : str
 				[description]
 			"""
-			ref_section = _check_reference_section(book, False)
+			ref_section = book._root.find(f"{book.namespace.ACBFns}references")
+
 			if ref_section is not None:
 				for i in ref_section.findall(f"{book.namespace.ACBFns}reference"):
 					if i.attrib["id"] == id:
 						i.clear()
-						i.getparent().remove(i)
+						ref_section.remove(i)
 						break
 
-				book.References = book.sync_references()
+				if len(ref_section.findall(f"{book.namespace.ACBFns}reference")) == 0:
+					ref_section.getparent().remove(ref_section)
+
+				book.sync_references()
+
+	class styles:
+		@staticmethod
+		@check_book
+		def edit(book: ACBFBook, stylesheet: str, style_name: str = "_"):
+			"""[summary]
+
+			Parameters
+			----------
+			stylesheet : str
+				[description]
+			style_name : str, optional
+				[description], by default "_"
+			"""
+
+			book.Styles.sync_styles()
+
+		@staticmethod
+		@check_book
+		def remove(book: ACBFBook, style_name: str = "_"):
+			"""[summary]
+
+			Parameters
+			----------
+			book : ACBFBook
+				[description]
+			style_name : str, optional
+				[description], by default "_"
+			"""
+
+			book.Styles.sync_styles()
 
 class metadata:
 	"""[summary]
@@ -625,6 +619,7 @@ class metadata:
 			def edit(book: ACBFBook):
 				raise NotImplementedError("TODO when making Page editor")
 
+		# Optional
 		class languagelayers:
 			@staticmethod
 			@check_book
@@ -641,7 +636,6 @@ class metadata:
 					[description]
 				"""
 				ln_section = book.Metadata.book_info._info.find(f"{book.namespace.ACBFns}languages")
-
 				if ln_section is None:
 					ln_section = etree.Element(f"{book.namespace.ACBFns}languages")
 					book.Metadata.book_info._info.append(ln_section)
@@ -687,8 +681,13 @@ class metadata:
 						if langcodes.standardize_tag(i.attrib["lang"]) == lang:
 							i.clear()
 							ln_section.remove(i)
-							book.Metadata.book_info.sync_languages()
 							break
+
+					if len(ln_section.findall(f"{book.namespace.ACBFns}text-layer")) == 0:
+						ln_section.clear()
+						ln_section.getparent().remove(ln_section)
+
+					book.Metadata.book_info.sync_languages()
 
 		class characters:
 			@staticmethod
@@ -733,14 +732,18 @@ class metadata:
 					if isinstance(item, int):
 						char_elements[item].clear()
 						char_section.remove(char_elements[item])
-						book.Metadata.book_info.sync_characters()
 					elif isinstance(item, str):
 						for i in char_elements:
 							if i.text == item:
 								i.clear()
 								char_section.remove(i)
-								book.Metadata.book_info.sync_characters()
 								break
+
+					if len(char_section.findall(f"{book.namespace.ACBFns}name")) == 0:
+						char_section.clear()
+						char_section.getparent().remove(char_section)
+
+					book.Metadata.book_info.sync_characters()
 
 		class keywords:
 			@staticmethod
@@ -888,7 +891,7 @@ class metadata:
 						book.Metadata.book_info.sync_series()
 						break
 
-		class contentrating:
+		class rating:
 			@staticmethod
 			@check_book
 			def edit(book: ACBFBook, rating: str, type: str = "_"):
@@ -1039,3 +1042,5 @@ class metadata:
 				dbref._element.clear()
 				dbref._element.getparent().remove(dbref._element)
 				book.Metadata.book_info.sync_database_ref()
+
+
