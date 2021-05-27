@@ -103,8 +103,8 @@ class Author:
 	def __init__(self, *names: str, first_name = None, last_name = None, nickname = None):
 		self._element = None
 
-		self.first_name: Optional[str] = None
-		self.last_name: Optional[str] = None
+		self._first_name: Optional[str] = None
+		self._last_name: Optional[str] = None
 		self.nickname: Optional[str] = None
 
 		if len(names) == 1:
@@ -118,8 +118,8 @@ class Author:
 			nickname = names[2]
 
 		if (first_name is not None and last_name is not None) or nickname is not None:
-			self.first_name: Optional[str] = first_name
-			self.last_name: Optional[str] = last_name
+			self._first_name: Optional[str] = first_name
+			self._last_name: Optional[str] = last_name
 			self.nickname: Optional[str] = nickname
 		else:
 			raise ValueError("Author must have either First Name and Last Name or Nickname.")
@@ -129,6 +129,28 @@ class Author:
 		self.middle_name: Optional[str] = None
 		self.home_page: Optional[str] = None
 		self.email: Optional[str] = None
+
+	@property
+	def first_name(self) -> str:
+		return self._first_name
+
+	@first_name.setter
+	def first_name(self, val: str):
+		if self.last_name is not None or self.nickname is not None:
+			self._first_name = val
+		else:
+			raise ValueError("Author must have either First Name and Last Name or Nickname.")
+
+	@property
+	def last_name(self) -> str:
+		return self._last_name
+
+	@last_name.setter
+	def last_name(self, val: str):
+		if self.first_name is not None or self.nickname is not None:
+			self._last_name = val
+		else:
+			raise ValueError("Author must have either First Name and Last Name or Nickname.")
 
 	@property
 	def activity(self) -> Optional[AuthorActivities]:
@@ -171,6 +193,22 @@ class Author:
 			self._lang = None
 		else:
 			self._lang = langcodes.standardize_tag(val)
+
+	def copy(self) -> Author:
+		"""Creates a copy of this ``Author`` object not connected to any book.
+
+		Returns
+		-------
+		Author
+			Copy of this object.
+		"""
+		copy = Author(self.first_name, self.last_name, self.nickname)
+		copy.activity = self.activity
+		copy.lang = self.lang
+		copy.middle_name = self.middle_name
+		copy.home_page = self.home_page
+		copy.email = self.email
+		return copy
 
 class Genre:
 	"""The genre of the book.

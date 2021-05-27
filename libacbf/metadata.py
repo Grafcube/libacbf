@@ -252,8 +252,10 @@ class PublishInfo:
 		The license that the book is under.
 	"""
 	def __init__(self, info, book: ACBFBook):
-		self.book = book
 		ns = book.namespace
+		self._info = info
+
+		self.book = book
 
 		self.publisher: str = info.find(f"{ns.ACBFns}publisher").text
 
@@ -312,9 +314,10 @@ class DocumentInfo:
 	"""
 	def __init__(self, info, book: ACBFBook):
 		self.book = book
+		self._info = info
 		ns: BookNamespace = book.namespace
 
-		self.authors: List[Author] = update_authors(info.findall(f"{ns.ACBFns}author"), ns)
+		self.sync_authors()
 
 		self.creation_date_string: str = info.find(f"{ns.ACBFns}creation-date").text
 
@@ -342,6 +345,10 @@ class DocumentInfo:
 		if info.find(f"{ns.ACBFns}history") is not None:
 			for item in info.findall(f"{ns.ACBFns}history/{ns.ACBFns}p"):
 				self.document_history.append(item.text)
+
+	def sync_authors(self):
+		ns = self.book.namespace
+		self.authors: List[Author] = update_authors(self._info.findall(f"{ns.ACBFns}author"), ns)
 
 def update_authors(author_items, ns: BookNamespace):
 	authors = []

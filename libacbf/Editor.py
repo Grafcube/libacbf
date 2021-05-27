@@ -1,7 +1,9 @@
 import re
 import langcodes
 import magic
+import dateutil.parser
 from typing import List, Optional, Union
+from datetime import date
 from functools import wraps
 from pathlib import Path
 from base64 import b64encode
@@ -21,6 +23,127 @@ def check_book(func):
 			raise ValueError("I/O operation on closed file.")
 		func(*args, **kwargs)
 	return wrapper
+
+def add_author(book: ACBFBook, section, author: Author):
+	info_section = section._info
+
+	au_element = etree.Element(f"{book.namespace.ACBFns}author")
+	author._element = au_element
+	idx = info_section.index(info_section.findall(f"{book.namespace.ACBFns}author")[-1]) + 1
+	info_section.insert(idx, au_element)
+
+	edit_author(book, section, author, author.copy())
+	section.sync_authors()
+
+def edit_author(book: ACBFBook, section, original_author: Union[Author, int], new_author: Author):
+	au_list = section._info.findall(f"{book.namespace.ACBFns}author")
+
+	if isinstance(original_author, Author):
+		if original_author._element is None:
+			raise ValueError("`original_author` is not part of a book.")
+		else:
+			au_element = original_author._element
+
+	elif isinstance(original_author, int):
+		au_element = au_list[original_author]
+		original_author = section.authors[original_author]
+
+	if new_author.activity is not None:
+		au_element.set("activity", new_author.activity.name)
+	else:
+		au_element.attrib.pop("activity")
+	if new_author.lang is not None:
+		au_element.set("lang", str(new_author.lang))
+	else:
+		au_element.attrib.pop("lang")
+
+	attrs = [
+		("first-name", "first_name", 0),
+		("last-name", "last_name", 1),
+		("nickname", "nickname")
+	]
+
+	for i in attrs:
+		element = au_element.find(book.namespace.ACBFns + i[0])
+		if element is None and getattr(new_author, i[1]) is not None:
+			element = etree.Element(book.namespace.ACBFns + i[0])
+			if i[0] != "nickname":
+				au_element.insert(i[2], element)
+			else:
+				if au_element.find(f"{book.namespace.ACBFns}last-name") is not None:
+					idx = 2
+				else:
+					idx = 0
+				au_element.insert(idx, element)
+			element.text = getattr(new_author, i[1])
+		elif element is not None and getattr(new_author, i[1]) is not None:
+			element.text = getattr(new_author, i[1])
+		elif element is not None and getattr(new_author, i[1]) is None:
+			element.clear()
+			au_element.remove(element)
+
+	attrs_op = [
+		("middle-name", "middle_name"),
+		("home-page", "home_page"),
+		("email", "email")
+		]
+
+	for i in attrs_op:
+		element = au_element.find(book.namespace.ACBFns + i[0])
+		if element is None and getattr(new_author, i[1]) is not None:
+			element = etree.Element(book.namespace.ACBFns + i[0])
+			au_element.append(element)
+			element.text = getattr(new_author, i[1])
+		elif element is not None and getattr(new_author, i[1]) is not None:
+			element.text = getattr(new_author, i[1])
+		elif element is not None and getattr(new_author, i[1]) is None:
+			element.clear()
+			au_element.remove(element)
+
+	section.sync_authors()
+
+def remove_author(book: ACBFBook, section, index: int):
+	info_section = section._info
+
+	au_items = info_section.findall(f"{book.namespace.ACBFns}author")
+	au_items[index].clear()
+	info_section.remove(au_items[index])
+
+	section.sync_authors()
+
+def edit_optional(book: ACBFBook, tag: str, section, attr: str, text: Optional[str] = None):
+	item = section._info.find(book.namespace.ACBFns + tag)
+
+	if text is not None:
+		if item is None:
+			item = etree.Element(book.namespace.ACBFns + tag)
+			section._info.append(item)
+		item.text = text
+		setattr(section, attr, item.text)
+	elif text is None and item is not None:
+		item.clear()
+		item.getparent().remove(item)
+
+def edit_date(book: ACBFBook, tag: str, section, attr_s: str, attr_d: str, dt: Union[str, date], include_date: bool = True):
+	item = section._info.find(book.namespace.ACBFns + tag)
+
+	if isinstance(dt, str):
+		item.text = dt
+	elif isinstance(dt, date):
+		item.text = dt.isoformat()
+
+	setattr(section, attr_s, item.text)
+
+	if include_date:
+		if isinstance(dt, str):
+			item.set("value", dateutil.parser.parse(dt, fuzzy=True).date().isoformat())
+		elif isinstance(dt, date):
+			item.set("value", dt.isoformat())
+		setattr(section, attr_d, date.fromisoformat(item.attrib["value"]))
+	else:
+		if "value" in item.attrib.keys():
+			item.attrib.pop("value")
+		setattr(section, attr_d, None)
 
 class book:
 	"""[summary]
@@ -203,46 +326,7 @@ class metadata:
 				author : Author
 					[description]
 				"""
-				info_section = book.Metadata.book_info._info
-
-				au_element = etree.Element(f"{book.namespace.ACBFns}author")
-
-				if author.activity is not None:
-					au_element.set("activity", author.activity.name)
-				if author.lang is not None:
-					au_element.set("lang", str(author.lang))
-
-				if author.first_name is not None:
-					element = etree.Element(f"{book.namespace.ACBFns}first-name")
-					element.text = author.first_name
-					au_element.append(element)
-				if author.last_name is not None:
-					element = etree.Element(f"{book.namespace.ACBFns}last-name")
-					element.text = author.last_name
-					au_element.append(element)
-				if author.nickname is not None:
-					element = etree.Element(f"{book.namespace.ACBFns}nickname")
-					element.text = author.nickname
-					au_element.append(element)
-				if author.middle_name is not None:
-					element = etree.Element(f"{book.namespace.ACBFns}middle-name")
-					element.text = author.middle_name
-					au_element.append(element)
-				if author.home_page is not None:
-					element = etree.Element(f"{book.namespace.ACBFns}home-page")
-					element.text = author.home_page
-					au_element.append(element)
-				if author.email is not None:
-					element = etree.Element(f"{book.namespace.ACBFns}email")
-					element.text = author.email
-					au_element.append(element)
-
-				last_au_idx = 0
-				if len(info_section.findall(f"{book.namespace.ACBFns}author")) > 0:
-					last_au_idx = info_section.index(info_section.findall(f"{book.namespace.ACBFns}author")[-1])
-				info_section.insert(last_au_idx+1, au_element)
-
-				book.Metadata.book_info.sync_authors()
+				add_author(book, book.Metadata.book_info, author)
 
 			@staticmethod
 			@check_book
@@ -263,81 +347,7 @@ class metadata:
 				ValueError
 					[description]
 				"""
-				au_list = book.Metadata.book_info._info.findall(f"{book.namespace.ACBFns}author")
-
-				if isinstance(original_author, Author):
-					if original_author._element is None:
-						raise ValueError("`original_author` is not part of the book.")
-					else:
-						au_element = original_author._element
-
-				elif isinstance(original_author, int):
-					au_element = au_list[original_author]
-					original_author = book.Metadata.book_info.authors[original_author]
-
-				if new_author.activity is not None:
-					au_element.set("activity", new_author.activity.name)
-				if new_author.lang is not None:
-					au_element.set("lang", str(new_author.lang))
-
-				if new_author.first_name is not None:
-					element = au_element.find(f"{book.namespace.ACBFns}first-name")
-					if element is None:
-						element = etree.Element(f"{book.namespace.ACBFns}first-name")
-						au_element.insert(0, element)
-					element.text = new_author.first_name
-
-				if new_author.last_name is not None:
-					element = au_element.find(f"{book.namespace.ACBFns}last-name")
-					if element is None:
-						element = etree.Element(f"{book.namespace.ACBFns}last-name")
-						if au_element.find(f"{book.namespace.ACBFns}middle-name") is not None:
-							au_element.insert(2, element)
-						else:
-							au_element.insert(1, element)
-					element.text = new_author.last_name
-
-				if new_author.nickname is not None:
-					element = au_element.find(f"{book.namespace.ACBFns}nickname")
-					if element is None:
-						element = etree.Element(f"{book.namespace.ACBFns}nickname")
-						if au_element.find(f"{book.namespace.ACBFns}last-name") is not None:
-							if au_element.find(f"{book.namespace.ACBFns}middle-name"):
-								idx = 3
-							else:
-								idx = 2
-						elif au_element.find(f"{book.namespace.ACBFns}middle-name") is not None:
-							idx = 1
-						else:
-							idx = 0
-						au_element.insert(idx, element)
-					element.text = new_author.nickname
-
-				if new_author.middle_name is not None:
-					element = au_element.find(f"{book.namespace.ACBFns}middle-name")
-					if element is None:
-						element = etree.Element(f"{book.namespace.ACBFns}middle-name")
-						if au_element.find(f"{book.namespace.ACBFns}first-name") is not None:
-							au_element.insert(1, element)
-						else:
-							au_element.insert(0, element)
-					element.text = new_author.middle_name
-
-				if new_author.home_page is not None:
-					element = au_element.find(f"{book.namespace.ACBFns}home-page")
-					if element is None:
-						element = etree.Element(f"{book.namespace.ACBFns}home-page")
-						au_element.append(element)
-					element.text = new_author.home_page
-
-				if new_author.email is not None:
-					element = au_element.find(f"{book.namespace.ACBFns}email")
-					if element is None:
-						element = etree.Element(f"{book.namespace.ACBFns}email")
-						au_element.append(element)
-					element.text = new_author.email
-
-				book.Metadata.book_info.sync_authors()
+				edit_author(book, book.Metadata.book_info, original_author, new_author)
 
 			@staticmethod
 			@check_book
@@ -351,13 +361,7 @@ class metadata:
 				index : int
 					[description]
 				"""
-				info_section = book.Metadata.book_info._info
-
-				au_items = info_section.findall(f"{book.namespace.ACBFns}author")
-				au_items[index].clear()
-				au_items[index].getparent().remove(au_items[index])
-
-				book.Metadata.book_info.sync_authors()
+				remove_author(book, book.Metadata.book_info, index)
 
 		class title:
 			@staticmethod
@@ -1043,4 +1047,88 @@ class metadata:
 				dbref._element.getparent().remove(dbref._element)
 				book.Metadata.book_info.sync_database_ref()
 
+	class publishinfo:
+		@staticmethod
+		@check_book
+		def publisher(book: ACBFBook, name: str):
+			"""[summary]
 
+			Parameters
+			----------
+			book : ACBFBook
+				[description]
+			name : str
+				[description]
+			"""
+			pub_item = book.Metadata.publisher_info._info.find(f"{book.namespace.ACBFns}publisher")
+			pub_item.text = name
+			book.Metadata.publisher_info.publisher = pub_item.text
+
+		@staticmethod
+		@check_book
+		def publish_date(book: ACBFBook, dt: Union[str, date], include_date: bool = True):
+			"""[summary]
+
+			Parameters
+			----------
+			book : ACBFBook
+				[description]
+			dt : str | date
+				[description]
+			include_date : bool, optional
+				[description], by default True
+			"""
+			edit_date(book,
+					"publish-date",
+					book.Metadata.publisher_info,
+					"publish_date_string",
+					"publish_date",
+					dt,
+					include_date
+				)
+
+		# Optional
+		@staticmethod
+		@check_book
+		def publish_city(book: ACBFBook, city: Optional[str] = None):
+			"""[summary]
+
+			Parameters
+			----------
+			book : ACBFBook
+				[description]
+			city : str
+				[description]
+			"""
+			edit_optional(book, "city", book.Metadata.publisher_info, "publish_city", city)
+
+		@staticmethod
+		@check_book
+		def isbn(book: ACBFBook, isbn: Optional[str] = None):
+			"""[summary]
+
+			Parameters
+			----------
+			book : ACBFBook
+				[description]
+			isbn : Optional[str], optional
+				[description], by default None
+			"""
+			edit_optional(book, "isbn", book.Metadata.publisher_info, "isbn", isbn)
+
+		@staticmethod
+		@check_book
+		def license(book: ACBFBook, license: Optional[str]):
+			"""[summary]
+
+			Parameters
+			----------
+			book : ACBFBook
+				[description]
+			license : Optional[str]
+				[description]
+			"""
+			edit_optional(book, "license", book.Metadata.publisher_info, "license", license)
+
+	class documentinfo:
+		pass
