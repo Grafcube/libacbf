@@ -1131,4 +1131,178 @@ class metadata:
 			edit_optional(book, "license", book.Metadata.publisher_info, "license", license)
 
 	class documentinfo:
-		pass
+		class authors:
+			@staticmethod
+			@check_book
+			def add(book: ACBFBook, author: Author):
+				"""[summary]
+
+				Parameters
+				----------
+				book : ACBFBook
+					[description]
+				author : Author
+					[description]
+				"""
+				add_author(book, book.Metadata.document_info, author)
+
+			@staticmethod
+			@check_book
+			def edit(book: ACBFBook, original_author: Union[Author, int], new_author: Author):
+				"""[summary]
+
+				Parameters
+				----------
+				book : ACBFBook
+					[description]
+				original_author : Union[Author, int]
+					[description]
+				new_author : Author
+					[description]
+
+				Raises
+				------
+				ValueError
+					[description]
+				"""
+				edit_author(book, book.Metadata.document_info, original_author, new_author)
+
+			@staticmethod
+			@check_book
+			def remove(book: ACBFBook, index: int):
+				"""[summary]
+
+				Parameters
+				----------
+				book : ACBFBook
+					[description]
+				index : int
+					[description]
+				"""
+				remove_author(book, book.Metadata.document_info, index)
+
+		@staticmethod
+		@check_book
+		def creation_date(book: ACBFBook, dt: Union[str, date], include_date: bool = True):
+			"""[summary]
+
+			Parameters
+			----------
+			book : ACBFBook
+				[description]
+			dt : Union[str, date]
+				[description]
+			include_date : bool, optional
+				[description], by default True
+			"""
+			edit_date(book,
+				"creation-date",
+				book.Metadata.document_info,
+				"creation_date_string",
+				"creation_date",
+				dt,
+				include_date
+			)
+
+		@staticmethod
+		@check_book
+		def source(book: ACBFBook, source: Optional[str] = None):
+			"""[summary]
+
+			Parameters
+			----------
+			book : ACBFBook
+				[description]
+			source : Optional[str], optional
+				[description], by default None
+			"""
+			pass
+
+		@staticmethod
+		@check_book
+		def document_id(book: ACBFBook, id: Optional[str] = None):
+			"""[summary]
+
+			Parameters
+			----------
+			book : ACBFBook
+				[description]
+			id : Optional[str], optional
+				[description], by default None
+			"""
+			edit_optional(book, "id", book.Metadata.document_info, "document_id", id)
+
+		@staticmethod
+		@check_book
+		def document_version(book: ACBFBook, version: Optional[str] = None):
+			"""[summary]
+
+			Parameters
+			----------
+			book : ACBFBook
+				[description]
+			version : Optional[str], optional
+				[description], by default None
+			"""
+			edit_optional(book, "version", book.Metadata.document_info, "document_version", version)
+
+		class document_history:
+			@staticmethod
+			@check_book
+			def append(book: ACBFBook, entry: str):
+				"""[summary]
+
+				Parameters
+				----------
+				book : ACBFBook
+					[description]
+				entry : str
+					[description]
+				"""
+				pass
+
+			@staticmethod
+			@check_book
+			def insert(book: ACBFBook, index: int, entry: str):
+				"""[summary]
+
+				Parameters
+				----------
+				book : ACBFBook
+					[description]
+				index : int
+					[description]
+				entry : str
+					[description]
+				"""
+				pass
+
+			@staticmethod
+			@check_book
+			def edit(book: ACBFBook, index: int, text: str):
+				"""[summary]
+
+				Parameters
+				----------
+				book : ACBFBook
+					[description]
+				index : int
+					[description]
+				text : str
+					[description]
+				"""
+				pass
+
+			@staticmethod
+			@check_book
+			def remove(book: ACBFBook, index: int):
+				"""[summary]
+
+				Parameters
+				----------
+				book : ACBFBook
+					[description]
+				index : int
+					[description]
+				"""
+				pass
