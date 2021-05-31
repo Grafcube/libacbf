@@ -28,9 +28,9 @@ def add_author(book: ACBFBook, section, author: Author):
 	info_section = section._info
 
 	au_element = etree.Element(f"{book.namespace}author")
-	author._element = au_element
 	idx = info_section.index(info_section.findall(f"{book.namespace}author")[-1]) + 1
 	info_section.insert(idx, au_element)
+	author._element = au_element
 
 	edit_author(book, section, author, author.copy())
 	section.sync_authors()
@@ -51,11 +51,13 @@ def edit_author(book: ACBFBook, section, original_author: Union[Author, int], ne
 	if new_author.activity is not None:
 		au_element.set("activity", new_author.activity.name)
 	else:
-		au_element.attrib.pop("activity")
+		if "activity" in au_element.attrib:
+			au_element.attrib.pop("activity")
 	if new_author.lang is not None:
 		au_element.set("lang", str(new_author.lang))
 	else:
-		au_element.attrib.pop("lang")
+		if "lang" in au_element.attrib:
+			au_element.attrib.pop("lang")
 
 	attrs = [
 		("first-name", "first_name", 0),
@@ -250,7 +252,7 @@ class book:
 			else:
 				ref_section.insert(idx, ref_element)
 
-			book.References = book.sync_references()
+			book.sync_references()
 
 		@staticmethod
 		@check_book

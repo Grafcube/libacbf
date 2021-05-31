@@ -187,7 +187,7 @@ class ACBFBook:
 
 		self.Data: ACBFData = ACBFData(self)
 
-		self.References: Dict[str, Dict[str, str]] = self.sync_references()
+		self.sync_references()
 
 	def save(self, path: str = "", overwrite: bool = False):
 		"""Save as file.
@@ -216,20 +216,19 @@ class ACBFBook:
 			self.archive.close()
 			self.is_open = False
 
-	def sync_references(self) -> Dict[str, Dict[str, str]]:
+	def sync_references(self):
 		ns = self.namespace
 		ref_root = self._root.find(f"{ns}references")
 		references = {}
-		if ref_root is None:
-			return references
-		reference_items = ref_root.findall(f"{ns}reference")
-		for ref in reference_items:
-			pa = []
-			for p in ref.findall(f"{ns}p"):
-				text = re.sub(r"<\/?p[^>]*>", "", str(etree.tostring(p, encoding="utf-8"), encoding="utf-8").strip())
-				pa.append(text)
-			references[ref.attrib["id"]] = {"paragraph": "\n".join(pa)}
-		return references
+		if ref_root is not None:
+			reference_items = ref_root.findall(f"{ns}reference")
+			for ref in reference_items:
+				pa = []
+				for p in ref.findall(f"{ns}p"):
+					text = re.sub(r"<\/?p[^>]*>", "", str(etree.tostring(p, encoding="utf-8"), encoding="utf-8").strip())
+					pa.append(text)
+				references[ref.attrib["id"]] = {"paragraph": "\n".join(pa)}
+		self.References: Dict[str, Dict[str, str]] = references
 
 	def __enter__(self):
 		return self
