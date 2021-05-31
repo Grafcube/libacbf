@@ -27,16 +27,16 @@ def check_book(func):
 def add_author(book: ACBFBook, section, author: Author):
 	info_section = section._info
 
-	au_element = etree.Element(f"{book.namespace.ACBFns}author")
+	au_element = etree.Element(f"{book.namespace}author")
 	author._element = au_element
-	idx = info_section.index(info_section.findall(f"{book.namespace.ACBFns}author")[-1]) + 1
+	idx = info_section.index(info_section.findall(f"{book.namespace}author")[-1]) + 1
 	info_section.insert(idx, au_element)
 
 	edit_author(book, section, author, author.copy())
 	section.sync_authors()
 
 def edit_author(book: ACBFBook, section, original_author: Union[Author, int], new_author: Author):
-	au_list = section._info.findall(f"{book.namespace.ACBFns}author")
+	au_list = section._info.findall(f"{book.namespace}author")
 
 	if isinstance(original_author, Author):
 		if original_author._element is None:
@@ -64,13 +64,13 @@ def edit_author(book: ACBFBook, section, original_author: Union[Author, int], ne
 	]
 
 	for i in attrs:
-		element = au_element.find(book.namespace.ACBFns + i[0])
+		element = au_element.find(book.namespace + i[0])
 		if element is None and getattr(new_author, i[1]) is not None:
-			element = etree.Element(book.namespace.ACBFns + i[0])
+			element = etree.Element(book.namespace + i[0])
 			if i[0] != "nickname":
 				au_element.insert(i[2], element)
 			else:
-				if au_element.find(f"{book.namespace.ACBFns}last-name") is not None:
+				if au_element.find(f"{book.namespace}last-name") is not None:
 					idx = 2
 				else:
 					idx = 0
@@ -89,9 +89,9 @@ def edit_author(book: ACBFBook, section, original_author: Union[Author, int], ne
 		]
 
 	for i in attrs_op:
-		element = au_element.find(book.namespace.ACBFns + i[0])
+		element = au_element.find(book.namespace + i[0])
 		if element is None and getattr(new_author, i[1]) is not None:
-			element = etree.Element(book.namespace.ACBFns + i[0])
+			element = etree.Element(book.namespace + i[0])
 			au_element.append(element)
 			element.text = getattr(new_author, i[1])
 		elif element is not None and getattr(new_author, i[1]) is not None:
@@ -105,18 +105,18 @@ def edit_author(book: ACBFBook, section, original_author: Union[Author, int], ne
 def remove_author(book: ACBFBook, section, index: int):
 	info_section = section._info
 
-	au_items = info_section.findall(f"{book.namespace.ACBFns}author")
+	au_items = info_section.findall(f"{book.namespace}author")
 	au_items[index].clear()
 	info_section.remove(au_items[index])
 
 	section.sync_authors()
 
 def edit_optional(book: ACBFBook, tag: str, section, attr: str, text: Optional[str] = None):
-	item = section._info.find(book.namespace.ACBFns + tag)
+	item = section._info.find(book.namespace + tag)
 
 	if text is not None:
 		if item is None:
-			item = etree.Element(book.namespace.ACBFns + tag)
+			item = etree.Element(book.namespace + tag)
 			section._info.append(item)
 		item.text = text
 		setattr(section, attr, item.text)
@@ -125,7 +125,7 @@ def edit_optional(book: ACBFBook, tag: str, section, attr: str, text: Optional[s
 		item.getparent().remove(item)
 
 def edit_date(book: ACBFBook, tag: str, section, attr_s: str, attr_d: str, dt: Union[str, date], include_date: bool = True):
-	item = section._info.find(book.namespace.ACBFns + tag)
+	item = section._info.find(book.namespace + tag)
 
 	if isinstance(dt, str):
 		item.text = dt
@@ -165,9 +165,9 @@ class book:
 
 			file_path = Path(file_path) if isinstance(file_path, str) else file_path
 
-			dat_section = book._root.find(f"{book.namespace.ACBFns}data")
+			dat_section = book._root.find(f"{book.namespace}data")
 			if dat_section is None:
-				dat_section = etree.Element(f"{book.namespace.ACBFns}data")
+				dat_section = etree.Element(f"{book.namespace}data")
 				book._root.append(dat_section)
 
 			id = file_path.name
@@ -176,7 +176,7 @@ class book:
 				content_type = magic.from_buffer(contents, True)
 				data64 = str(b64encode(contents), encoding="utf-8")
 
-			bin_element = etree.Element(f"{book.namespace.ACBFns}binary")
+			bin_element = etree.Element(f"{book.namespace}binary")
 			bin_element.set("id", id)
 			bin_element.set("content-type", content_type)
 			bin_element.text = data64
@@ -196,16 +196,16 @@ class book:
 			id : str
 				[description]
 			"""
-			dat_section = book._root.find(f"{book.namespace.ACBFns}data")
+			dat_section = book._root.find(f"{book.namespace}data")
 
 			if dat_section is not None:
-				for i in dat_section.findall(f"{book.namespace.ACBFns}binary"):
+				for i in dat_section.findall(f"{book.namespace}binary"):
 					if i.attrib["id"] == id:
 						i.clear()
 						dat_section.remove(i)
 						break
 
-				if len(dat_section.findall(f"{book.namespace.ACBFns}binary")) == 0:
+				if len(dat_section.findall(f"{book.namespace}binary")) == 0:
 					dat_section.clear()
 					dat_section.getparent().remove(dat_section)
 
@@ -228,11 +228,11 @@ class book:
 			idx : int, optional
 				[description], by default -1
 			"""
-			ref_section = book._root.find(f"{book.namespace.ACBFns}references")
+			ref_section = book._root.find(f"{book.namespace}references")
 			if ref_section is None:
 				book._root.append(ref_section)
 
-			ref_element = etree.Element(f"{book.namespace.ACBFns}reference")
+			ref_element = etree.Element(f"{book.namespace}reference")
 			ref_element.set("id", id)
 
 			p_list = re.split(r"\n", paragraph)
@@ -240,7 +240,7 @@ class book:
 				p = f"<p>{ref}</p>"
 				p_element = etree.fromstring(bytes(p, encoding="utf-8"))
 				for i in list(p_element.iter()):
-					i.tag = book.namespace.ACBFns + i.tag
+					i.tag = book.namespace + i.tag
 				ref_element.append(p_element)
 
 			if idx == -1:
@@ -264,16 +264,16 @@ class book:
 			id : str
 				[description]
 			"""
-			ref_section = book._root.find(f"{book.namespace.ACBFns}references")
+			ref_section = book._root.find(f"{book.namespace}references")
 
 			if ref_section is not None:
-				for i in ref_section.findall(f"{book.namespace.ACBFns}reference"):
+				for i in ref_section.findall(f"{book.namespace}reference"):
 					if i.attrib["id"] == id:
 						i.clear()
 						ref_section.remove(i)
 						break
 
-				if len(ref_section.findall(f"{book.namespace.ACBFns}reference")) == 0:
+				if len(ref_section.findall(f"{book.namespace}reference")) == 0:
 					ref_section.getparent().remove(ref_section)
 
 				book.sync_references()
@@ -380,7 +380,7 @@ class metadata:
 				"""
 				info_section = book.Metadata.book_info._info
 
-				title_elements = info_section.findall(f"{book.namespace.ACBFns}book-title")
+				title_elements = info_section.findall(f"{book.namespace}book-title")
 				idx = info_section.index(title_elements[-1]) + 1
 				found = False
 				key = None
@@ -392,7 +392,7 @@ class metadata:
 							found = True
 							break
 					if not found:
-						t_element = etree.Element(f"{book.namespace.ACBFns}book-title")
+						t_element = etree.Element(f"{book.namespace}book-title")
 						t_element.text = title
 						info_section.insert(idx, t_element)
 						found = True
@@ -406,7 +406,7 @@ class metadata:
 							found = True
 							break
 					if not found:
-						t_element = etree.Element(f"{book.namespace.ACBFns}book-title")
+						t_element = etree.Element(f"{book.namespace}book-title")
 						t_element.set("lang", key)
 						t_element.text = title
 						info_section.insert(idx, t_element)
@@ -428,7 +428,7 @@ class metadata:
 				"""
 				info_section = book.Metadata.book_info._info
 
-				title_elements = info_section.findall(f"{book.namespace.ACBFns}book-title")
+				title_elements = info_section.findall(f"{book.namespace}book-title")
 
 				key = None
 				complete = False
@@ -474,7 +474,7 @@ class metadata:
 					[description]
 				"""
 				info_section = book.Metadata.book_info._info
-				gn_elements = info_section.findall(f"{book.namespace.ACBFns}genre")
+				gn_elements = info_section.findall(f"{book.namespace}genre")
 
 				name = None
 				if type(genre) is Genres:
@@ -490,7 +490,7 @@ class metadata:
 
 				if gn_element is None:
 					idx = info_section.index(gn_elements[-1]) + 1
-					gn_element = etree.Element(f"{book.namespace.ACBFns}genre")
+					gn_element = etree.Element(f"{book.namespace}genre")
 					gn_element.text = name
 					info_section.insert(idx, gn_element)
 
@@ -512,7 +512,7 @@ class metadata:
 					[description]
 				"""
 				info_section = book.Metadata.book_info._info
-				gn_elements = info_section.findall(f"{book.namespace.ACBFns}genre")
+				gn_elements = info_section.findall(f"{book.namespace}genre")
 
 				name = None
 				if type(genre) is Genres:
@@ -543,7 +543,7 @@ class metadata:
 					[description], by default "_"
 				"""
 				info_section = book.Metadata.book_info._info
-				annotation_elements = info_section.findall(f"{book.namespace.ACBFns}annotation")
+				annotation_elements = info_section.findall(f"{book.namespace}annotation")
 				key = None
 				idx = info_section.index(annotation_elements[-1]) + 1
 
@@ -554,7 +554,7 @@ class metadata:
 							an_element = i
 							break
 					if an_element is None:
-						an_element = etree.Element(f"{book.namespace.ACBFns}annotation")
+						an_element = etree.Element(f"{book.namespace}annotation")
 						info_section.insert(idx, an_element)
 
 				else:
@@ -566,12 +566,12 @@ class metadata:
 							an_element = i
 							break
 					if an_element is None:
-						an_element = etree.Element(f"{book.namespace.ACBFns}annotation")
+						an_element = etree.Element(f"{book.namespace}annotation")
 						an_element.set("lang", key)
 						info_section.insert(idx, an_element)
 
 				for pt in text.split(r"\n"):
-					p = etree.Element(f"{book.namespace.ACBFns}p")
+					p = etree.Element(f"{book.namespace}p")
 					p.text = pt
 					an_element.append(p)
 
@@ -590,7 +590,7 @@ class metadata:
 					[description], by default "_"
 				"""
 				info_section = book.Metadata.book_info._info
-				annotation_elements = info_section.findall(f"{book.namespace.ACBFns}annotation")
+				annotation_elements = info_section.findall(f"{book.namespace}annotation")
 				an_element = None
 				key = None
 
@@ -639,12 +639,12 @@ class metadata:
 				show : bool
 					[description]
 				"""
-				ln_section = book.Metadata.book_info._info.find(f"{book.namespace.ACBFns}languages")
+				ln_section = book.Metadata.book_info._info.find(f"{book.namespace}languages")
 				if ln_section is None:
-					ln_section = etree.Element(f"{book.namespace.ACBFns}languages")
+					ln_section = etree.Element(f"{book.namespace}languages")
 					book.Metadata.book_info._info.append(ln_section)
 
-				ln_elements = ln_section.findall(f"{book.namespace.ACBFns}text-layer")
+				ln_elements = ln_section.findall(f"{book.namespace}text-layer")
 
 				lang = langcodes.standardize_tag(lang)
 
@@ -655,7 +655,7 @@ class metadata:
 						break
 
 				if ln_item is None:
-					ln_item = etree.Element(f"{book.namespace.ACBFns}text-layer")
+					ln_item = etree.Element(f"{book.namespace}text-layer")
 					ln_item.set("lang", lang)
 					ln_section.append(ln_item)
 
@@ -675,10 +675,10 @@ class metadata:
 				lang : str
 					[description]
 				"""
-				ln_section = book.Metadata.book_info._info.find(f"{book.namespace.ACBFns}languages")
+				ln_section = book.Metadata.book_info._info.find(f"{book.namespace}languages")
 
 				if ln_section is not None:
-					ln_elements = ln_section.findall(f"{book.namespace.ACBFns}text-layer")
+					ln_elements = ln_section.findall(f"{book.namespace}text-layer")
 					lang = langcodes.standardize_tag(lang)
 
 					for i in ln_elements:
@@ -687,7 +687,7 @@ class metadata:
 							ln_section.remove(i)
 							break
 
-					if len(ln_section.findall(f"{book.namespace.ACBFns}text-layer")) == 0:
+					if len(ln_section.findall(f"{book.namespace}text-layer")) == 0:
 						ln_section.clear()
 						ln_section.getparent().remove(ln_section)
 
@@ -706,12 +706,12 @@ class metadata:
 				name : str
 					[description]
 				"""
-				char_section = book.Metadata.book_info._info.find(f"{book.namespace.ACBFns}characters")
+				char_section = book.Metadata.book_info._info.find(f"{book.namespace}characters")
 
 				if char_section is None:
-					char_section = etree.Element(f"{book.namespace.ACBFns}characters")
+					char_section = etree.Element(f"{book.namespace}characters")
 
-				char = etree.Element(f"{book.namespace.ACBFns}name")
+				char = etree.Element(f"{book.namespace}name")
 				char.text = name
 				char_section.append(char)
 				book.Metadata.book_info.sync_characters()
@@ -728,10 +728,10 @@ class metadata:
 				item : str | int
 					[description]
 				"""
-				char_section = book.Metadata.book_info._info.find(f"{book.namespace.ACBFns}characters")
+				char_section = book.Metadata.book_info._info.find(f"{book.namespace}characters")
 
 				if char_section is not None:
-					char_elements = char_section.findall(f"{book.namespace.ACBFns}name")
+					char_elements = char_section.findall(f"{book.namespace}name")
 
 					if isinstance(item, int):
 						char_elements[item].clear()
@@ -743,7 +743,7 @@ class metadata:
 								char_section.remove(i)
 								break
 
-					if len(char_section.findall(f"{book.namespace.ACBFns}name")) == 0:
+					if len(char_section.findall(f"{book.namespace}name")) == 0:
 						char_section.clear()
 						char_section.getparent().remove(char_section)
 
@@ -765,7 +765,7 @@ class metadata:
 					[description], by default "_"
 				"""
 				info_section = book.Metadata.book_info._info
-				key_elements = info_section.findall(f"{book.namespace.ACBFns}keywords")
+				key_elements = info_section.findall(f"{book.namespace}keywords")
 				idx = None
 
 				if len(key_elements) > 0:
@@ -778,7 +778,7 @@ class metadata:
 							key_element = i
 							break
 					if key_element is None:
-						key_element = etree.Element(f"{book.namespace.ACBFns}keywords")
+						key_element = etree.Element(f"{book.namespace}keywords")
 						if idx is not None:
 							info_section.insert(idx, key_element)
 						else:
@@ -790,7 +790,7 @@ class metadata:
 							key_element = i
 							break
 					if key_element is None:
-						key_element = etree.Element(f"{book.namespace.ACBFns}keywords")
+						key_element = etree.Element(f"{book.namespace}keywords")
 						key_element.set("lang", lang)
 						if idx is not None:
 							info_section.insert(idx, key_element)
@@ -813,7 +813,7 @@ class metadata:
 				lang : str, optional
 					[description], by default "_"
 				"""
-				key_elements = book.Metadata.book_info._info.findall(f"{book.namespace.ACBFns}keywords")
+				key_elements = book.Metadata.book_info._info.findall(f"{book.namespace}keywords")
 
 				key_element = None
 				if lang == "_":
@@ -850,7 +850,7 @@ class metadata:
 					[description], by default None
 				"""
 				info_section = book.Metadata.book_info._info
-				ser_items = info_section.findall(f"{book.namespace.ACBFns}sequence")
+				ser_items = info_section.findall(f"{book.namespace}sequence")
 				idx = None
 
 				if len(ser_items) > 0:
@@ -862,7 +862,7 @@ class metadata:
 						ser_element = i
 						break
 				if ser_element is None:
-					ser_element = etree.Element(f"{book.namespace.ACBFns}sequence")
+					ser_element = etree.Element(f"{book.namespace}sequence")
 					ser_element.set("title", title)
 					if idx is not None:
 						info_section.insert(idx, ser_element)
@@ -886,7 +886,7 @@ class metadata:
 				title : str
 					[description]
 				"""
-				seq_items = book.Metadata.book_info._info.findall(f"{book.namespace.ACBFns}sequence")
+				seq_items = book.Metadata.book_info._info.findall(f"{book.namespace}sequence")
 
 				for i in seq_items:
 					if i.attrib["title"] == title:
@@ -911,7 +911,7 @@ class metadata:
 					[description], by default "_"
 				"""
 				info_section = book.Metadata.book_info._info
-				rt_items = info_section.findall(f"{book.namespace.ACBFns}content-rating")
+				rt_items = info_section.findall(f"{book.namespace}content-rating")
 				idx = None
 
 				if len(rt_items) > 0:
@@ -930,7 +930,7 @@ class metadata:
 							break
 
 				if rt_element is None:
-					rt_element = etree.Element(f"{book.namespace.ACBFns}content-rating")
+					rt_element = etree.Element(f"{book.namespace}content-rating")
 					if idx is not None:
 						info_section.insert(idx, rt_element)
 					else:
@@ -953,7 +953,7 @@ class metadata:
 				type : str, optional
 					[description], by default "_"
 				"""
-				rt_items = book.Metadata.book_info._info.findall(f"{book.namespace.ACBFns}sequence")
+				rt_items = book.Metadata.book_info._info.findall(f"{book.namespace}sequence")
 
 				rt_element = None
 				for i in rt_items:
@@ -984,13 +984,13 @@ class metadata:
 					[description], by default None
 				"""
 				info_section = book.Metadata.book_info._info
-				db_items = info_section.findall(f"{book.namespace.ACBFns}databaseref")
+				db_items = info_section.findall(f"{book.namespace}databaseref")
 				idx = None
 
 				if len(db_items) > 0:
 					idx = info_section.index(db_items[-1]) + 1
 
-				db_element = etree.Element(f"{book.namespace.ACBFns}databaseref")
+				db_element = etree.Element(f"{book.namespace}databaseref")
 				db_element.set("dbname", dbname)
 				db_element.text = ref
 				if type is not None:
@@ -1060,7 +1060,7 @@ class metadata:
 			name : str
 				[description]
 			"""
-			pub_item = book.Metadata.publisher_info._info.find(f"{book.namespace.ACBFns}publisher")
+			pub_item = book.Metadata.publisher_info._info.find(f"{book.namespace}publisher")
 			pub_item.text = name
 			book.Metadata.publisher_info.publisher = pub_item.text
 

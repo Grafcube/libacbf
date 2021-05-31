@@ -13,5 +13,4 @@ libacbf.constants module
 
 .. automodule:: libacbf.constants
    :members:
-   :exclude-members: BookNamespace
    :undoc-members:

@@ -5,7 +5,6 @@ from typing import List, Dict, Optional, Union
 from lxml import etree
 
 from libacbf.structs import Styles
-from libacbf.constants import BookNamespace
 from libacbf.metadata import BookInfo, PublishInfo, DocumentInfo
 from libacbf.body import Page
 from libacbf.bookdata import BookData
@@ -43,8 +42,8 @@ def is_book_archive(file: Union[str, Path]) -> Optional[bool]:
 		else:
 			return None
 
-def _validate_acbf(tree, ns: BookNamespace):
-	version = re.split(r'/', ns.ACBFns_raw)[-1]
+def _validate_acbf(tree, ns: str):
+	version = re.split(r'/', re.sub(r'\{|\}', "", ns))[-1]
 	xsd_path = f"libacbf/schema/acbf-{version}.xsd"
 
 	with open(xsd_path, encoding="utf-8") as file:
@@ -176,7 +175,7 @@ class ACBFBook:
 		self._root = etree.fromstring(bytes(contents, encoding="utf-8"))
 		self._tree = self._root.getroottree()
 
-		self.namespace: BookNamespace = BookNamespace(f"{{{self._root.nsmap[None]}}}")
+		self.namespace: str = r"{" + self._root.nsmap[None] + r"}"
 
 		_validate_acbf(self._tree, self.namespace)
 
@@ -219,14 +218,14 @@ class ACBFBook:
 
 	def sync_references(self) -> Dict[str, Dict[str, str]]:
 		ns = self.namespace
-		ref_root = self._root.find(f"{ns.ACBFns}references")
+		ref_root = self._root.find(f"{ns}references")
 		references = {}
 		if ref_root is None:
 			return references
-		reference_items = ref_root.findall(f"{ns.ACBFns}reference")
+		reference_items = ref_root.findall(f"{ns}reference")
 		for ref in reference_items:
 			pa = []
-			for p in ref.findall(f"{ns.ACBFns}p"):
+			for p in ref.findall(f"{ns}p"):
 				text = re.sub(r"<\/?p[^>]*>", "", str(etree.tostring(p, encoding="utf-8"), encoding="utf-8").strip())
 				pa.append(text)
 			references[ref.attrib["id"]] = {"paragraph": "\n".join(pa)}
@@ -261,12 +260,12 @@ class ACBFMetadata:
 	"""
 	def __init__(self, book: ACBFBook):
 		self.book = book
-		ns: BookNamespace = book.namespace
-		meta_root = book._root.find(f"{ns.ACBFns}meta-data")
+		ns = book.namespace
+		meta_root = book._root.find(f"{ns}meta-data")
 
-		self.book_info: BookInfo = BookInfo(meta_root.find(f"{ns.ACBFns}book-info"), book)
-		self.publisher_info: PublishInfo = PublishInfo(meta_root.find(f"{ns.ACBFns}publish-info"), book)
-		self.document_info: DocumentInfo = DocumentInfo(meta_root.find(f"{ns.ACBFns}document-info"), book)
+		self.book_info: BookInfo = BookInfo(meta_root.find(f"{ns}book-info"), book)
+		self.publisher_info: PublishInfo = PublishInfo(meta_root.find(f"{ns}publish-info"), book)
+		self.document_info: DocumentInfo = DocumentInfo(meta_root.find(f"{ns}document-info"), book)
 
 class ACBFBody:
 	"""Body section contains the definition of individual book pages, text layers, frames and jumps
@@ -292,8 +291,8 @@ class ACBFBody:
 		self.book = book
 
 		ns = book.namespace
-		body = book._root.find(f"{ns.ACBFns}body")
-		page_items = body.findall(f"{ns.ACBFns}page")
+		body = book._root.find(f"{ns}body")
+		page_items = body.findall(f"{ns}page")
 
 		pgs = []
 		for pg in page_items:
@@ -335,8 +334,9 @@ class ACBFData:
 	"""
 	def __init__(self, book: ACBFBook):
 		self._ns = book.namespace
+		self.book: ACBFBook = book
 		self._root = book._root
-		self._base = book._root.find(f"{self._ns.ACBFns}data")
+		self._base = book._root.find(f"{self._ns}data")
 		self._data_elements = []
 
 		self.files: Dict[str, Optional[BookData]] = {}
@@ -358,9 +358,9 @@ class ACBFData:
 		return fl
 
 	def sync_data(self):
-		self._base = self._root.find(f"{self._ns.ACBFns}data")
+		self._base = self._root.find(f"{self._ns}data")
 		if self._base is not None:
-			self._data_elements = self._base.findall(f"{self._ns.ACBFns}binary")
+			self._data_elements = self._base.findall(f"{self._ns}binary")
 		for i in self._data_elements:
 			self.files[i.attrib["id"]] = None
 

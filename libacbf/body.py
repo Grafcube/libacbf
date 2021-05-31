@@ -12,7 +12,7 @@ from lxml import etree
 if TYPE_CHECKING:
 	from libacbf import ACBFBook
 import libacbf.structs as structs
-from libacbf.constants import BookNamespace, ImageRefType, PageTransitions, TextAreas
+from libacbf.constants import ImageRefType, PageTransitions, TextAreas
 from libacbf.archivereader import ArchiveReader
 from libacbf.bookdata import BookData
 
@@ -53,7 +53,7 @@ class Page:
 		:class:`PageTransitions <libacbf.constants.PageTransitions>`.
 	"""
 	def __init__(self, page, book: ACBFBook, coverpage: bool = False):
-		ns: BookNamespace = book.namespace
+		ns = book.namespace
 		self._page = page
 		self._text_layers = None
 		self._frames = None
@@ -63,7 +63,7 @@ class Page:
 		self.book = book
 
 		# Sub
-		self.image_ref: str = page.find(f"{ns.ACBFns}image").attrib["href"]
+		self.image_ref: str = page.find(f"{ns}image").attrib["href"]
 
 		ref_t = None
 		if self.image_ref.startswith("#"):
@@ -115,7 +115,7 @@ class Page:
 		## Optional
 		if not coverpage:
 			self.title: Dict[str, str] = {}
-			title_items = page.findall(f"{ns.ACBFns}title")
+			title_items = page.findall(f"{ns}title")
 			for t in title_items:
 				if "lang" in t.keys():
 					self.title[t.attrib["lang"]] = t.text
@@ -174,7 +174,7 @@ class Page:
 			item = self._page
 			ns = self.book.namespace
 			text_layers = {}
-			textlayer_items = item.findall(f"{ns.ACBFns}text-layer")
+			textlayer_items = item.findall(f"{ns}text-layer")
 			for lr in textlayer_items:
 				new_lr = TextLayer(lr, ns)
 				text_layers[new_lr.language] = new_lr
@@ -198,7 +198,7 @@ class Page:
 			item = self._page
 			ns = self.book.namespace
 			frames = []
-			frame_items = item.findall(f"{ns.ACBFns}frame")
+			frame_items = item.findall(f"{ns}frame")
 			for fr in frame_items:
 				frame = structs.Frame(get_points(fr.attrib["points"]))
 				if "bgcolor" in fr.keys():
@@ -224,7 +224,7 @@ class Page:
 			item = self._page
 			ns = self.book.namespace
 			jumps = []
-			jump_items = item.findall(f"{ns.ACBFns}jump")
+			jump_items = item.findall(f"{ns}jump")
 			for jp in jump_items:
 				jump = structs.Jump(get_points(jp.attrib["points"]), int(jp.attrib["page"]))
 				jumps.append(jump)
@@ -249,7 +249,7 @@ class TextLayer:
 	bgcolor : str, optional
 		Defines the background colour of the text areas or inherits from :attr:`Page.bgcolor` if ``None``.
 	"""
-	def __init__(self, layer, ns: BookNamespace):
+	def __init__(self, layer, ns):
 		self.language: str = langcodes.standardize_tag(layer.attrib["lang"])
 
 		self.bgcolor: Optional[str] = None
@@ -258,7 +258,7 @@ class TextLayer:
 
 		# Sub
 		self.text_areas: List[TextArea] = []
-		areas = layer.findall(f"{ns.ACBFns}text-area")
+		areas = layer.findall(f"{ns}text-area")
 		for ar in areas:
 			self.text_areas.append(TextArea(ar, ns))
 
@@ -315,12 +315,12 @@ class TextArea:
 	transparent : bool, optional
 		Whether text is drawn.
 	"""
-	def __init__(self, area, ns: BookNamespace):
+	def __init__(self, area, ns):
 		self.points: List[structs.Vec2] = get_points(area.attrib["points"])
 
 		self.paragraph: str = ""
 		pa = []
-		for p in area.findall(f"{ns.ACBFns}p"):
+		for p in area.findall(f"{ns}p"):
 			text = re.sub(r"<\/?p[^>]*>", "", str(etree.tostring(p, encoding="utf-8"), encoding="utf-8").strip())
 			pa.append(text)
 		self.paragraph = "\n".join(pa)

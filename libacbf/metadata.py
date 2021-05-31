@@ -9,7 +9,6 @@ if TYPE_CHECKING:
 	from libacbf import ACBFBook
 from libacbf.body import Page
 from libacbf.structs import Author, DBRef, Genre, LanguageLayer, Series
-from libacbf.constants import BookNamespace
 
 class BookInfo:
 	"""Metadata about the book itself.
@@ -90,7 +89,7 @@ class BookInfo:
 	def __init__(self, info, book: ACBFBook):
 		self.book = book
 		self._info = info
-		self._ns: BookNamespace = book.namespace
+		self._ns: str = book.namespace
 
 		self.sync_authors()
 		self.sync_book_titles()
@@ -108,12 +107,12 @@ class BookInfo:
 
 	#region Sync
 	def sync_authors(self):
-		self.authors: List[Author] = update_authors(self._info.findall(f"{self._ns.ACBFns}author"), self._ns)
+		self.authors: List[Author] = update_authors(self._info.findall(f"{self._ns}author"), self._ns)
 
 	def sync_book_titles(self):
 		self.book_title: Dict[str, str] = {}
 
-		book_items = self._info.findall(f"{self._ns.ACBFns}book-title")
+		book_items = self._info.findall(f"{self._ns}book-title")
 		for title in book_items:
 			if "lang" in title.keys():
 				lang = langcodes.standardize_tag(title.attrib["lang"])
@@ -124,7 +123,7 @@ class BookInfo:
 	def sync_genres(self):
 		self.genres: Dict[str, Genre] = {}
 
-		genre_items = self._info.findall(f"{self._ns.ACBFns}genre")
+		genre_items = self._info.findall(f"{self._ns}genre")
 		for genre in genre_items:
 			new_genre = Genre(genre.text)
 
@@ -136,10 +135,10 @@ class BookInfo:
 	def sync_annotations(self):
 		self.annotations: Dict[str, str] = {}
 
-		annotation_items = self._info.findall(f"{self._ns.ACBFns}annotation")
+		annotation_items = self._info.findall(f"{self._ns}annotation")
 		for an in annotation_items:
 			p = []
-			for i in an.findall(f"{self._ns.ACBFns}p"):
+			for i in an.findall(f"{self._ns}p"):
 				p.append(i.text)
 			p = "\n".join(p)
 
@@ -150,15 +149,15 @@ class BookInfo:
 				self.annotations["_"] = p
 
 	def sync_coverpage(self):
-		cpage = self._info.find(f"{self._ns.ACBFns}coverpage")
+		cpage = self._info.find(f"{self._ns}coverpage")
 		self.cover_page: Page = Page(cpage, self.book, True)
 
 	# Optional
 	def sync_languages(self):
 		self.languages: List[LanguageLayer] = []
 
-		if self._info.find(f"{self._ns.ACBFns}languages") is not None:
-			text_layers = self._info.find(f"{self._ns.ACBFns}languages").findall(f"{self._ns.ACBFns}text-layer")
+		if self._info.find(f"{self._ns}languages") is not None:
+			text_layers = self._info.find(f"{self._ns}languages").findall(f"{self._ns}text-layer")
 			for layer in text_layers:
 				show = bool(distutils.util.strtobool(layer.attrib["show"]))
 				new_lang = LanguageLayer(layer.attrib["lang"], show)
@@ -168,15 +167,15 @@ class BookInfo:
 	def sync_characters(self):
 		self.characters: List[str] = []
 
-		character_item = self._info.find(f"{self._ns.ACBFns}characters")
+		character_item = self._info.find(f"{self._ns}characters")
 		if character_item is not None:
-			for c in character_item.findall(f"{self._ns.ACBFns}name"):
+			for c in character_item.findall(f"{self._ns}name"):
 				self.characters.append(c.text)
 
 	def sync_keywords(self):
 		self.keywords: Dict[str, List[str]] = {}
 
-		keyword_items = self._info.findall(f"{self._ns.ACBFns}keywords")
+		keyword_items = self._info.findall(f"{self._ns}keywords")
 		for k in keyword_items:
 			if "lang" in k.keys():
 				lang = langcodes.standardize_tag(k.attrib["lang"])
@@ -188,7 +187,7 @@ class BookInfo:
 	def sync_series(self):
 		self.series: Dict[str, Series] = {}
 
-		series_items = self._info.findall(f"{self._ns.ACBFns}sequence")
+		series_items = self._info.findall(f"{self._ns}sequence")
 		for se in series_items:
 			new_se = Series(se.attrib["title"], se.text)
 
@@ -200,7 +199,7 @@ class BookInfo:
 	def sync_content_rating(self):
 		self.content_rating: Dict[str, str] = {}
 
-		rating_items = self._info.findall(f"{self._ns.ACBFns}content-rating")
+		rating_items = self._info.findall(f"{self._ns}content-rating")
 		for rt in rating_items:
 			if "type" in rt.keys():
 				self.content_rating[rt.attrib["type"]] = rt.text
@@ -210,7 +209,7 @@ class BookInfo:
 	def sync_database_ref(self):
 		self.database_ref: List[DBRef] = []
 
-		db_items = self._info.findall(f"{self._ns.ACBFns}databaseref")
+		db_items = self._info.findall(f"{self._ns}databaseref")
 		for db in db_items:
 			new_db = DBRef(db.attrib["dbname"], db.text)
 			new_db._element = db
@@ -257,26 +256,26 @@ class PublishInfo:
 
 		self.book = book
 
-		self.publisher: str = info.find(f"{ns.ACBFns}publisher").text
+		self.publisher: str = info.find(f"{ns}publisher").text
 
-		self.publish_date_string: str = info.find(f"{ns.ACBFns}publish-date").text
+		self.publish_date_string: str = info.find(f"{ns}publish-date").text
 
 		# Optional
 		self.publish_date: Optional[date] = None
-		if "value" in info.find(f"{ns.ACBFns}publish-date").keys():
-			self.publish_date = date.fromisoformat(info.find(f"{ns.ACBFns}publish-date").attrib["value"])
+		if "value" in info.find(f"{ns}publish-date").keys():
+			self.publish_date = date.fromisoformat(info.find(f"{ns}publish-date").attrib["value"])
 
 		self.publish_city: Optional[str] = None
-		if info.find(f"{ns.ACBFns}city") is not None:
-			self.publish_city = info.find(f"{ns.ACBFns}city").text
+		if info.find(f"{ns}city") is not None:
+			self.publish_city = info.find(f"{ns}city").text
 
 		self.isbn: Optional[str] = None
-		if info.find(f"{ns.ACBFns}isbn") is not None:
-			self.isbn = info.find(f"{ns.ACBFns}isbn").text
+		if info.find(f"{ns}isbn") is not None:
+			self.isbn = info.find(f"{ns}isbn").text
 
 		self.license: Optional[str] = None
-		if info.find(f"{ns.ACBFns}license") is not None:
-			self.license = info.find(f"{ns.ACBFns}license").text
+		if info.find(f"{ns}license") is not None:
+			self.license = info.find(f"{ns}license").text
 
 class DocumentInfo:
 	"""Metadata about the ACBF file itself.
@@ -315,54 +314,54 @@ class DocumentInfo:
 	def __init__(self, info, book: ACBFBook):
 		self.book = book
 		self._info = info
-		ns: BookNamespace = book.namespace
+		ns = book.namespace
 
 		self.sync_authors()
 
-		self.creation_date_string: str = info.find(f"{ns.ACBFns}creation-date").text
+		self.creation_date_string: str = info.find(f"{ns}creation-date").text
 
 		# Optional
 		self.creation_date: Optional[date] = None
-		if "value" in info.find(f"{ns.ACBFns}creation-date").keys():
-			self.creation_date = date.fromisoformat(info.find(f"{ns.ACBFns}creation-date").attrib["value"])
+		if "value" in info.find(f"{ns}creation-date").keys():
+			self.creation_date = date.fromisoformat(info.find(f"{ns}creation-date").attrib["value"])
 
 		self.source: Optional[str] = None
-		if info.find(f"{ns.ACBFns}source") is not None:
+		if info.find(f"{ns}source") is not None:
 			p = []
-			for line in info.findall(f"{ns.ACBFns}source/{ns.ACBFns}p"):
+			for line in info.findall(f"{ns}source/{ns}p"):
 				p.append(line.text)
 			self.source = "\n".join(p)
 
 		self.document_id: Optional[str] = None
-		if info.find(f"{ns.ACBFns}id") is not None:
-			self.document_id = info.find(f"{ns.ACBFns}id").text
+		if info.find(f"{ns}id") is not None:
+			self.document_id = info.find(f"{ns}id").text
 
 		self.document_version: Optional[str] = None
-		if info.find(f"{ns.ACBFns}version") is not None:
-			self.document_version = info.find(f"{ns.ACBFns}version").text
+		if info.find(f"{ns}version") is not None:
+			self.document_version = info.find(f"{ns}version").text
 
 		self.document_history: Optional[List[str]] = []
-		if info.find(f"{ns.ACBFns}history") is not None:
-			for item in info.findall(f"{ns.ACBFns}history/{ns.ACBFns}p"):
+		if info.find(f"{ns}history") is not None:
+			for item in info.findall(f"{ns}history/{ns}p"):
 				self.document_history.append(item.text)
 
 	def sync_authors(self):
 		ns = self.book.namespace
-		self.authors: List[Author] = update_authors(self._info.findall(f"{ns.ACBFns}author"), ns)
+		self.authors: List[Author] = update_authors(self._info.findall(f"{ns}author"), ns)
 
-def update_authors(author_items, ns: BookNamespace):
+def update_authors(author_items, ns):
 	authors = []
 
 	for au in author_items:
 		new_first_name = None
 		new_last_name = None
 		new_nickname = None
-		if au.find(f"{ns.ACBFns}first-name") is not None:
-			new_first_name = au.find(f"{ns.ACBFns}first-name").text
-		if au.find(f"{ns.ACBFns}last-name") is not None:
-			new_last_name = au.find(f"{ns.ACBFns}last-name").text
-		if au.find(f"{ns.ACBFns}nickname") is not None:
-			new_nickname = au.find(f"{ns.ACBFns}nickname").text
+		if au.find(f"{ns}first-name") is not None:
+			new_first_name = au.find(f"{ns}first-name").text
+		if au.find(f"{ns}last-name") is not None:
+			new_last_name = au.find(f"{ns}last-name").text
+		if au.find(f"{ns}nickname") is not None:
+			new_nickname = au.find(f"{ns}nickname").text
 
 		new_author: Author = Author(new_first_name, new_last_name, new_nickname)
 		new_author._element = au
@@ -373,12 +372,12 @@ def update_authors(author_items, ns: BookNamespace):
 			new_author.lang = au.attrib["lang"]
 
 		# Optional
-		if au.find(f"{ns.ACBFns}middle-name") is not None:
-			new_author.middle_name = au.find(f"{ns.ACBFns}middle-name").text
-		if au.find(f"{ns.ACBFns}home-page") is not None:
-			new_author.home_page = au.find(f"{ns.ACBFns}home-page").text
-		if au.find(f"{ns.ACBFns}email") is not None:
-			new_author.email = au.find(f"{ns.ACBFns}email").text
+		if au.find(f"{ns}middle-name") is not None:
+			new_author.middle_name = au.find(f"{ns}middle-name").text
+		if au.find(f"{ns}home-page") is not None:
+			new_author.home_page = au.find(f"{ns}home-page").text
+		if au.find(f"{ns}email") is not None:
+			new_author.email = au.find(f"{ns}email").text
 
 		authors.append(new_author)
 

@@ -1,14 +1,6 @@
 import re
 from enum import Enum, auto
 
-class BookNamespace:
-	def __init__(self, ns: str):
-		self.ACBFns: str = ns
-
-	@property
-	def ACBFns_raw(self) -> str:
-		return re.sub(r'\{|\}', "", self.ACBFns)
-
 class AuthorActivities(Enum):
 	"""List of accepted values for :attr:`Author.activity<libacbf.structs.Author.activity>`.
 
