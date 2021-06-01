@@ -977,7 +977,7 @@ class metadata:
 				type : str, optional
 					[description], by default "_"
 				"""
-				rt_items = book.Metadata.book_info._info.findall(f"{book.namespace}sequence")
+				rt_items = book.Metadata.book_info._info.findall(f"{book.namespace}content-rating")
 
 				rt_element = None
 				for i in rt_items:
