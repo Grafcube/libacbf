@@ -139,7 +139,7 @@ class ACBFBook:
 
 	archive : ArchiveReader, optional
 		Can be used to read archive directly if file is not ``.acbf``. There probably wont be any
-		reasonn to use this.
+		reason to use this.
 
 		:attr:`ArchiveReader.archive <libacbf.archivereader.ArchiveReader.archive>` may be
 		``zipfile.ZipFile``, ``pathlib.Path``, ``tarfile.TarFile`` or ``rarfile.RarFile``.

@@ -160,7 +160,8 @@ class BookInfo:
 			text_layers = self._info.find(f"{self._ns}languages").findall(f"{self._ns}text-layer")
 			for layer in text_layers:
 				show = bool(distutils.util.strtobool(layer.attrib["show"]))
-				new_lang = LanguageLayer(layer.attrib["lang"], show)
+				new_lang = LanguageLayer(langcodes.standardize_tag(layer.attrib["lang"]), show)
+				new_lang._element = layer
 
 				self.languages.append(new_lang)
 

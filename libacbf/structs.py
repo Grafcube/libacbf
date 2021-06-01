@@ -288,6 +288,8 @@ class LanguageLayer:
 		Whether layer is drawn.
 	"""
 	def __init__(self, val: str, show: bool):
+		self._element = None
+
 		self.lang: str = langcodes.standardize_tag(val)
 		self.show: bool = show
 

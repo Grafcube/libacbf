@@ -10,7 +10,7 @@ from base64 import b64encode
 from lxml import etree
 
 from libacbf import ACBFBook
-from libacbf.structs import Author, DBRef, Genre
+from libacbf.structs import Author, DBRef, Genre, LanguageLayer
 from libacbf.constants import ArchiveTypes, Genres
 
 def check_book(func):
@@ -150,7 +150,7 @@ def edit_date(book: ACBFBook, tag: str, section, attr_s: str, attr_d: str, dt: U
 class book:
 	"""[summary]
 	"""
-	class data:
+	class data: # Incomplete (Archive writing)
 		@staticmethod
 		@check_book
 		def add(book: ACBFBook, file_path: Union[str, Path], embed: bool = False):
@@ -280,7 +280,7 @@ class book:
 
 				book.sync_references()
 
-	class styles:
+	class styles: # Incomplete
 		@staticmethod
 		@check_book
 		def edit(book: ACBFBook, stylesheet: str, style_name: str = "_"):
@@ -619,7 +619,7 @@ class metadata:
 
 				book.Metadata.book_info.sync_annotations()
 
-		class coverpage:
+		class coverpage: # Incomplete (With Page editing)
 			@staticmethod
 			@check_book
 			def edit(book: ACBFBook):
@@ -629,7 +629,7 @@ class metadata:
 		class languagelayers:
 			@staticmethod
 			@check_book
-			def edit(book: ACBFBook, lang: str, show: bool):
+			def add(book: ACBFBook, lang: str, show: bool):
 				"""[summary]
 
 				Parameters
@@ -646,23 +646,41 @@ class metadata:
 					ln_section = etree.Element(f"{book.namespace}languages")
 					book.Metadata.book_info._info.append(ln_section)
 
-				ln_elements = ln_section.findall(f"{book.namespace}text-layer")
-
 				lang = langcodes.standardize_tag(lang)
 
-				ln_item = None
-				for i in ln_elements:
-					if langcodes.standardize_tag(i.attrib["lang"]) == lang:
-						ln_item = i
-						break
-
-				if ln_item is None:
-					ln_item = etree.Element(f"{book.namespace}text-layer")
-					ln_item.set("lang", lang)
-					ln_section.append(ln_item)
-
+				ln_item = etree.Element(f"{book.namespace}text-layer")
+				ln_item.set("lang", lang)
 				ln_item.set("show", str(show))
+				ln_section.append(ln_item)
 
+				book.Metadata.book_info.sync_languages()
+
+			@staticmethod
+			@check_book
+			def edit(book: ACBFBook, layer: Union[int, LanguageLayer], lang: Optional[str] = None, show: Optional[bool] = None):
+				"""[summary]
+
+				Parameters
+				----------
+				book : ACBFBook
+					[description]
+				layer : Union[int, LanguageLayer]
+					[description]
+				lang : Optional[str], optional
+					[description], by default None
+				show : Optional[bool], optional
+					[description], by default None
+				"""
+				if lang is None and show is None:
+					return
+
+				if isinstance(layer, int):
+					layer = book.Metadata.book_info.languages[layer]
+
+				if lang is not None:
+					layer._element.set("lang", lang)
+				if show is not None:
+					layer._element.set("show", str(show))
 				book.Metadata.book_info.sync_languages()
 
 			@staticmethod
