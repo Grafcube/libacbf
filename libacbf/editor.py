@@ -1029,14 +1029,14 @@ class metadata:
 
 			@staticmethod
 			@check_book
-			def edit(book: ACBFBook, dbref: DBRef, dbname: Optional[str] = None, ref: Optional[str] = None, type: Optional[str] = None):
+			def edit(book: ACBFBook, dbref: Union[int, DBRef], dbname: Optional[str] = None, ref: Optional[str] = None, type: Optional[str] = None):
 				"""[summary]
 
 				Parameters
 				----------
 				book : ACBFBook
 					[description]
-				dbref : DBRef
+				dbref : int | DBRef
 					[description]
 				dbname : str
 					[description]
@@ -1045,6 +1045,9 @@ class metadata:
 				type : str | None, optional
 					[description], by default None
 				"""
+				if isinstance(dbref, int):
+					dbref = book.Metadata.book_info.database_ref[dbref]
+
 				if dbname is not None:
 					dbref._element.set("dbname", dbname)
 				if ref is not None:
