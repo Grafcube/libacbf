@@ -4,11 +4,10 @@ import libacbf.editor as edit
 from tests.testsettings import samples
 
 with ACBFBook(samples[1]) as book:
-	pprint([{"lang": x.lang, "show": x.show} for x in book.Metadata.book_info.languages])
+	pprint([{"title": x.title, "seq": x.sequence, "vol": x.volume} for x in book.Metadata.book_info.series.values()])
 	print('')
-	edit.metadata.bookinfo.languagelayers.add(book, "kn", True)
-	pprint([{"lang": x.lang, "show": x.show} for x in book.Metadata.book_info.languages])
+	edit.metadata.bookinfo.series.edit(book, "test", "1")
+	pprint([{"title": x.title, "seq": x.sequence, "vol": x.volume} for x in book.Metadata.book_info.series.values()])
 	print('')
-	edit.metadata.bookinfo.languagelayers.edit(book, 1, "ta", False)
-	pprint([{"lang": x.lang, "show": x.show} for x in book.Metadata.book_info.languages])
-	print('')
+	edit.metadata.bookinfo.series.edit(book, "test", volume="2")
+	pprint([{"title": x.title, "seq": x.sequence, "vol": x.volume} for x in book.Metadata.book_info.series.values()])

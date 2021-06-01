@@ -855,7 +855,7 @@ class metadata:
 		class series:
 			@staticmethod
 			@check_book
-			def edit(book: ACBFBook, title: str, sequence: str, volume: Optional[str] = None):
+			def edit(book: ACBFBook, title: str, sequence: Optional[str] = None, volume: Optional[str] = None):
 				"""[summary]
 
 				Parameters
@@ -864,9 +864,9 @@ class metadata:
 					[description]
 				title : str
 					[description]
-				sequence : str
-					[description]
-				volume : str, optional
+				sequence : Optional[str], optional
+					[description], by default None
+				volume : Optional[str], optional
 					[description], by default None
 				"""
 				info_section = book.Metadata.book_info._info
@@ -889,10 +889,14 @@ class metadata:
 					else:
 						info_section.append(ser_element)
 
-				ser_element.text = sequence
+				if sequence is not None:
+					ser_element.text = sequence
 
 				if volume is not None:
 					ser_element.set("volume", volume)
+				else:
+					if "volume" in ser_element.keys():
+						ser_element.attrib.pop("volume")
 
 				book.Metadata.book_info.sync_series()
 
