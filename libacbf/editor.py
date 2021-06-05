@@ -216,7 +216,7 @@ class book:
 	class references:
 		@staticmethod
 		@check_book
-		def add(book: ACBFBook, id: str, paragraph: str, idx: int = -1):
+		def edit(book: ACBFBook, id: str, paragraph: str):
 			"""[summary]
 
 			Parameters
@@ -232,9 +232,22 @@ class book:
 			"""
 			ref_section = book._root.find(f"{book.namespace}references")
 			if ref_section is None:
+				ref_section = etree.Element(f"{book.namespace}references")
 				book._root.append(ref_section)
 
-			ref_element = etree.Element(f"{book.namespace}reference")
+			ref_items = ref_section.findall(f"{book.namespace}reference")
+
+			ref_element = None
+			for i in ref_items:
+				if i.attrib["id"] == id:
+					ref_element = i
+					break
+
+			if ref_element == None:
+				ref_element = etree.Element(f"{book.namespace}reference")
+				ref_section.append(ref_element)
+
+			ref_element.clear()
 			ref_element.set("id", id)
 
 			p_list = re.split(r"\n", paragraph)
@@ -244,13 +257,6 @@ class book:
 				for i in list(p_element.iter()):
 					i.tag = book.namespace + i.tag
 				ref_element.append(p_element)
-
-			if idx == -1:
-				ref_section.append(ref_element)
-			elif idx < 0:
-				ref_section.insert(idx+1, ref_element)
-			else:
-				ref_section.insert(idx, ref_element)
 
 			book.sync_references()
 
@@ -381,38 +387,28 @@ class metadata:
 					[description], by default "_"
 				"""
 				info_section = book.Metadata.book_info._info
-
 				title_elements = info_section.findall(f"{book.namespace}book-title")
 				idx = info_section.index(title_elements[-1]) + 1
-				found = False
-				key = None
 
+				t_element = None
 				if lang == "_":
 					for i in title_elements:
 						if "lang" not in i.keys():
-							i.text = title
-							found = True
+							t_element = i
 							break
-					if not found:
-						t_element = etree.Element(f"{book.namespace}book-title")
-						t_element.text = title
-						info_section.insert(idx, t_element)
-						found = True
 				else:
 					key = langcodes.standardize_tag(lang)
-
-				if not found:
 					for i in title_elements:
 						if "lang" in i.keys() and langcodes.standardize_tag(i.attrib["lang"]) == key:
-							i.text == title
-							found = True
+							t_element = i
 							break
-					if not found:
-						t_element = etree.Element(f"{book.namespace}book-title")
-						t_element.set("lang", key)
-						t_element.text = title
-						info_section.insert(idx, t_element)
-						found = True
+
+				if t_element == None:
+					t_element = etree.Element(f"{book.namespace}book-title")
+					info_section.insert(idx, t_element)
+
+				t_element.set("lang", key)
+				t_element.text = title
 
 				book.Metadata.book_info.sync_book_titles()
 
@@ -429,31 +425,23 @@ class metadata:
 					[description], by default "_"
 				"""
 				info_section = book.Metadata.book_info._info
-
 				title_elements = info_section.findall(f"{book.namespace}book-title")
 
-				key = None
-				complete = False
-				if len(title_elements) > 1:
-					if lang == "_":
-						for i in title_elements:
-							if "lang" not in i.keys():
-								i.clear()
-								i.getparent().remove(i)
-								complete = True
-								break
-					else:
-						key = langcodes.standardize_tag(lang)
-
-					if not complete:
-						for i in title_elements:
-							if "lang" in i.keys() and langcodes.standardize_tag(i.attrib["lang"]) == key:
-								i.clear()
-								i.getparent().remove(i)
-								complete = True
-								break
-
-					book.Metadata.book_info.sync_book_titles()
+				if lang == "_":
+					for i in title_elements:
+						if "lang" not in i.keys():
+							i.clear()
+							info_section.remove(i)
+							book.Metadata.book_info.sync_book_titles()
+							break
+				else:
+					lang = langcodes.standardize_tag(lang)
+					for i in title_elements:
+						if "lang" in i.keys() and langcodes.standardize_tag(i.attrib["lang"]) == lang:
+							i.clear()
+							info_section.remove(i)
+							book.Metadata.book_info.sync_book_titles()
+							break
 
 		class genres:
 			@staticmethod
@@ -525,7 +513,7 @@ class metadata:
 				for i in gn_elements:
 					if i.text == name:
 						i.clear()
-						i.getparent().remove(i)
+						info_section.remove(i)
 						book.Metadata.book_info.sync_genres()
 						break
 
@@ -546,8 +534,6 @@ class metadata:
 				"""
 				info_section = book.Metadata.book_info._info
 				annotation_elements = info_section.findall(f"{book.namespace}annotation")
-				key = None
-				idx = info_section.index(annotation_elements[-1]) + 1
 
 				an_element = None
 				if lang == "_":
@@ -555,24 +541,22 @@ class metadata:
 						if "lang" not in i.keys():
 							an_element = i
 							break
-					if an_element is None:
-						an_element = etree.Element(f"{book.namespace}annotation")
-						info_section.insert(idx, an_element)
-
 				else:
-					key = langcodes.standardize_tag(lang)
-
-				if an_element is None:
+					lang = langcodes.standardize_tag(lang)
 					for i in annotation_elements:
-						if "lang" in i.keys() and langcodes.standardize_tag(i.attrib["lang"]) == key:
+						if "lang" in i.keys() and langcodes.standardize_tag(i.attrib["lang"]) == lang:
 							an_element = i
 							break
-					if an_element is None:
-						an_element = etree.Element(f"{book.namespace}annotation")
-						an_element.set("lang", key)
-						info_section.insert(idx, an_element)
 
-				for pt in text.split(r"\n"):
+				if an_element is None:
+					idx = info_section.index(annotation_elements[-1]) + 1
+					an_element = etree.Element(f"{book.namespace}annotation")
+					info_section.insert(idx, an_element)
+
+				an_element.clear()
+				an_element.set("lang", lang)
+
+				for pt in text.split(r'\n'):
 					p = etree.Element(f"{book.namespace}p")
 					p.text = pt
 					an_element.append(p)
@@ -593,31 +577,24 @@ class metadata:
 				"""
 				info_section = book.Metadata.book_info._info
 				annotation_elements = info_section.findall(f"{book.namespace}annotation")
-				an_element = None
-				key = None
 
+				an_element = None
 				if lang == "_":
 					for i in annotation_elements:
 						if "lang" not in i.keys():
 							an_element = i
 							break
-
 				else:
-					key = langcodes.standardize_tag(lang)
-
-				if an_element is None:
+					lang = langcodes.standardize_tag(lang)
 					for i in annotation_elements:
-						if "lang" in i.keys() and langcodes.standardize_tag(i.attrib["lang"]) == key:
+						if "lang" in i.keys() and langcodes.standardize_tag(i.attrib["lang"]) == lang:
 							an_element = i
 							break
 
-				if an_element is None:
-					return
-				else:
+				if an_element is not None:
 					an_element.clear()
-					an_element.getparent().remove(an_element)
-
-				book.Metadata.book_info.sync_annotations()
+					info_section.remove(an_element)
+					book.Metadata.book_info.sync_annotations()
 
 		class coverpage: # Incomplete (With Page editing)
 			@staticmethod
