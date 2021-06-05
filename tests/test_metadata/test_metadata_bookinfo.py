@@ -1,7 +1,6 @@
 import os
 import json
 from pathlib import Path
-from langcodes import Language
 from tests.conftest import book, sample_path
 
 dir = f"tests/results/{Path(sample_path).name}/metadata/book_info/"
@@ -11,8 +10,8 @@ def test_authors():
 	op = []
 	for i in book.Metadata.book_info.authors:
 		new_op = {
-			"activity": i.activity.name,
-			"lang": i.lang if i.lang is not None else None,
+			"activity": i.activity.name if i.activity is not None else None,
+			"lang": i.lang,
 			"first_name": i.first_name,
 			"last_name": i.last_name,
 			"middle_name": i.middle_name,

@@ -1,4 +1,3 @@
-import re
 from enum import Enum, auto
 
 class AuthorActivities(Enum):

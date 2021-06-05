@@ -1253,20 +1253,6 @@ class metadata:
 		class document_history:
 			@staticmethod
 			@check_book
-			def append(book: ACBFBook, entry: str):
-				"""[summary]
-
-				Parameters
-				----------
-				book : ACBFBook
-					[description]
-				entry : str
-					[description]
-				"""
-				pass
-
-			@staticmethod
-			@check_book
 			def insert(book: ACBFBook, index: int, entry: str):
 				"""[summary]
 
@@ -1279,7 +1265,26 @@ class metadata:
 				entry : str
 					[description]
 				"""
-				pass
+				history_section = book.Metadata.document_info._info.find(f"{book.namespace}history")
+				p = etree.Element(f"{book.namespace}p")
+				history_section.insert(index, p)
+				p.text = entry
+				book.Metadata.document_info.sync_history()
+
+			@staticmethod
+			@check_book
+			def append(book: ACBFBook, entry: str):
+				"""[summary]
+
+				Parameters
+				----------
+				book : ACBFBook
+					[description]
+				entry : str
+					[description]
+				"""
+				idx = len(book.Metadata.document_info._info.findall(f"{book.namespace}history/{book.namespace}p"))
+				metadata.documentinfo.document_history.insert(book, idx, entry)
 
 			@staticmethod
 			@check_book
@@ -1295,7 +1300,9 @@ class metadata:
 				text : str
 					[description]
 				"""
-				pass
+				item = book.Metadata.document_info._info.findall(f"{book.namespace}history/{book.namespace}p")[index]
+				item.text = text
+				book.Metadata.document_info.sync_history()
 
 			@staticmethod
 			@check_book
@@ -1309,4 +1316,7 @@ class metadata:
 				index : int
 					[description]
 				"""
-				pass
+				item = book.Metadata.document_info._info.findall(f"{book.namespace}history/{book.namespace}p")[index]
+				item.clear()
+				item.getparent().remove(item)
+				book.Metadata.document_info.sync_history()

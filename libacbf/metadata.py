@@ -341,14 +341,17 @@ class DocumentInfo:
 		if info.find(f"{ns}version") is not None:
 			self.document_version = info.find(f"{ns}version").text
 
-		self.document_history: Optional[List[str]] = []
-		if info.find(f"{ns}history") is not None:
-			for item in info.findall(f"{ns}history/{ns}p"):
-				self.document_history.append(item.text)
+		self.sync_history()
 
 	def sync_authors(self):
 		ns = self.book.namespace
 		self.authors: List[Author] = update_authors(self._info.findall(f"{ns}author"), ns)
+
+	def sync_history(self):
+		self.document_history: Optional[List[str]] = []
+		if self._info.find(f"{self.book.namespace}history") is not None:
+			for item in self._info.findall(f"{self.book.namespace}history/{self.book.namespace}p"):
+				self.document_history.append(item.text)
 
 def update_authors(author_items, ns):
 	authors = []
