@@ -2,10 +2,10 @@ import os
 import json
 from pathlib import Path
 from tests.conftest import book, sample_path
-import libacbf.editor as edit
+from libacbf.editor import metadata as edit_meta
 from libacbf.structs import Author
 
-dir = f"tests/results/editor/{Path(sample_path).name}/metadata/book_info/"
+dir = f"tests/results/{Path(sample_path).name}/editor/metadata/book_info/"
 os.makedirs(dir, exist_ok=True)
 
 def test_authors():
@@ -25,7 +25,7 @@ def test_authors():
 	with open(dir + "test_authors.json", 'w', encoding="utf-8", newline='\n') as result:
 		result.write(json.dumps(op, ensure_ascii=False))
 
-	edit.metadata.bookinfo.authors.add(book, Author("Test"))
+	edit_meta.bookinfo.authors.add(book, Author("Test"))
 	op["added"] = []
 	for i in book.Metadata.book_info.authors:
 		new_op = {
@@ -47,7 +47,7 @@ def test_authors():
 	n.last_name = "TheLast"
 	n.nickname = None
 	n.home_page = "https://example.com/testing"
-	edit.metadata.bookinfo.authors.edit(book, -1, n)
+	edit_meta.bookinfo.authors.edit(book, -1, n)
 	op["edited"] = []
 	for i in book.Metadata.book_info.authors:
 		new_op = {
@@ -64,7 +64,7 @@ def test_authors():
 	with open(dir + "test_authors.json", 'w', encoding="utf-8", newline='\n') as result:
 			result.write(json.dumps(op, ensure_ascii=False))
 
-	edit.metadata.bookinfo.authors.remove(book, -1)
+	edit_meta.bookinfo.authors.remove(book, -1)
 	op["removed"] = []
 	for i in book.Metadata.book_info.authors:
 		new_op = {
@@ -80,3 +80,25 @@ def test_authors():
 		op["removed"].append(new_op)
 	with open(dir + "test_authors.json", 'w', encoding="utf-8", newline='\n') as result:
 			result.write(json.dumps(op, ensure_ascii=False))
+
+def test_titles():
+	op = {}
+
+	op["original"] = book.Metadata.book_info.book_title
+	with open(dir + "test_titles.json", 'w', encoding="utf-8", newline='\n') as result:
+		result.write(json.dumps(op, ensure_ascii=False))
+
+	edit_meta.bookinfo.title.edit(book, "ಕ್ರ್ಯಾಪ್ಹೌಂಡ್", "kn")
+	op["added"] = book.Metadata.book_info.book_title
+	with open(dir + "test_titles.json", 'w', encoding="utf-8", newline='\n') as result:
+		result.write(json.dumps(op, ensure_ascii=False))
+
+	edit_meta.bookinfo.title.edit(book, "ಹೆಸರು", "kn")
+	op["edited"] = book.Metadata.book_info.book_title
+	with open(dir + "test_titles.json", 'w', encoding="utf-8", newline='\n') as result:
+		result.write(json.dumps(op, ensure_ascii=False))
+
+	edit_meta.bookinfo.title.remove(book, "kn")
+	op["removed"] = book.Metadata.book_info.book_title
+	with open(dir + "test_titles.json", 'w', encoding="utf-8", newline='\n') as result:
+		result.write(json.dumps(op, ensure_ascii=False))
