@@ -662,7 +662,7 @@ class metadata:
 
 			@staticmethod
 			@check_book
-			def remove(book: ACBFBook, lang: str):
+			def remove(book: ACBFBook, layer: Union[int, LanguageLayer]):
 				"""[summary]
 
 				Parameters
@@ -674,21 +674,17 @@ class metadata:
 				"""
 				ln_section = book.Metadata.book_info._info.find(f"{book.namespace}languages")
 
-				if ln_section is not None:
-					ln_elements = ln_section.findall(f"{book.namespace}text-layer")
-					lang = langcodes.standardize_tag(lang)
+				if isinstance(layer, int):
+					layer = book.Metadata.book_info.languages[layer]
 
-					for i in ln_elements:
-						if langcodes.standardize_tag(i.attrib["lang"]) == lang:
-							i.clear()
-							ln_section.remove(i)
-							break
+				layer._element.clear()
+				ln_section.remove(layer._element)
 
-					if len(ln_section.findall(f"{book.namespace}text-layer")) == 0:
-						ln_section.clear()
-						ln_section.getparent().remove(ln_section)
+				if len(ln_section.findall(f"{book.namespace}text-layer")) == 0:
+					ln_section.clear()
+					ln_section.getparent().remove(ln_section)
 
-					book.Metadata.book_info.sync_languages()
+				book.Metadata.book_info.sync_languages()
 
 		class characters:
 			@staticmethod

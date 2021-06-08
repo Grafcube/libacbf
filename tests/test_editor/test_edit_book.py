@@ -27,11 +27,6 @@ def test_references():
 	with open(dir + "test_references.json", 'w', encoding="utf-8", newline='\n') as result:
 		result.write(json.dumps(op, ensure_ascii=False))
 
-	edit_bookinfo.book.references.remove(book, "test_ref")
-	op["non-existant"] = book.References
-	with open(dir + "test_references.json", 'w', encoding="utf-8", newline='\n') as result:
-		result.write(json.dumps(op, ensure_ascii=False))
-
 def test_data():
 	pass
 
