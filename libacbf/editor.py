@@ -10,7 +10,7 @@ from base64 import b64encode
 from lxml import etree
 
 from libacbf import ACBFBook
-from libacbf.structs import Author, DBRef, Genre, LanguageLayer
+from libacbf.structs import Author, DBRef, LanguageLayer
 from libacbf.constants import ArchiveTypes, AuthorActivities, Genres
 from libacbf.metadata import BookInfo, DocumentInfo, PublishInfo
 
@@ -149,23 +149,11 @@ def edit_date(book: ACBFBook, tag: str, section: Union[BookInfo, PublishInfo, Do
 		setattr(section, attr_d, None)
 
 class book:
-	"""[summary]
-	"""
 	class data: # Incomplete (Archive writing)
 		@staticmethod
 		@check_book
 		def add(book: ACBFBook, file_path: Union[str, Path], embed: bool = False):
 			# TODO: Option to choose whether to embed in xml or add to archive
-			"""[summary]
-
-			Parameters
-			----------
-			book : ACBFBook
-				[description]
-			file_path : str
-				[description]
-			"""
-
 			file_path = Path(file_path) if isinstance(file_path, str) else file_path
 
 			dat_section = book._root.find(f"{book.namespace}data")
@@ -190,15 +178,6 @@ class book:
 		@staticmethod
 		@check_book
 		def remove(book: ACBFBook, id: str):
-			"""[summary]
-
-			Parameters
-			----------
-			book : ACBFBook
-				[description]
-			id : str
-				[description]
-			"""
 			dat_section = book._root.find(f"{book.namespace}data")
 
 			if dat_section is not None:
@@ -218,19 +197,6 @@ class book:
 		@staticmethod
 		@check_book
 		def edit(book: ACBFBook, id: str, paragraph: str):
-			"""[summary]
-
-			Parameters
-			----------
-			book : ACBFBook
-				[description]
-			id : str
-				[description]
-			paragraph : str
-				[description]
-			idx : int, optional
-				[description], by default -1
-			"""
 			ref_section = book._root.find(f"{book.namespace}references")
 			if ref_section is None:
 				ref_section = etree.Element(f"{book.namespace}references")
@@ -264,15 +230,6 @@ class book:
 		@staticmethod
 		@check_book
 		def remove(book: ACBFBook, id: str):
-			"""[summary]
-
-			Parameters
-			----------
-			book : ACBFBook
-				[description]
-			id : str
-				[description]
-			"""
 			ref_section = book._root.find(f"{book.namespace}references")
 
 			if ref_section is not None:
@@ -291,102 +248,37 @@ class book:
 		@staticmethod
 		@check_book
 		def edit(book: ACBFBook, stylesheet: str, style_name: str = "_"):
-			"""[summary]
-
-			Parameters
-			----------
-			stylesheet : str
-				[description]
-			style_name : str, optional
-				[description], by default "_"
-			"""
 
 			book.Styles.sync_styles()
 
 		@staticmethod
 		@check_book
 		def remove(book: ACBFBook, style_name: str = "_"):
-			"""[summary]
-
-			Parameters
-			----------
-			book : ACBFBook
-				[description]
-			style_name : str, optional
-				[description], by default "_"
-			"""
 
 			book.Styles.sync_styles()
 
 class metadata:
-	"""[summary]
-	"""
 	class bookinfo:
 		class authors:
 			@staticmethod
 			@check_book
 			def add(book: ACBFBook, *names: str, **required):
-				"""[summary]
-
-				Parameters
-				----------
-				book : ACBFBook
-					[description]
-				author : Author
-					[description]
-				"""
 				add_author(book, book.Metadata.book_info, *names, **required)
 
 			@staticmethod
 			@check_book
 			def edit(book: ACBFBook, author: Union[Author, int], **attributes):
-				"""[summary]
-
-				Parameters
-				----------
-				book : ACBFBook
-					[description]
-				original_author : Union[Author, int]
-					[description]
-				new_author : Author
-					[description]
-
-				Raises
-				------
-				ValueError
-					[description]
-				"""
 				edit_author(book, book.Metadata.book_info, author, **attributes)
 
 			@staticmethod
 			@check_book
 			def remove(book: ACBFBook, author: Union[int, Author]):
-				"""[summary]
-
-				Parameters
-				----------
-				book : ACBFBook
-					[description]
-				index : int
-					[description]
-				"""
 				remove_author(book, book.Metadata.book_info, author)
 
 		class title:
 			@staticmethod
 			@check_book
 			def edit(book: ACBFBook, title: str, lang: str = "_"):
-				"""[summary]
-
-				Parameters
-				----------
-				book : ACBFBook
-					[description]
-				title : str
-					[description]
-				lang : str, optional
-					[description], by default "_"
-				"""
 				info_section = book.Metadata.book_info._info
 				title_elements = info_section.findall(f"{book.namespace}book-title")
 				idx = info_section.index(title_elements[-1]) + 1
@@ -416,15 +308,6 @@ class metadata:
 			@staticmethod
 			@check_book
 			def remove(book: ACBFBook, lang: str = "_"):
-				"""[summary]
-
-				Parameters
-				----------
-				book : ACBFBook
-					[description]
-				lang : str, optional
-					[description], by default "_"
-				"""
 				info_section = book.Metadata.book_info._info
 				title_elements = info_section.findall(f"{book.namespace}book-title")
 
@@ -448,22 +331,6 @@ class metadata:
 			@staticmethod
 			@check_book
 			def edit(book: ACBFBook, genre: Genres, match: Optional[int] = "_"):
-				"""[summary]
-
-				Parameters
-				----------
-				book : ACBFBook
-					[description]
-				genre : Genre | Genres(Enum)
-					[description]
-				match : int, optional
-					[description]
-
-				Raises
-				------
-				ValueError
-					[description]
-				"""
 				info_section = book.Metadata.book_info._info
 				gn_elements = info_section.findall(f"{book.namespace}genre")
 				name = genre.name
@@ -490,15 +357,6 @@ class metadata:
 			@staticmethod
 			@check_book
 			def remove(book: ACBFBook, genre: Genres):
-				"""[summary]
-
-				Parameters
-				----------
-				book : ACBFBook
-					[description]
-				genre : Union[Genre, Genres]
-					[description]
-				"""
 				info_section = book.Metadata.book_info._info
 				gn_elements = info_section.findall(f"{book.namespace}genre")
 				name = genre.name
@@ -514,17 +372,6 @@ class metadata:
 			@staticmethod
 			@check_book
 			def edit(book: ACBFBook, text: str, lang: str = "_"):
-				"""[summary]
-
-				Parameters
-				----------
-				book : ACBFBook
-					[description]
-				text : str
-					[description]
-				lang : str, optional
-					[description], by default "_"
-				"""
 				info_section = book.Metadata.book_info._info
 				annotation_elements = info_section.findall(f"{book.namespace}annotation")
 
@@ -559,15 +406,6 @@ class metadata:
 			@staticmethod
 			@check_book
 			def remove(book: ACBFBook, lang: str = "_"):
-				"""[summary]
-
-				Parameters
-				----------
-				book : ACBFBook
-					[description]
-				lang : str, optional
-					[description], by default "_"
-				"""
 				info_section = book.Metadata.book_info._info
 				annotation_elements = info_section.findall(f"{book.namespace}annotation")
 
@@ -600,17 +438,6 @@ class metadata:
 			@staticmethod
 			@check_book
 			def add(book: ACBFBook, lang: str, show: bool):
-				"""[summary]
-
-				Parameters
-				----------
-				book : ACBFBook
-					[description]
-				lang : str
-					[description]
-				show : bool
-					[description]
-				"""
 				ln_section = book.Metadata.book_info._info.find(f"{book.namespace}languages")
 				if ln_section is None:
 					ln_section = etree.Element(f"{book.namespace}languages")
@@ -628,19 +455,6 @@ class metadata:
 			@staticmethod
 			@check_book
 			def edit(book: ACBFBook, layer: Union[int, LanguageLayer], lang: Optional[str] = None, show: Optional[bool] = None):
-				"""[summary]
-
-				Parameters
-				----------
-				book : ACBFBook
-					[description]
-				layer : Union[int, LanguageLayer]
-					[description]
-				lang : Optional[str], optional
-					[description], by default None
-				show : Optional[bool], optional
-					[description], by default None
-				"""
 				if lang is None and show is None:
 					return
 
@@ -656,15 +470,6 @@ class metadata:
 			@staticmethod
 			@check_book
 			def remove(book: ACBFBook, layer: Union[int, LanguageLayer]):
-				"""[summary]
-
-				Parameters
-				----------
-				book : ACBFBook
-					[description]
-				lang : str
-					[description]
-				"""
 				ln_section = book.Metadata.book_info._info.find(f"{book.namespace}languages")
 
 				if isinstance(layer, int):
@@ -683,15 +488,6 @@ class metadata:
 			@staticmethod
 			@check_book
 			def add(book: ACBFBook, name: str):
-				"""[summary]
-
-				Parameters
-				----------
-				book : ACBFBook
-					[description]
-				name : str
-					[description]
-				"""
 				char_section = book.Metadata.book_info._info.find(f"{book.namespace}characters")
 
 				if char_section is None:
@@ -705,15 +501,6 @@ class metadata:
 			@staticmethod
 			@check_book
 			def remove(book: ACBFBook, item: Union[str, int]):
-				"""[summary]
-
-				Parameters
-				----------
-				book : ACBFBook
-					[description]
-				item : str | int
-					[description]
-				"""
 				char_section = book.Metadata.book_info._info.find(f"{book.namespace}characters")
 
 				if char_section is not None:
@@ -739,17 +526,6 @@ class metadata:
 			@staticmethod
 			@check_book
 			def edit(book: ACBFBook, keywords: List[str], lang: str = "_"):
-				"""[summary]
-
-				Parameters
-				----------
-				book : ACBFBook
-					[description]
-				keywords : List[str]
-					[description]
-				lang : str, optional
-					[description], by default "_"
-				"""
 				info_section = book.Metadata.book_info._info
 				key_elements = info_section.findall(f"{book.namespace}keywords")
 				idx = None
@@ -790,15 +566,6 @@ class metadata:
 			@staticmethod
 			@check_book
 			def remove(book: ACBFBook, lang: str = "_"):
-				"""[summary]
-
-				Parameters
-				----------
-				book : ACBFBook
-					[description]
-				lang : str, optional
-					[description], by default "_"
-				"""
 				key_elements = book.Metadata.book_info._info.findall(f"{book.namespace}keywords")
 
 				key_element = None
@@ -822,19 +589,6 @@ class metadata:
 			@staticmethod
 			@check_book
 			def edit(book: ACBFBook, title: str, sequence: Optional[str] = None, volume: Optional[str] = None):
-				"""[summary]
-
-				Parameters
-				----------
-				book : ACBFBook
-					[description]
-				title : str
-					[description]
-				sequence : Optional[str], optional
-					[description], by default None
-				volume : Optional[str], optional
-					[description], by default None
-				"""
 				info_section = book.Metadata.book_info._info
 				ser_items = info_section.findall(f"{book.namespace}sequence")
 				idx = None
@@ -867,15 +621,6 @@ class metadata:
 				book.Metadata.book_info.sync_series()
 
 			def remove(book: ACBFBook, title: str):
-				"""[summary]
-
-				Parameters
-				----------
-				book : ACBFBook
-					[description]
-				title : str
-					[description]
-				"""
 				seq_items = book.Metadata.book_info._info.findall(f"{book.namespace}sequence")
 
 				for i in seq_items:
@@ -889,17 +634,6 @@ class metadata:
 			@staticmethod
 			@check_book
 			def edit(book: ACBFBook, rating: str, type: str = "_"):
-				"""[summary]
-
-				Parameters
-				----------
-				book : ACBFBook
-					[description]
-				rating : str
-					[description]
-				type : str, optional
-					[description], by default "_"
-				"""
 				info_section = book.Metadata.book_info._info
 				rt_items = info_section.findall(f"{book.namespace}content-rating")
 				idx = None
@@ -934,15 +668,6 @@ class metadata:
 			@staticmethod
 			@check_book
 			def remove(book: ACBFBook, type: str = "_"):
-				"""[summary]
-
-				Parameters
-				----------
-				book : ACBFBook
-					[description]
-				type : str, optional
-					[description], by default "_"
-				"""
 				rt_items = book.Metadata.book_info._info.findall(f"{book.namespace}content-rating")
 
 				rt_element = None
@@ -960,19 +685,6 @@ class metadata:
 			@staticmethod
 			@check_book
 			def add(book: ACBFBook, dbname: str, ref: str, type: Optional[str] = None):
-				"""[summary]
-
-				Parameters
-				----------
-				book : ACBFBook
-					[description]
-				dbname : str
-					[description]
-				ref : str
-					[description]
-				type : str | None, optional
-					[description], by default None
-				"""
 				info_section = book.Metadata.book_info._info
 				db_items = info_section.findall(f"{book.namespace}databaseref")
 				idx = None
@@ -996,21 +708,6 @@ class metadata:
 			@staticmethod
 			@check_book
 			def edit(book: ACBFBook, dbref: Union[int, DBRef], dbname: Optional[str] = None, ref: Optional[str] = None, type: Optional[str] = None):
-				"""[summary]
-
-				Parameters
-				----------
-				book : ACBFBook
-					[description]
-				dbref : int | DBRef
-					[description]
-				dbname : str
-					[description]
-				ref : str
-					[description]
-				type : str | None, optional
-					[description], by default None
-				"""
 				if isinstance(dbref, int):
 					dbref = book.Metadata.book_info.database_ref[dbref]
 
@@ -1027,15 +724,6 @@ class metadata:
 			@staticmethod
 			@check_book
 			def remove(book: ACBFBook, dbref: DBRef):
-				"""[summary]
-
-				Parameters
-				----------
-				book : ACBFBook
-					[description]
-				dbref : DBRef
-					[description]
-				"""
 				dbref._element.clear()
 				dbref._element.getparent().remove(dbref._element)
 				book.Metadata.book_info.sync_database_ref()
@@ -1044,15 +732,6 @@ class metadata:
 		@staticmethod
 		@check_book
 		def publisher(book: ACBFBook, name: str):
-			"""[summary]
-
-			Parameters
-			----------
-			book : ACBFBook
-				[description]
-			name : str
-				[description]
-			"""
 			pub_item = book.Metadata.publisher_info._info.find(f"{book.namespace}publisher")
 			pub_item.text = name
 			book.Metadata.publisher_info.publisher = pub_item.text
@@ -1060,17 +739,6 @@ class metadata:
 		@staticmethod
 		@check_book
 		def publish_date(book: ACBFBook, dt: Union[str, date], include_date: bool = True):
-			"""[summary]
-
-			Parameters
-			----------
-			book : ACBFBook
-				[description]
-			dt : str | date
-				[description]
-			include_date : bool, optional
-				[description], by default True
-			"""
 			edit_date(book,
 					"publish-date",
 					book.Metadata.publisher_info,
@@ -1084,15 +752,6 @@ class metadata:
 		@staticmethod
 		@check_book
 		def publish_city(book: ACBFBook, city: Optional[str] = None):
-			"""[summary]
-
-			Parameters
-			----------
-			book : ACBFBook
-				[description]
-			city : str
-				[description]
-			"""
 			edit_optional(book, "city", book.Metadata.publisher_info, "publish_city", city)
 
 		@staticmethod
@@ -1128,66 +787,21 @@ class metadata:
 			@staticmethod
 			@check_book
 			def add(book: ACBFBook, *names: str, **required):
-				"""[summary]
-
-				Parameters
-				----------
-				book : ACBFBook
-					[description]
-				author : Author
-					[description]
-				"""
 				add_author(book, book.Metadata.document_info, *names, **required)
 
 			@staticmethod
 			@check_book
 			def edit(book: ACBFBook, author: Union[Author, int], **attributes):
-				"""[summary]
-
-				Parameters
-				----------
-				book : ACBFBook
-					[description]
-				original_author : Union[Author, int]
-					[description]
-				new_author : Author
-					[description]
-
-				Raises
-				------
-				ValueError
-					[description]
-				"""
 				edit_author(book, book.Metadata.document_info, author, **attributes)
 
 			@staticmethod
 			@check_book
 			def remove(book: ACBFBook, author: Union[int, Author]):
-				"""[summary]
-
-				Parameters
-				----------
-				book : ACBFBook
-					[description]
-				index : int
-					[description]
-				"""
 				remove_author(book, book.Metadata.document_info, author)
 
 		@staticmethod
 		@check_book
 		def creation_date(book: ACBFBook, dt: Union[str, date], include_date: bool = True):
-			"""[summary]
-
-			Parameters
-			----------
-			book : ACBFBook
-				[description]
-			dt : Union[str, date]
-				[description]
-			include_date : bool, optional
-				[description], by default True
-			"""
 			edit_date(book,
 				"creation-date",
 				book.Metadata.document_info,
@@ -1200,60 +814,22 @@ class metadata:
 		@staticmethod
 		@check_book
 		def source(book: ACBFBook, source: Optional[str] = None):
-			"""[summary]
-
-			Parameters
-			----------
-			book : ACBFBook
-				[description]
-			source : Optional[str], optional
-				[description], by default None
-			"""
 			pass
 
 		@staticmethod
 		@check_book
 		def document_id(book: ACBFBook, id: Optional[str] = None):
-			"""[summary]
-
-			Parameters
-			----------
-			book : ACBFBook
-				[description]
-			id : Optional[str], optional
-				[description], by default None
-			"""
 			edit_optional(book, "id", book.Metadata.document_info, "document_id", id)
 
 		@staticmethod
 		@check_book
 		def document_version(book: ACBFBook, version: Optional[str] = None):
-			"""[summary]
-
-			Parameters
-			----------
-			book : ACBFBook
-				[description]
-			version : Optional[str], optional
-				[description], by default None
-			"""
 			edit_optional(book, "version", book.Metadata.document_info, "document_version", version)
 
 		class document_history:
 			@staticmethod
 			@check_book
 			def insert(book: ACBFBook, index: int, entry: str):
-				"""[summary]
-
-				Parameters
-				----------
-				book : ACBFBook
-					[description]
-				index : int
-					[description]
-				entry : str
-					[description]
-				"""
 				history_section = book.Metadata.document_info._info.find(f"{book.namespace}history")
 				p = etree.Element(f"{book.namespace}p")
 				history_section.insert(index, p)
@@ -1263,32 +839,12 @@ class metadata:
 			@staticmethod
 			@check_book
 			def append(book: ACBFBook, entry: str):
-				"""[summary]
-
-				Parameters
-				----------
-				book : ACBFBook
-					[description]
-				entry : str
-					[description]
-				"""
 				idx = len(book.Metadata.document_info._info.findall(f"{book.namespace}history/{book.namespace}p"))
 				metadata.documentinfo.document_history.insert(book, idx, entry)
 
 			@staticmethod
 			@check_book
 			def edit(book: ACBFBook, index: int, text: str):
-				"""[summary]
-
-				Parameters
-				----------
-				book : ACBFBook
-					[description]
-				index : int
-					[description]
-				text : str
-					[description]
-				"""
 				item = book.Metadata.document_info._info.findall(f"{book.namespace}history/{book.namespace}p")[index]
 				item.text = text
 				book.Metadata.document_info.sync_history()
@@ -1296,15 +852,6 @@ class metadata:
 			@staticmethod
 			@check_book
 			def remove(book: ACBFBook, index: int):
-				"""[summary]
-
-				Parameters
-				----------
-				book : ACBFBook
-					[description]
-				index : int
-					[description]
-				"""
 				item = book.Metadata.document_info._info.findall(f"{book.namespace}history/{book.namespace}p")[index]
 				item.clear()
 				item.getparent().remove(item)
