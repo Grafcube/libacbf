@@ -23,10 +23,18 @@ def test_authors():
 	with open(dir + "test_authors.json", 'w', encoding="utf-8", newline='\n') as result:
 			result.write(json.dumps(op, ensure_ascii=False))
 
+	au = book.Metadata.book_info.authors[-1]
 	edit_meta.bookinfo.authors.edit(book, -1, first_name="TheFirst", last_name="TheLast", middle_name="TheMid", nickname=None, home_page="https://example.com/testing")
 	op["edited"] = []
 	for i in book.Metadata.book_info.authors:
 		op["edited"].append(get_au_op(i))
+	with open(dir + "test_authors.json", 'w', encoding="utf-8", newline='\n') as result:
+			result.write(json.dumps(op, ensure_ascii=False))
+
+	try:
+		edit_meta.bookinfo.authors.edit(book, au, something="Non existant")
+	except AttributeError as e:
+		op["non-existant"] = str(e)
 	with open(dir + "test_authors.json", 'w', encoding="utf-8", newline='\n') as result:
 			result.write(json.dumps(op, ensure_ascii=False))
 
@@ -71,6 +79,11 @@ def test_genres():
 
 	edit_meta.bookinfo.genres.edit(book, Genres.other, 42)
 	op["edited"] = {x.Genre.name: x.Match for x in book.Metadata.book_info.genres.values()}
+	with open(dir + "test_genres.json", 'w', encoding="utf-8", newline='\n') as result:
+		result.write(json.dumps(op, ensure_ascii=False))
+
+	edit_meta.bookinfo.genres.edit(book, Genres.other, None)
+	op["modified"] = {x.Genre.name: x.Match for x in book.Metadata.book_info.genres.values()}
 	with open(dir + "test_genres.json", 'w', encoding="utf-8", newline='\n') as result:
 		result.write(json.dumps(op, ensure_ascii=False))
 

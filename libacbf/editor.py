@@ -77,8 +77,10 @@ def edit_author(book: ACBFBook, section: Union[BookInfo, PublishInfo, DocumentIn
 					au_element.attrib.pop(k)
 
 	for k, v in attributes.items():
+		if not hasattr(author, k):
+			raise AttributeError(f"`Author` has no attribute `{k}`.")
 		element = au_element.find(book.namespace + re.sub(r'_', '-', k))
-		if ValueError is not None and element is None:
+		if v is not None and element is None:
 			element = etree.Element(book.namespace + re.sub(r'_', '-', k))
 			au_element.append(element)
 			element.text = v
@@ -445,7 +447,7 @@ class metadata:
 		class genres:
 			@staticmethod
 			@check_book
-			def edit(book: ACBFBook, genre: Genres, match: Optional[int] = None):
+			def edit(book: ACBFBook, genre: Genres, match: Optional[int] = "_"):
 				"""[summary]
 
 				Parameters
@@ -478,14 +480,16 @@ class metadata:
 					gn_element.text = name
 					info_section.insert(idx, gn_element)
 
-				if match is not None:
+				if match is not None and match != "_":
 					gn_element.set("match", str(match))
+				elif match is None:
+					gn_element.attrib.pop("match")
 
 				book.Metadata.book_info.sync_genres()
 
 			@staticmethod
 			@check_book
-			def remove(book: ACBFBook, genre: Union[Genre, Genres]):
+			def remove(book: ACBFBook, genre: Genres):
 				"""[summary]
 
 				Parameters
@@ -497,12 +501,7 @@ class metadata:
 				"""
 				info_section = book.Metadata.book_info._info
 				gn_elements = info_section.findall(f"{book.namespace}genre")
-
-				name = None
-				if type(genre) is Genres:
-					name = genre.name
-				elif type(genre) is Genre:
-					name = genre.Genre.name
+				name = genre.name
 
 				for i in gn_elements:
 					if i.text == name:
