@@ -353,7 +353,7 @@ class DocumentInfo:
 			for item in self._info.findall(f"{self.book.namespace}history/{self.book.namespace}p"):
 				self.document_history.append(item.text)
 
-def update_authors(author_items, ns):
+def update_authors(author_items, ns) -> List[Author]:
 	authors = []
 
 	for au in author_items:

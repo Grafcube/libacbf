@@ -1,7 +1,7 @@
 import os
 import json
 from pathlib import Path
-from tests.conftest import book, sample_path
+from tests.conftest import book, sample_path, get_au_op
 
 dir = f"tests/results/{Path(sample_path).name}/metadata/book_info/"
 os.makedirs(dir, exist_ok=True)
@@ -9,17 +9,7 @@ os.makedirs(dir, exist_ok=True)
 def test_authors():
 	op = []
 	for i in book.Metadata.book_info.authors:
-		new_op = {
-			"activity": i.activity.name if i.activity is not None else None,
-			"lang": i.lang,
-			"first_name": i.first_name,
-			"last_name": i.last_name,
-			"middle_name": i.middle_name,
-			"nickname": i.nickname,
-			"home_page": i.home_page,
-			"email": i.email
-		}
-		op.append(new_op)
+		op.append(get_au_op(i))
 	print(op)
 	with open(dir + "test_bookinfo_authors.json", 'w', encoding="utf-8", newline='\n') as result:
 		result.write(json.dumps(op, ensure_ascii=False))

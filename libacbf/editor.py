@@ -11,7 +11,8 @@ from lxml import etree
 
 from libacbf import ACBFBook
 from libacbf.structs import Author, DBRef, Genre, LanguageLayer
-from libacbf.constants import ArchiveTypes, Genres
+from libacbf.constants import ArchiveTypes, AuthorActivities, Genres
+from libacbf.metadata import BookInfo, DocumentInfo, PublishInfo
 
 def check_book(func):
 	@wraps(func)
@@ -24,96 +25,94 @@ def check_book(func):
 		func(*args, **kwargs)
 	return wrapper
 
-def add_author(book: ACBFBook, section, author: Author):
+def add_author(book: ACBFBook, section: Union[BookInfo, PublishInfo, DocumentInfo], author: Author):
 	info_section = section._info
+
+	if section not in [book.Metadata.book_info, book.Metadata.publisher_info, book.Metadata.document_info]:
+		raise ValueError("Section is not from this book.")
 
 	au_element = etree.Element(f"{book.namespace}author")
 	idx = info_section.index(info_section.findall(f"{book.namespace}author")[-1]) + 1
 	info_section.insert(idx, au_element)
 	author._element = au_element
 
-	edit_author(book, section, author, author.copy())
-	section.sync_authors()
+	attributes = author.__dict__.copy()
+	attributes.pop("_element")
+	attributes["activity"] = attributes["_activity"]
+	attributes.pop("_activity")
+	attributes["lang"] = attributes["_lang"]
+	attributes.pop("_lang")
+	attributes["first_name"] = attributes["_first_name"]
+	attributes.pop("_first_name")
+	attributes["last_name"] = attributes["_last_name"]
+	attributes.pop("_last_name")
 
-def edit_author(book: ACBFBook, section, original_author: Union[Author, int], new_author: Author):
+	edit_author(book, section, author, **attributes)
+
+def edit_author(book: ACBFBook, section: Union[BookInfo, PublishInfo, DocumentInfo], author: Union[int, Author], **attributes):
 	au_list = section._info.findall(f"{book.namespace}author")
 
-	if isinstance(original_author, Author):
-		if original_author._element is None:
-			raise ValueError("`original_author` is not part of a book.")
+	if section not in [book.Metadata.book_info, book.Metadata.publisher_info, book.Metadata.document_info]:
+		raise ValueError("Section is not from this book.")
+
+	if isinstance(author, int):
+		au_element = section.authors[author]._element
+		author = section.authors[author]
+	elif isinstance(author, Author):
+		if author._element is None:
+			raise ValueError("Author is not part of a book.")
+		elif author._element not in au_list:
+			raise ValueError("Author is not part of this book.")
 		else:
-			au_element = original_author._element
+			au_element = author._element
 
-	elif isinstance(original_author, int):
-		au_element = au_list[original_author]
-		original_author = section.authors[original_author]
+	attrs = {x: attributes.pop(x) for x in ["activity", "lang"] if x in attributes}
 
-	if new_author.activity is not None:
-		au_element.set("activity", new_author.activity.name)
-	else:
-		if "activity" in au_element.attrib:
-			au_element.attrib.pop("activity")
-	if new_author.lang is not None:
-		au_element.set("lang", str(new_author.lang))
-	else:
-		if "lang" in au_element.attrib:
-			au_element.attrib.pop("lang")
-
-	attrs = [
-		("first-name", "first_name", 0),
-		("last-name", "last_name", 1),
-		("nickname", "nickname")
-	]
-
-	for i in attrs:
-		element = au_element.find(book.namespace + i[0])
-		if element is None and getattr(new_author, i[1]) is not None:
-			element = etree.Element(book.namespace + i[0])
-			if i[0] != "nickname":
-				au_element.insert(i[2], element)
+	for k, v in attrs.items():
+		if (k == "activity" and type(v) is AuthorActivities) or (k == "lang" and isinstance(v, str)):
+			if v is not None:
+				au_element.set(k, v.name if k == "activity" else v)
 			else:
-				if au_element.find(f"{book.namespace}last-name") is not None:
-					idx = 2
-				else:
-					idx = 0
-				au_element.insert(idx, element)
-			element.text = getattr(new_author, i[1])
-		elif element is not None and getattr(new_author, i[1]) is not None:
-			element.text = getattr(new_author, i[1])
-		elif element is not None and getattr(new_author, i[1]) is None:
-			element.clear()
-			au_element.remove(element)
+				if k in au_element.attrib:
+					au_element.attrib.pop(k)
 
-	attrs_op = [
-		("middle-name", "middle_name"),
-		("home-page", "home_page"),
-		("email", "email")
-		]
-
-	for i in attrs_op:
-		element = au_element.find(book.namespace + i[0])
-		if element is None and getattr(new_author, i[1]) is not None:
-			element = etree.Element(book.namespace + i[0])
+	for k, v in attributes.items():
+		element = au_element.find(book.namespace + re.sub(r'_', '-', k))
+		if ValueError is not None and element is None:
+			element = etree.Element(book.namespace + re.sub(r'_', '-', k))
 			au_element.append(element)
-			element.text = getattr(new_author, i[1])
-		elif element is not None and getattr(new_author, i[1]) is not None:
-			element.text = getattr(new_author, i[1])
-		elif element is not None and getattr(new_author, i[1]) is None:
+			element.text = v
+		elif v is not None and element is not None:
+			element.text = v
+		elif v is None and element is not None:
 			element.clear()
 			au_element.remove(element)
 
 	section.sync_authors()
 
-def remove_author(book: ACBFBook, section, index: int):
+def remove_author(book: ACBFBook, section: Union[BookInfo, PublishInfo, DocumentInfo], author: Union[int, Author]):
 	info_section = section._info
 
-	au_items = info_section.findall(f"{book.namespace}author")
-	au_items[index].clear()
-	info_section.remove(au_items[index])
+	if section not in [book.Metadata.book_info, book.Metadata.publisher_info, book.Metadata.document_info]:
+		raise ValueError("Section is not from this book.")
+
+	au_list = section._info.findall(f"{book.namespace}author")
+
+	if isinstance(author, int):
+		author_element = section.authors[author]._element
+	elif isinstance(author, Author):
+		if author._element is None:
+			raise ValueError("Author is not part of a book.")
+		elif author._element not in au_list:
+			raise ValueError("Author is not part of this book.")
+		author_element = author._element
+
+	author_element.clear()
+	info_section.remove(author_element)
 
 	section.sync_authors()
 
-def edit_optional(book: ACBFBook, tag: str, section, attr: str, text: Optional[str] = None):
+def edit_optional(book: ACBFBook, tag: str, section: Union[BookInfo, PublishInfo, DocumentInfo], attr: str, text: Optional[str] = None):
 	item = section._info.find(book.namespace + tag)
 
 	if text is not None:
@@ -126,7 +125,7 @@ def edit_optional(book: ACBFBook, tag: str, section, attr: str, text: Optional[s
 		item.clear()
 		item.getparent().remove(item)
 
-def edit_date(book: ACBFBook, tag: str, section, attr_s: str, attr_d: str, dt: Union[str, date], include_date: bool = True):
+def edit_date(book: ACBFBook, tag: str, section: Union[BookInfo, PublishInfo, DocumentInfo], attr_s: str, attr_d: str, dt: Union[str, date], include_date: bool = True):
 	item = section._info.find(book.namespace + tag)
 
 	if isinstance(dt, str):
@@ -324,7 +323,7 @@ class metadata:
 		class authors:
 			@staticmethod
 			@check_book
-			def add(book: ACBFBook, author: Author):
+			def add(book: ACBFBook, *names: str, **required):
 				"""[summary]
 
 				Parameters
@@ -334,11 +333,11 @@ class metadata:
 				author : Author
 					[description]
 				"""
-				add_author(book, book.Metadata.book_info, author)
+				add_author(book, book.Metadata.book_info, *names, **required)
 
 			@staticmethod
 			@check_book
-			def edit(book: ACBFBook, original_author: Union[Author, int], new_author: Author):
+			def edit(book: ACBFBook, author: Union[Author, int], **attributes):
 				"""[summary]
 
 				Parameters
@@ -355,11 +354,11 @@ class metadata:
 				ValueError
 					[description]
 				"""
-				edit_author(book, book.Metadata.book_info, original_author, new_author)
+				edit_author(book, book.Metadata.book_info, author, **attributes)
 
 			@staticmethod
 			@check_book
-			def remove(book: ACBFBook, index: int):
+			def remove(book: ACBFBook, author: Union[int, Author]):
 				"""[summary]
 
 				Parameters
@@ -369,7 +368,7 @@ class metadata:
 				index : int
 					[description]
 				"""
-				remove_author(book, book.Metadata.book_info, index)
+				remove_author(book, book.Metadata.book_info, author)
 
 		class title:
 			@staticmethod
@@ -446,7 +445,7 @@ class metadata:
 		class genres:
 			@staticmethod
 			@check_book
-			def edit(book: ACBFBook, genre: Union[Genre, Genres], match: Optional[int] = None):
+			def edit(book: ACBFBook, genre: Genres, match: Optional[int] = None):
 				"""[summary]
 
 				Parameters
@@ -465,12 +464,7 @@ class metadata:
 				"""
 				info_section = book.Metadata.book_info._info
 				gn_elements = info_section.findall(f"{book.namespace}genre")
-
-				name = None
-				if type(genre) is Genres:
-					name = genre.name
-				elif isinstance(genre, Genre):
-					name = genre.Genre.name
+				name = genre.name
 
 				gn_element = None
 				for i in gn_elements:
@@ -1134,7 +1128,7 @@ class metadata:
 		class authors:
 			@staticmethod
 			@check_book
-			def add(book: ACBFBook, author: Author):
+			def add(book: ACBFBook, *names: str, **required):
 				"""[summary]
 
 				Parameters
@@ -1144,11 +1138,11 @@ class metadata:
 				author : Author
 					[description]
 				"""
-				add_author(book, book.Metadata.document_info, author)
+				add_author(book, book.Metadata.document_info, *names, **required)
 
 			@staticmethod
 			@check_book
-			def edit(book: ACBFBook, original_author: Union[Author, int], new_author: Author):
+			def edit(book: ACBFBook, author: Union[Author, int], **attributes):
 				"""[summary]
 
 				Parameters
@@ -1165,11 +1159,11 @@ class metadata:
 				ValueError
 					[description]
 				"""
-				edit_author(book, book.Metadata.document_info, original_author, new_author)
+				edit_author(book, book.Metadata.document_info, author, **attributes)
 
 			@staticmethod
 			@check_book
-			def remove(book: ACBFBook, index: int):
+			def remove(book: ACBFBook, author: Union[int, Author]):
 				"""[summary]
 
 				Parameters
@@ -1179,7 +1173,7 @@ class metadata:
 				index : int
 					[description]
 				"""
-				remove_author(book, book.Metadata.document_info, index)
+				remove_author(book, book.Metadata.document_info, author)
 
 		@staticmethod
 		@check_book
