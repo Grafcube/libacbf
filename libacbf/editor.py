@@ -2,7 +2,7 @@ import re
 import langcodes
 import magic
 import dateutil.parser
-from typing import List, Optional, Union
+from typing import Optional, Union
 from datetime import date
 from functools import wraps
 from pathlib import Path
@@ -532,7 +532,7 @@ class metadata:
 		class keywords:
 			@staticmethod
 			@check_book
-			def edit(book: ACBFBook, keywords: List[str], lang: str = "_"):
+			def add(book: ACBFBook, *kwords: str, lang: str = "_"):
 				info_section = book.Metadata.book_info._info
 				key_elements = info_section.findall(f"{book.namespace}keywords")
 				idx = None
@@ -546,35 +546,62 @@ class metadata:
 						if "lang" not in i.keys():
 							key_element = i
 							break
-					if key_element is None:
-						key_element = etree.Element(f"{book.namespace}keywords")
-						if idx is not None:
-							info_section.insert(idx, key_element)
-						else:
-							info_section.append(key_element)
 				else:
 					lang = langcodes.standardize_tag(lang)
 					for i in key_elements:
 						if "lang" in i.keys() and langcodes.standardize_tag(i.attrib["lang"]) == lang:
 							key_element = i
 							break
-					if key_element is None:
-						key_element = etree.Element(f"{book.namespace}keywords")
-						key_element.set("lang", lang)
-						if idx is not None:
-							info_section.insert(idx, key_element)
-						else:
-							info_section.append(key_element)
 
+				if key_element is None:
+					key_element = etree.Element(f"{book.namespace}keywords")
+					if idx is not None:
+						info_section.insert(idx, key_element)
+					else:
+						info_section.append(key_element)
+
+				if lang != "_":
+					key_element.set("lang", lang)
+
+				keywords = set([])
+				if lang in book.Metadata.book_info.keywords:
+					keywords = book.Metadata.book_info.keywords[lang].copy()
+				keywords.update(kwords)
 				key_element.text = ", ".join(keywords)
 
 				book.Metadata.book_info.sync_keywords()
 
 			@staticmethod
 			@check_book
-			def remove(book: ACBFBook, lang: str = "_"):
-				key_elements = book.Metadata.book_info._info.findall(f"{book.namespace}keywords")
+			def remove(book: ACBFBook, *kwords: str, lang: str = "_"):
+				info_section = book.Metadata.book_info._info
+				key_elements = info_section.findall(f"{book.namespace}keywords")
 
+				key_element = None
+				if lang == "_":
+					for i in key_elements:
+						if "lang" not in i.keys():
+							key_element = i
+							break
+				else:
+					lang = langcodes.standardize_tag(lang)
+					for i in key_elements:
+						if "lang" in i.keys() and langcodes.standardize_tag(i.attrib["lang"]) == lang:
+							key_element = i
+							break
+
+				keywords = set([])
+				if lang in book.Metadata.book_info.keywords:
+					keywords = book.Metadata.book_info.keywords[lang].copy()
+				keywords.difference_update(kwords)
+				key_element.text = ", ".join(keywords)
+
+				book.Metadata.book_info.sync_keywords()
+
+			@staticmethod
+			@check_book
+			def clear(book: ACBFBook, lang: str = "_"):
+				key_elements = book.Metadata.book_info._info.findall(f"{book.namespace}keywords")
 				key_element = None
 				if lang == "_":
 					for i in key_elements:
