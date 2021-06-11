@@ -55,7 +55,7 @@ def test_keywords():
 	op = book.Metadata.book_info.keywords
 	print(op)
 	with open(dir + "test_bookinfo_keywords.json", 'w', encoding="utf-8", newline='\n') as result:
-		result.write(json.dumps(op, ensure_ascii=False))
+		result.write(json.dumps(op, default=lambda x : list(x), ensure_ascii=False))
 
 def test_series():
 	op = {}

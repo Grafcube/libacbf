@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Set, Optional
 from datetime import date
 import distutils.util
 import re
@@ -174,16 +174,17 @@ class BookInfo:
 				self.characters.append(c.text)
 
 	def sync_keywords(self):
-		self.keywords: Dict[str, List[str]] = {}
+		self.keywords: Dict[str, Set[str]] = {}
 
 		keyword_items = self._info.findall(f"{self._ns}keywords")
 		for k in keyword_items:
 			if "lang" in k.keys():
 				lang = langcodes.standardize_tag(k.attrib["lang"])
-				self.keywords[lang] = re.split(", |,", k.text)
 			else:
-				if k.text is not None:
-					self.keywords["_"] = re.split(", |,", k.text)
+				lang = "_"
+
+			if k.text is not None:
+				self.keywords[lang] = set(re.split(", |,", k.text))
 
 	def sync_series(self):
 		self.series: Dict[str, Series] = {}
