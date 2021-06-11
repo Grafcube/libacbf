@@ -24,10 +24,24 @@ def test_authors():
 			result.write(json.dumps(op, ensure_ascii=False))
 
 	au = book.Metadata.book_info.authors[-1]
-	edit_meta.bookinfo.authors.edit(book, -1, first_name="TheFirst", last_name="TheLast", middle_name="TheMid", nickname=None, home_page="https://example.com/testing")
+	edit_meta.bookinfo.authors.edit(book, -1, first_name="TheFirst", last_name="TheLast", middle_name="TheMid", lang="kn", nickname=None, home_page="https://example.com/testing")
 	op["edited"] = []
 	for i in book.Metadata.book_info.authors:
 		op["edited"].append(get_au_op(i))
+	with open(dir + "test_authors.json", 'w', encoding="utf-8", newline='\n') as result:
+			result.write(json.dumps(op, ensure_ascii=False))
+
+	edit_meta.bookinfo.authors.edit(book, au, middle_name=None, lang=None)
+	op["modified"] = []
+	for i in book.Metadata.book_info.authors:
+		op["modified"].append(get_au_op(i))
+	with open(dir + "test_authors.json", 'w', encoding="utf-8", newline='\n') as result:
+			result.write(json.dumps(op, ensure_ascii=False))
+
+	try:
+		edit_meta.bookinfo.authors.edit(book, au, first_name=None)
+	except ValueError as e:
+		op["author-attr-fail"] = str(e)
 	with open(dir + "test_authors.json", 'w', encoding="utf-8", newline='\n') as result:
 			result.write(json.dumps(op, ensure_ascii=False))
 

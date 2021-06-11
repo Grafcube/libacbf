@@ -66,31 +66,36 @@ def edit_author(book: ACBFBook, section: Union[BookInfo, PublishInfo, DocumentIn
 		else:
 			au_element = author._element
 
+	for i in attributes.keys():
+		if not hasattr(author, i):
+			raise AttributeError(f"`Author` has no attribute `{i}`.")
+
 	attrs = {x: attributes.pop(x) for x in ["activity", "lang"] if x in attributes}
 
 	for k, v in attrs.items():
-		if (k == "activity" and type(v) is AuthorActivities) or (k == "lang" and isinstance(v, str)):
+		if (k == "activity" and (type(v) is AuthorActivities or v is None)) or (k == "lang" and (isinstance(v, str) or v is None)):
 			if v is not None:
 				au_element.set(k, v.name if k == "activity" else v)
 			else:
 				if k in au_element.attrib:
 					au_element.attrib.pop(k)
-
-	for i in attributes.keys():
-		if not hasattr(author, i):
-			raise AttributeError(f"`Author` has no attribute `{i}`.")
+		else:
+			raise TypeError(f"`{k}` is not of an accepted type.")
 
 	for k, v in attributes.items():
-		element = au_element.find(book.namespace + re.sub(r'_', '-', k))
-		if v is not None and element is None:
-			element = etree.Element(book.namespace + re.sub(r'_', '-', k))
-			au_element.append(element)
-			element.text = v
-		elif v is not None and element is not None:
-			element.text = v
-		elif v is None and element is not None:
-			element.clear()
-			au_element.remove(element)
+		if isinstance(v, str) or v is None:
+			element = au_element.find(book.namespace + re.sub(r'_', '-', k))
+			if v is not None and element is None:
+				element = etree.Element(book.namespace + re.sub(r'_', '-', k))
+				au_element.append(element)
+				element.text = v
+			elif v is not None and element is not None:
+				element.text = v
+			elif v is None and element is not None:
+				element.clear()
+				au_element.remove(element)
+		else:
+			raise TypeError(f"`{k}` is not of an accepted type.")
 
 	section.sync_authors()
 

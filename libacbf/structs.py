@@ -175,6 +175,8 @@ class Author:
 			self._activity = AuthorActivities[val]
 		elif type(val) is int:
 			self._activity = AuthorActivities(val)
+		else:
+			raise ValueError("`Author.activity` must be an `int`, `str` or `constants.AuthorActivities`.")
 
 	@property
 	def lang(self) -> Optional[str]:
