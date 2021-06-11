@@ -141,3 +141,21 @@ def test_languagelayers():
 	op["removed"] = [{"lang": x.lang, "show": x.show} for x in book.Metadata.book_info.languages]
 	with open(dir + "test_languages.json", 'w', encoding="utf-8", newline='\n') as result:
 		result.write(json.dumps(op, ensure_ascii=False))
+
+def test_characters():
+	op = {}
+	op["original"] = ", ".join(book.Metadata.book_info.characters)
+	with open(dir + "test_characters.json", 'w', encoding="utf-8", newline='\n') as result:
+		result.write(json.dumps(op, ensure_ascii=False))
+
+	edit_meta.bookinfo.characters.add(book, "Test")
+	edit_meta.bookinfo.characters.add(book, "Another")
+	op["added"] = ", ".join(book.Metadata.book_info.characters)
+	with open(dir + "test_characters.json", 'w', encoding="utf-8", newline='\n') as result:
+		result.write(json.dumps(op, ensure_ascii=False))
+
+	edit_meta.bookinfo.characters.remove(book, "Test")
+	edit_meta.bookinfo.characters.remove(book, -1)
+	op["removed"] = ", ".join(book.Metadata.book_info.characters)
+	with open(dir + "test_characters.json", 'w', encoding="utf-8", newline='\n') as result:
+		result.write(json.dumps(op, ensure_ascii=False))

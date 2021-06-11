@@ -76,9 +76,11 @@ def edit_author(book: ACBFBook, section: Union[BookInfo, PublishInfo, DocumentIn
 				if k in au_element.attrib:
 					au_element.attrib.pop(k)
 
+	for i in attributes.keys():
+		if not hasattr(author, i):
+			raise AttributeError(f"`Author` has no attribute `{i}`.")
+
 	for k, v in attributes.items():
-		if not hasattr(author, k):
-			raise AttributeError(f"`Author` has no attribute `{k}`.")
 		element = au_element.find(book.namespace + re.sub(r'_', '-', k))
 		if v is not None and element is None:
 			element = etree.Element(book.namespace + re.sub(r'_', '-', k))
