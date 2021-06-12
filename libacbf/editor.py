@@ -563,6 +563,7 @@ class metadata:
 				if lang != "_":
 					key_element.set("lang", lang)
 
+				kwords = {x.lower() for x in kwords}
 				keywords = set([])
 				if lang in book.Metadata.book_info.keywords:
 					keywords = book.Metadata.book_info.keywords[lang].copy()
@@ -590,6 +591,7 @@ class metadata:
 							key_element = i
 							break
 
+				kwords = {x.lower() for x in kwords}
 				keywords = set([])
 				if lang in book.Metadata.book_info.keywords:
 					keywords = book.Metadata.book_info.keywords[lang].copy()

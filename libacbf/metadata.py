@@ -184,7 +184,7 @@ class BookInfo:
 				lang = "_"
 
 			if k.text is not None:
-				self.keywords[lang] = set(re.split(", |,", k.text))
+				self.keywords[lang] = {x.lower() for x in re.split(", |,", k.text)}
 
 	def sync_series(self):
 		self.series: Dict[str, Series] = {}

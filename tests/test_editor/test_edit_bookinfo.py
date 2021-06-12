@@ -178,25 +178,25 @@ def test_keywords():
 	op = {}
 	op["original"] = book.Metadata.book_info.keywords
 	with open(dir + "test_keywords.json", 'w', encoding="utf-8", newline='\n') as result:
-		result.write(json.dumps(op, default=lambda x : list(x), ensure_ascii=False))
+		result.write(json.dumps(op, default=list, ensure_ascii=False))
 
 	new_kws = book.Metadata.book_info.keywords["_"].copy()
 	edit_meta.bookinfo.keywords.add(book, *new_kws, lang="en")
 	op["added"] = book.Metadata.book_info.keywords
 	with open(dir + "test_keywords.json", 'w', encoding="utf-8", newline='\n') as result:
-		result.write(json.dumps(op, default=lambda x : list(x), ensure_ascii=False))
+		result.write(json.dumps(op, default=list, ensure_ascii=False))
 
-	edit_meta.bookinfo.keywords.add(book, "ebook", "tag", "comic book", lang="en")
+	edit_meta.bookinfo.keywords.add(book, "ebook", "tag", "comic book", "Tag", "TAG", lang="en")
 	op["updated"] = book.Metadata.book_info.keywords
 	with open(dir + "test_keywords.json", 'w', encoding="utf-8", newline='\n') as result:
-		result.write(json.dumps(op, default=lambda x : list(x), ensure_ascii=False))
+		result.write(json.dumps(op, default=list, ensure_ascii=False))
 
-	edit_meta.bookinfo.keywords.remove(book, "comic book", "science fiction", lang="en")
+	edit_meta.bookinfo.keywords.remove(book, "comic book", "science fiction", "TaG", lang="en")
 	op["removed"] = book.Metadata.book_info.keywords
 	with open(dir + "test_keywords.json", 'w', encoding="utf-8", newline='\n') as result:
-		result.write(json.dumps(op, default=lambda x : list(x), ensure_ascii=False))
+		result.write(json.dumps(op, default=list, ensure_ascii=False))
 
 	edit_meta.bookinfo.keywords.clear(book, "en")
 	op["cleared"] = book.Metadata.book_info.keywords
 	with open(dir + "test_keywords.json", 'w', encoding="utf-8", newline='\n') as result:
-		result.write(json.dumps(op, default=lambda x : list(x), ensure_ascii=False))
+		result.write(json.dumps(op, default=list, ensure_ascii=False))
