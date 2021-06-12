@@ -1,5 +1,6 @@
 import os
 import re
+import warnings
 from pathlib import Path
 from typing import List, Dict, Optional, Union
 from lxml import etree
@@ -48,15 +49,19 @@ def _validate_acbf(tree, ns: str):
 
 	with open(xsd_path, encoding="utf-8") as file:
 		acbf_root = etree.fromstring(bytes(file.read(), encoding="utf-8"))
-		acbf_tree = acbf_root.getroottree()
-		acbf_schema = etree.XMLSchema(acbf_tree)
 
-	# TODO fix schema error. When fixed, remove try/except
-	try:
+	acbf_tree = acbf_root.getroottree()
+	acbf_schema = etree.XMLSchema(acbf_tree)
+
+	if version == "1.0":
+		try:
+			acbf_schema.assertValid(tree)
+		except etree.DocumentInvalid as err:
+			warnings.warn("Validation failed. Books with 1.0 schema are not fully supported.", UserWarning)
+			warnings.warn('Change the ACBF tag at the top of the `.acbf` XML file to `<ACBF xmlns="http://www.acbf.info/xml/acbf/1.1">` to use the 1.1 schema.', UserWarning)
+			print(err)
+	else:
 		acbf_schema.assertValid(tree)
-	except etree.DocumentInvalid as err:
-		print("Validation failed. File may be valid (bug)")
-		print(err)
 
 class ACBFBook:
 	"""Base class for reading ACBF ebooks.

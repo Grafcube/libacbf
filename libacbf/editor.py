@@ -269,8 +269,8 @@ class metadata:
 		class authors:
 			@staticmethod
 			@check_book
-			def add(book: ACBFBook, *names: str, **required):
-				add_author(book, book.Metadata.book_info, *names, **required)
+			def add(book: ACBFBook, author: Author):
+				add_author(book, book.Metadata.book_info, author)
 
 			@staticmethod
 			@check_book
@@ -822,8 +822,8 @@ class metadata:
 		class authors:
 			@staticmethod
 			@check_book
-			def add(book: ACBFBook, *names: str, **required):
-				add_author(book, book.Metadata.document_info, *names, **required)
+			def add(book: ACBFBook, author: Author):
+				add_author(book, book.Metadata.document_info, author)
 
 			@staticmethod
 			@check_book

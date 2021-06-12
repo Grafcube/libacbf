@@ -1,5 +1,5 @@
+import os
 import shutil
-import tempfile
 from pathlib import Path
 from typing import Optional, Union
 from zipfile import ZipFile, is_zipfile
@@ -63,7 +63,8 @@ class ArchiveReader:
 		if self.type == ArchiveTypes.Zip:
 			arc = ZipFile(str(archive), 'r')
 		if self.type == ArchiveTypes.SevenZip:
-			arc = Path(tempfile.mkdtemp())
+			arc = Path(archive.parent/(archive.stem.replace(' ', '_') + "-" + ''.join(archive.suffixes)))
+			os.makedirs(str(arc), exist_ok=True)
 			with SevenZipFile(str(archive), 'r') as sarchive:
 				sarchive.extractall(str(arc))
 		if self.type == ArchiveTypes.Tar:
