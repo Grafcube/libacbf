@@ -1,7 +1,8 @@
-from pprint import pprint
+import time
 from libacbf import ACBFBook
 from tests.testsettings import samples
 
-with ACBFBook(samples[1]) as book:
-	print(book.book_path.name)
-	print(book.archive.type if book.archive is not None else None)
+with ACBFBook(samples[2]) as book:
+	for i in book.Body.pages:
+		print(i.image_ref, i.image.filesize)
+	time.sleep(5)

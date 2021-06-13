@@ -63,18 +63,17 @@ class ArchiveReader:
 		if self.type == ArchiveTypes.Zip:
 			arc = ZipFile(str(archive), 'r')
 		if self.type == ArchiveTypes.SevenZip:
-			arc = Path(archive.parent/(archive.stem.replace(' ', '_') + "-" + ''.join(archive.suffixes)))
-			os.makedirs(str(arc), exist_ok=True)
-			with SevenZipFile(str(archive), 'r') as sarchive:
-				sarchive.extractall(str(arc))
+			self.tempdir = Path(archive.parent/('.' + archive.stem.replace(' ', '_') + "-" + ''.join(archive.suffixes)))
+			os.makedirs(str(self.tempdir), exist_ok=True)
+			arc = SevenZipFile(str(archive), 'r')
 		if self.type == ArchiveTypes.Tar:
 			arc = Tar.open(str(archive), 'r')
 		if self.type == ArchiveTypes.Rar:
 			arc = RarFile(str(archive), errors="strict")
 
-		self.archive: Union[ZipFile, Path, Tar.TarFile, RarFile] = arc
+		self.archive: Union[ZipFile, SevenZipFile, Path, Tar.TarFile, RarFile] = arc
 
-	def read(self, file_path: str) -> bytes:
+	def read(self, file_path: Union[str, Path]) -> bytes:
 		"""Get file as bytes from archive.
 
 		Parameters
@@ -87,15 +86,24 @@ class ArchiveReader:
 		bytes
 			Contents of file.
 		"""
+		if isinstance(file_path, str):
+			file_path = Path(file_path)
+
 		contents = None
 		if self.type in [ArchiveTypes.Zip, ArchiveTypes.Rar]:
-			with self.archive.open(file_path, 'r') as file:
+			with self.archive.open(str(file_path), 'r') as file:
 				contents = file.read()
+
 		elif self.type == ArchiveTypes.SevenZip:
-			with open(str(self.archive/Path(file_path)), 'rb') as file:
+			self.archive.reset()
+			if not os.path.exists(str(self.tempdir/file_path)):
+				self.archive.extract(str(self.tempdir), [str(file_path)])
+			with open(str(self.tempdir/file_path), 'rb') as file:
 				contents = file.read()
+
 		elif self.type == ArchiveTypes.Tar:
-			contents = self.archive.extractfile(file_path).read()
+			contents = self.archive.extractfile(str(file_path)).read()
+
 		return contents
 
 	def close(self):
@@ -104,26 +112,28 @@ class ArchiveReader:
 		if self.type in [ArchiveTypes.Zip, ArchiveTypes.Tar, ArchiveTypes.Rar]:
 			self.archive.close()
 		elif self.type == ArchiveTypes.SevenZip:
-			shutil.rmtree(str(self.archive))
+			shutil.rmtree(self.tempdir)
 
 	def _get_acbf_contents(self) -> Optional[str]:
+		acbf_file = None
 		contents = None
 		if self.type in [ArchiveTypes.Zip, ArchiveTypes.Rar]:
 			for i in self.archive.infolist():
 				if not i.is_dir() and '/' not in i.filename and i.filename.endswith(".acbf"):
-					with self.archive.open(i, 'r') as book:
-						contents = str(book.read(), "utf-8")
+					acbf_file = i.filename
 					break
 		elif self.type == ArchiveTypes.SevenZip:
-			acbf_files = list(self.archive.glob("*.acbf"))
-			if len(acbf_files) > 0:
-				with open(acbf_files[0], 'r', encoding="utf-8") as book:
-					contents = book.read()
+			for i in self.archive.list():
+				if not i.is_directory and '/' not in i.filename and i.filename.endswith(".acbf"):
+					acbf_file = i.filename
+					break
 		elif self.type == ArchiveTypes.Tar:
 			for i in self.archive.getmembers():
 				if i.isfile() and '/' not in i.name and i.name.endswith(".acbf"):
-					contents = str(self.archive.extractfile(i).read(), encoding="utf-8")
+					acbf_file = i.name
 					break
+
+		contents = str(self.read(acbf_file), "utf-8")
 		return contents
 
 	def __enter__(self):

@@ -18,7 +18,7 @@ def check_book(func):
 	@wraps(func)
 	def wrapper(*args, **kwargs):
 		book: ACBFBook = kwargs["book"] if "book" in kwargs.keys() else args[0]
-		if book.archive.type == ArchiveTypes.Rar:
+		if book.archive is not None and book.archive.type == ArchiveTypes.Rar:
 			raise ValueError("Editing RAR Archives is not supported by this module.")
 		if not book.is_open:
 			raise ValueError("I/O operation on closed file.")
