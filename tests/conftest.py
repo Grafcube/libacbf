@@ -2,7 +2,7 @@ import pytest
 from libacbf import ACBFBook
 from tests.testsettings import samples
 
-sample_path = samples[2]
+sample_path = samples[1]
 
 book: ACBFBook = ACBFBook(sample_path)
 

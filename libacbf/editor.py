@@ -70,6 +70,14 @@ def edit_author(book: ACBFBook, section: Union[BookInfo, PublishInfo, DocumentIn
 		if not hasattr(author, i):
 			raise AttributeError(f"`Author` has no attribute `{i}`.")
 
+	names = {x: attributes[x] for x in ["first_name", "last_name", "nickname"] if x in attributes}
+
+	if len(names) > 0:
+		for i in ["first_name", "last_name", "nickname"]:
+			if i not in names:
+				names[i] = getattr(author, i)
+		_ = Author(**names)
+
 	attrs = {x: attributes.pop(x) for x in ["activity", "lang"] if x in attributes}
 
 	for k, v in attrs.items():
