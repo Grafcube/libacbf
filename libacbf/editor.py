@@ -759,7 +759,7 @@ class metadata:
 
 			@staticmethod
 			@check_book
-			def edit(book: ACBFBook, dbref: Union[int, DBRef], dbname: Optional[str] = None, ref: Optional[str] = None, type: Optional[str] = None):
+			def edit(book: ACBFBook, dbref: Union[int, DBRef], dbname: Optional[str] = None, ref: Optional[str] = None, type: Optional[str] = "_"):
 				if isinstance(dbref, int):
 					dbref = book.Metadata.book_info.database_ref[dbref]
 
@@ -767,15 +767,23 @@ class metadata:
 					dbref._element.set("dbname", dbname)
 				if ref is not None:
 					dbref._element.text = ref
-				if type is not None:
-					dbref._element.set("type", type)
 
-				if dbname is not None or ref is not None or type is not None:
+				if type != "_":
+					if type is not None:
+						dbref._element.set("type", type)
+					else:
+						if "type" in dbref._element.keys():
+							dbref._element.attrib.pop("type")
+
+				if dbname is not None or ref is not None or type is not "_":
 					book.Metadata.book_info.sync_database_ref()
 
 			@staticmethod
 			@check_book
-			def remove(book: ACBFBook, dbref: DBRef):
+			def remove(book: ACBFBook, dbref: Union[int, DBRef]):
+				if isinstance(dbref, int):
+					dbref = book.Metadata.book_info.database_ref[dbref]
+
 				dbref._element.clear()
 				dbref._element.getparent().remove(dbref._element)
 				book.Metadata.book_info.sync_database_ref()
