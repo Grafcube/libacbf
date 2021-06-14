@@ -632,10 +632,15 @@ class metadata:
 		class series:
 			@staticmethod
 			@check_book
-			def edit(book: ACBFBook, title: str, sequence: Optional[str] = None, volume: Optional[str] = None):
+			def edit(book: ACBFBook, title: str, sequence: Optional[str] = None, volume: Optional[str] = "_"):
 				info_section = book.Metadata.book_info._info
 				ser_items = info_section.findall(f"{book.namespace}sequence")
 				idx = None
+
+				if sequence is not None:
+					sequence = str(sequence)
+				if volume is not None:
+					volume = str(volume)
 
 				if len(ser_items) > 0:
 					idx = info_section.index(ser_items[-1]) + 1
@@ -646,6 +651,8 @@ class metadata:
 						ser_element = i
 						break
 				if ser_element is None:
+					if sequence is None:
+						raise AttributeError(f"`sequence` cannot be blank for new series entry `{title}`.")
 					ser_element = etree.Element(f"{book.namespace}sequence")
 					ser_element.set("title", title)
 					if idx is not None:
@@ -656,11 +663,12 @@ class metadata:
 				if sequence is not None:
 					ser_element.text = sequence
 
-				if volume is not None:
-					ser_element.set("volume", volume)
-				else:
-					if "volume" in ser_element.keys():
-						ser_element.attrib.pop("volume")
+				if volume != "_":
+					if volume is not None:
+						ser_element.set("volume", volume)
+					else:
+						if "volume" in ser_element.keys():
+							ser_element.attrib.pop("volume")
 
 				book.Metadata.book_info.sync_series()
 

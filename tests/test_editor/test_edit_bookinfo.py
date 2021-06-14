@@ -10,52 +10,43 @@ dir = f"tests/results/{Path(sample_path).name}/editor/metadata/book_info/"
 os.makedirs(dir, exist_ok=True)
 
 def test_authors():
-	op = {"original": []}
-	for i in book.Metadata.book_info.authors:
-		op["original"].append(get_au_op(i))
+	op = {}
+	op["original"] = [get_au_op(x) for x in book.Metadata.book_info.authors]
 	with open(dir + "test_authors.json", 'w', encoding="utf-8", newline='\n') as result:
 		result.write(json.dumps(op, ensure_ascii=False))
 
 	edit_meta.bookinfo.authors.add(book, Author("Test"))
-	op["added"] = []
-	for i in book.Metadata.book_info.authors:
-		op["added"].append(get_au_op(i))
+	op["added"] = [get_au_op(x) for x in book.Metadata.book_info.authors]
 	with open(dir + "test_authors.json", 'w', encoding="utf-8", newline='\n') as result:
 			result.write(json.dumps(op, ensure_ascii=False))
 
 	au = book.Metadata.book_info.authors[-1]
 	edit_meta.bookinfo.authors.edit(book, -1, first_name="TheFirst", last_name="TheLast", middle_name="TheMid", lang="kn", nickname=None, home_page="https://example.com/testing")
-	op["edited"] = []
-	for i in book.Metadata.book_info.authors:
-		op["edited"].append(get_au_op(i))
+	op["edited"] = [get_au_op(x) for x in book.Metadata.book_info.authors]
 	with open(dir + "test_authors.json", 'w', encoding="utf-8", newline='\n') as result:
 			result.write(json.dumps(op, ensure_ascii=False))
 
 	edit_meta.bookinfo.authors.edit(book, au, middle_name=None, lang=None)
-	op["modified"] = []
-	for i in book.Metadata.book_info.authors:
-		op["modified"].append(get_au_op(i))
+	op["modified"] = [get_au_op(x) for x in book.Metadata.book_info.authors]
 	with open(dir + "test_authors.json", 'w', encoding="utf-8", newline='\n') as result:
 			result.write(json.dumps(op, ensure_ascii=False))
 
 	try:
 		edit_meta.bookinfo.authors.edit(book, au, first_name=None)
 	except ValueError as e:
-		op["author-attr-fail"] = str(e)
+		op["author-attr-fail"] = {str(e): [get_au_op(x) for x in book.Metadata.book_info.authors]}
 	with open(dir + "test_authors.json", 'w', encoding="utf-8", newline='\n') as result:
 			result.write(json.dumps(op, ensure_ascii=False))
 
 	try:
 		edit_meta.bookinfo.authors.edit(book, au, something="Non existant")
 	except AttributeError as e:
-		op["non-existant"] = str(e)
+		op["non-existant"] = {str(e): [get_au_op(x) for x in book.Metadata.book_info.authors]}
 	with open(dir + "test_authors.json", 'w', encoding="utf-8", newline='\n') as result:
 			result.write(json.dumps(op, ensure_ascii=False))
 
 	edit_meta.bookinfo.authors.remove(book, -1)
-	op["removed"] = []
-	for i in book.Metadata.book_info.authors:
-		op["removed"].append(get_au_op(i))
+	op["removed"] = [get_au_op(x) for x in book.Metadata.book_info.authors]
 	with open(dir + "test_authors.json", 'w', encoding="utf-8", newline='\n') as result:
 			result.write(json.dumps(op, ensure_ascii=False))
 
@@ -199,4 +190,37 @@ def test_keywords():
 	edit_meta.bookinfo.keywords.clear(book, "en")
 	op["cleared"] = book.Metadata.book_info.keywords
 	with open(dir + "test_keywords.json", 'w', encoding="utf-8", newline='\n') as result:
+		result.write(json.dumps(op, default=list, ensure_ascii=False))
+
+def test_series():
+	op = {}
+	op["original"] = [x.__dict__ for x in book.Metadata.book_info.series.values()]
+	with open(dir + "test_series.json", 'w', encoding="utf-8", newline='\n') as result:
+		result.write(json.dumps(op, default=list, ensure_ascii=False))
+
+	try:
+		edit_meta.bookinfo.series.edit(book, "Some Comics")
+	except AttributeError as e:
+		op["empty-sequence"] = {str(e): [x.__dict__ for x in book.Metadata.book_info.series.values()]}
+	with open(dir + "test_series.json", 'w', encoding="utf-8", newline='\n') as result:
+		result.write(json.dumps(op, default=list, ensure_ascii=False))
+
+	edit_meta.bookinfo.series.edit(book, "Some Comics", 2)
+	op["added"] = [x.__dict__ for x in book.Metadata.book_info.series.values()]
+	with open(dir + "test_series.json", 'w', encoding="utf-8", newline='\n') as result:
+		result.write(json.dumps(op, default=list, ensure_ascii=False))
+
+	edit_meta.bookinfo.series.edit(book, "Some Comics", volume=1)
+	op["edited"] = [x.__dict__ for x in book.Metadata.book_info.series.values()]
+	with open(dir + "test_series.json", 'w', encoding="utf-8", newline='\n') as result:
+		result.write(json.dumps(op, default=list, ensure_ascii=False))
+
+	edit_meta.bookinfo.series.edit(book, "Some Comics", volume=None)
+	op["modified"] = [x.__dict__ for x in book.Metadata.book_info.series.values()]
+	with open(dir + "test_series.json", 'w', encoding="utf-8", newline='\n') as result:
+		result.write(json.dumps(op, default=list, ensure_ascii=False))
+
+	edit_meta.bookinfo.series.remove(book, "Some Comics")
+	op["removed"] = [x.__dict__ for x in book.Metadata.book_info.series.values()]
+	with open(dir + "test_series.json", 'w', encoding="utf-8", newline='\n') as result:
 		result.write(json.dumps(op, default=list, ensure_ascii=False))
