@@ -1,13 +1,12 @@
 from pathlib import PurePath
 from typing import Optional, Union, BinaryIO
-import magic
 from zipfile import ZipFile, is_zipfile
 from py7zr import SevenZipFile, is_7zfile
 import tarfile as Tar
 from rarfile import RarFile, is_rarfile
 
 from libacbf.constants import ArchiveTypes
-from libacbf.exceptions import FailedToReadArchive, InvalidBook, UnsupportedArchive
+from libacbf.exceptions import InvalidBook, UnsupportedArchive
 
 def get_archive_type(file: Union[str, PurePath, BinaryIO]) -> ArchiveTypes:
 	"""[summary]
@@ -27,34 +26,16 @@ def get_archive_type(file: Union[str, PurePath, BinaryIO]) -> ArchiveTypes:
 	ValueError
 		[description]
 	"""
-	is_path = False
-	if not isinstance(file, (str, PurePath)):
-		file.seek(0)
-		mime_type = magic.from_buffer(file.read(2048), True)
-		file.seek(0)
+	if is_7zfile(file):
+		return ArchiveTypes.SevenZip
+	elif is_zipfile(file):
+		return ArchiveTypes.Zip
+	elif is_rarfile(file):
+		return ArchiveTypes.Rar
+	elif Tar.is_tarfile(file):
+		return ArchiveTypes.Tar
 	else:
-		is_path = True
-		mime_type = magic.from_file(str(file), True)
-
-	is_text = mime_type.startswith("text/")
-
-	if not is_text:
-		if is_7zfile(file):
-			return ArchiveTypes.SevenZip
-		elif is_zipfile(file):
-			return ArchiveTypes.Zip
-
-		if is_path:
-			if Tar.is_tarfile(file):
-				return ArchiveTypes.Tar
-			elif is_rarfile(file):
-				return ArchiveTypes.Rar
-			else:
-				raise UnsupportedArchive
-		else:
-			raise FailedToReadArchive("Tar and RAR archives can only be read from file paths.")
-	else:
-		raise UnsupportedArchive("File is not an archive file.")
+		raise UnsupportedArchive
 
 class ArchiveReader:
 	"""Class to directly read from archives.
@@ -74,13 +55,19 @@ class ArchiveReader:
 	def __init__(self, archive: Union[str, PurePath, BinaryIO]):
 		self.type: ArchiveTypes = get_archive_type(archive)
 
+		if not isinstance(archive, (str, PurePath)):
+			archive.seek(0)
+
 		arc = None
 		if self.type == ArchiveTypes.Zip:
 			arc = ZipFile(archive, 'r')
 		if self.type == ArchiveTypes.SevenZip:
 			arc = SevenZipFile(archive, 'r')
 		if self.type == ArchiveTypes.Tar:
-			arc = Tar.open(archive, 'r')
+			if isinstance(archive, (str, PurePath)):
+				arc = Tar.open(archive, mode='r')
+			else:
+				arc = Tar.open(fileobj=archive, mode='r')
 		if self.type == ArchiveTypes.Rar:
 			arc = RarFile(archive)
 

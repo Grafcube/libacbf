@@ -1,6 +1,8 @@
 import os
 import re
 import warnings
+import magic
+from io import TextIOBase
 from pathlib import PurePath
 from typing import List, Dict, Optional, Union, IO
 from lxml import etree
@@ -9,10 +11,9 @@ from libacbf.structs import Styles
 from libacbf.metadata import BookInfo, PublishInfo, DocumentInfo
 from libacbf.body import Page
 from libacbf.bookdata import BookData
-from libacbf.archivereader import ArchiveReader, get_archive_type
-from libacbf.exceptions import UnsupportedArchive
+from libacbf.archivereader import ArchiveReader
 
-def is_book_valid_archive(file: Union[str, PurePath, IO]) -> Optional[bool]:
+def is_book_text(file: Union[str, PurePath, IO]) -> Optional[bool]:
 	"""Check if file is a valid ACBF Ebook and if it is a text file or archive.
 
 	Parameters
@@ -26,14 +27,20 @@ def is_book_valid_archive(file: Union[str, PurePath, IO]) -> Optional[bool]:
 		Returns ``None`` if file is not a valid ACBF book. Returns ``True`` if book is an archive.
 		Returns ``False`` if file is a text file.
 	"""
-	try:
-		get_archive_type(file)
-	except UnsupportedArchive:
-		return False
-	else:
+	if isinstance(file, TextIOBase):
 		return True
 
-def _validate_acbf(tree, ns: str):
+	if not isinstance(file, (str, PurePath)):
+		file.seek(0)
+		mime_type = magic.from_buffer(file.read(2048), True)
+		file.seek(0)
+	else:
+		mime_type = magic.from_file(str(file), True)
+
+	return mime_type.startswith("text/")
+
+def _validate_acbf(root, ns: str):
+	tree = root.getroottree()
 	version = re.split(r'/', re.sub(r'\{|\}', "", ns))[-1]
 	xsd_path = f"libacbf/schema/acbf-{version}.xsd"
 
@@ -154,22 +161,24 @@ class ACBFBook:
 		self.archive: Optional[ArchiveReader] = None
 
 		contents = None
-		if is_book_valid_archive(file):
+		if not is_book_text(file):
 			self.archive = ArchiveReader(file)
 			contents = self.archive._get_acbf_contents()
 		else:
 			if self.book_path is None:
-				contents = str(file.read(), encoding="utf-8")
+				if isinstance(file, TextIOBase):
+					contents = file.read()
+				else:
+					contents = str(file.read(), encoding="utf-8")
 			else:
 				with open(file, encoding="utf-8") as book:
 					contents = book.read()
 
 		self._root = etree.fromstring(bytes(contents, encoding="utf-8"))
-		self._tree = self._root.getroottree()
 
 		self.namespace: str = r"{" + self._root.nsmap[None] + r"}"
 
-		_validate_acbf(self._tree, self.namespace)
+		_validate_acbf(self._root, self.namespace)
 
 		self.Styles: Styles = Styles(self, contents)
 
