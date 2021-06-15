@@ -875,7 +875,21 @@ class metadata:
 		@staticmethod
 		@check_book
 		def source(book: ACBFBook, source: Optional[str] = None):
-			pass
+			src_section = book.Metadata.document_info._info.find(f"{book.namespace}source")
+
+			if source is not None:
+				if src_section is None:
+					src_section = etree.Element(f"{book.namespace}source")
+					book.Metadata.document_info._info.append(src_section)
+				src_section.clear()
+				for i in re.split('\n', source):
+					p = etree.Element(f"{book.namespace}p")
+					src_section.append(p)
+					p.text = i
+			else:
+				if src_section is not None:
+					src_section.clear()
+					src_section.getparent().remove(src_section)
 
 		@staticmethod
 		@check_book
