@@ -5,7 +5,7 @@ import dateutil.parser
 from typing import Optional, Union
 from datetime import date
 from functools import wraps
-from pathlib import Path
+from pathlib import PurePath
 from base64 import b64encode
 from lxml import etree
 
@@ -13,13 +13,14 @@ from libacbf import ACBFBook
 from libacbf.structs import Author, DBRef, LanguageLayer
 from libacbf.constants import ArchiveTypes, AuthorActivities, Genres
 from libacbf.metadata import BookInfo, DocumentInfo, PublishInfo
+from libacbf.exceptions import EditRARArchiveError
 
 def check_book(func):
 	@wraps(func)
 	def wrapper(*args, **kwargs):
 		book: ACBFBook = kwargs["book"] if "book" in kwargs.keys() else args[0]
 		if book.archive is not None and book.archive.type == ArchiveTypes.Rar:
-			raise ValueError("Editing RAR Archives is not supported by this module.")
+			raise EditRARArchiveError
 		if not book.is_open:
 			raise ValueError("I/O operation on closed file.")
 		func(*args, **kwargs)
@@ -167,9 +168,9 @@ class book:
 	class data: # Incomplete (Archive writing)
 		@staticmethod
 		@check_book
-		def add(book: ACBFBook, file_path: Union[str, Path], embed: bool = False):
+		def add(book: ACBFBook, file_path: Union[str, PurePath], embed: bool = False):
 			# TODO: Option to choose whether to embed in xml or add to archive
-			file_path = Path(file_path) if isinstance(file_path, str) else file_path
+			file_path = PurePath(file_path) if isinstance(file_path, str) else file_path
 
 			dat_section = book._root.find(f"{book.namespace}data")
 			if dat_section is None:

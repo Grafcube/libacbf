@@ -1,5 +1,4 @@
 from typing import Optional, Union
-from io import BytesIO
 from base64 import b64decode
 
 class BookData:
@@ -20,36 +19,20 @@ class BookData:
 	is_embedded : bool
 		Whether the file is embedded in the ACBD file.
 
-	data : BytesIO
+	data : bytes
 		The actual file's data.
 	"""
-	def __init__(self, id: str, file_type: str, data: Union[str, bytes, BytesIO]):
+	def __init__(self, id: str, file_type: str, data: Union[str, bytes]):
 		self._base64data: Optional[str] = None
 
 		self.id: str = id
 
 		self.type: str = file_type
 
-		dt = None
-		if type(data) is str:
+		if isinstance(data, str):
 			self._base64data = data
-			dt = BytesIO(b64decode(self._base64data))
-		elif type(data) is BytesIO:
-			dt = data
-		elif type(data) is bytes:
-			dt = BytesIO(data)
+			data = b64decode(self._base64data)
 
 		self.is_embedded: bool = self._base64data is not None
 
-		self.data: BytesIO = dt
-
-	@property
-	def filesize(self):
-		"""Gets the size of the file.
-
-		Returns
-		-------
-		int
-			The size of the file in bytes.
-		"""
-		return self.data.getbuffer().nbytes
+		self.data: bytes = data

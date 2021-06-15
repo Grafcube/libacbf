@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, Dict, List, Optional, Union
 from collections import namedtuple
-from pathlib import Path
+from pathlib import PurePath
 import re
 import langcodes
 
@@ -42,7 +42,7 @@ class Styles:
 				self.styles["_"] = self.book._root.find(f"{self.book.namespace}style").text.strip()
 			else:
 				if self.book.archive is None:
-					st_path = self.book.book_path.parent/Path(key)
+					st_path = self.book.book_path.parent/PurePath(key)
 					with open(str(st_path), 'r', encoding="utf-8") as st:
 						self.styles[key] = st.read()
 				else:

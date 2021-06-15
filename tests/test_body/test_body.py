@@ -1,9 +1,9 @@
 import os
 import json
-from pathlib import Path
+from pathlib import PurePath
 from tests.conftest import book, sample_path
 
-dir = f"tests/results/{Path(sample_path).name}/body/"
+dir = f"tests/results/{PurePath(sample_path).name}/body/"
 os.makedirs(dir, exist_ok=True)
 
 def test_body_info():
@@ -89,7 +89,7 @@ def test_body_images():
 			"id": img.id,
 			"type": img.type,
 			"is_embedded": img.is_embedded,
-			"filesize": img.filesize
+			"filesize": len(img.data)
 		}
 	print(op)
 	with open(dir + "test_body_images.json", "w", encoding="utf-8", newline="\n") as result:

@@ -1,8 +1,8 @@
 import os
 import re
 import warnings
-from pathlib import Path
-from typing import List, Dict, Optional, Union
+from pathlib import PurePath
+from typing import List, Dict, Optional, Union, IO
 from lxml import etree
 
 from libacbf.structs import Styles
@@ -10,13 +10,14 @@ from libacbf.metadata import BookInfo, PublishInfo, DocumentInfo
 from libacbf.body import Page
 from libacbf.bookdata import BookData
 from libacbf.archivereader import ArchiveReader, get_archive_type
+from libacbf.exceptions import UnsupportedArchive
 
-def is_book_archive(file: Union[str, Path]) -> Optional[bool]:
+def is_book_valid_archive(file: Union[str, PurePath, IO]) -> Optional[bool]:
 	"""Check if file is a valid ACBF Ebook and if it is a text file or archive.
 
 	Parameters
 	----------
-	file : Union[str, Path]
+	file : Union[str, PurePath]
 		Path to file.
 
 	Returns
@@ -25,23 +26,12 @@ def is_book_archive(file: Union[str, Path]) -> Optional[bool]:
 		Returns ``None`` if file is not a valid ACBF book. Returns ``True`` if book is an archive.
 		Returns ``False`` if file is a text file.
 	"""
-	if isinstance(file, str):
-		file = Path(file)
-
-	if file.suffix == ".acbf":
-		return False
-
 	try:
 		get_archive_type(file)
-	except ValueError:
-		return None
+	except UnsupportedArchive:
+		return False
 	else:
-		with ArchiveReader(file) as arc:
-			acbf = arc._get_acbf_contents()
-		if acbf is not None:
-			return True
-		else:
-			return None
+		return True
 
 def _validate_acbf(tree, ns: str):
 	version = re.split(r'/', re.sub(r'\{|\}', "", ns))[-1]
@@ -147,35 +137,32 @@ class ACBFBook:
 		reason to use this.
 
 		:attr:`ArchiveReader.archive <libacbf.archivereader.ArchiveReader.archive>` may be
-		``zipfile.ZipFile``, ``pathlib.Path``, ``tarfile.TarFile`` or ``rarfile.RarFile``.
+		``zipfile.ZipFile``, ``py7zr.SevenZipFile``, ``tarfile.TarFile`` or ``rarfile.RarFile``.
 	"""
-	def __init__(self, file_path: Union[str, Path] = "libacbf/templates/base_template_1.1.acbf"):
-		if file_path == "libacbf/templates/base_template_1.1.acbf":
+	def __init__(self, file: Union[str, PurePath, IO] = "libacbf/templates/base_template_1.1.acbf"):
+		if file == "libacbf/templates/base_template_1.1.acbf":
 			raise NotImplementedError("Create new books TBD")
 
 		self.is_open: bool = True
 
-		if isinstance(file_path, str):
-			file_path = Path(os.path.abspath(file_path))
-
-		self.book_path = file_path
-
-		self.file_path = str(file_path)
+		self.book_path = None
+		if isinstance(file, str):
+			self.book_path = PurePath(os.path.abspath(file))
+		if isinstance(file, PurePath):
+			self.book_path = file
 
 		self.archive: Optional[ArchiveReader] = None
 
 		contents = None
-		type = is_book_archive(file_path)
-		if type == False:
-			with open(file_path, encoding="utf-8") as book:
-				contents = book.read()
-		elif type == True:
-			self.archive = ArchiveReader(file_path)
+		if is_book_valid_archive(file):
+			self.archive = ArchiveReader(file)
 			contents = self.archive._get_acbf_contents()
-			if contents is None:
-				raise ValueError("File is not an ACBF Ebook.")
-		elif type == None:
-			raise ValueError("File is not an ACBF Ebook.")
+		else:
+			if self.book_path is None:
+				contents = str(file.read(), encoding="utf-8")
+			else:
+				with open(file, encoding="utf-8") as book:
+					contents = book.read()
 
 		self._root = etree.fromstring(bytes(contents, encoding="utf-8"))
 		self._tree = self._root.getroottree()
@@ -210,7 +197,7 @@ class ACBFBook:
 			To do when making editor.py
 		"""
 		if path == "":
-			path = self.file_path
+			path = self.book_path
 		raise NotImplementedError
 
 	def close(self):

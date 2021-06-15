@@ -1,20 +1,20 @@
-import os
-import shutil
-from pathlib import Path
-from typing import Optional, Union
+from pathlib import PurePath
+from typing import Optional, Union, BinaryIO
+import magic
 from zipfile import ZipFile, is_zipfile
 from py7zr import SevenZipFile, is_7zfile
 import tarfile as Tar
 from rarfile import RarFile, is_rarfile
 
 from libacbf.constants import ArchiveTypes
+from libacbf.exceptions import FailedToReadArchive, InvalidBook, UnsupportedArchive
 
-def get_archive_type(file: Union[str, Path]) -> ArchiveTypes:
+def get_archive_type(file: Union[str, PurePath, BinaryIO]) -> ArchiveTypes:
 	"""[summary]
 
 	Parameters
 	----------
-	file : Union[str, Path]
+	file : Union[str, PurePath]
 		[description]
 
 	Returns
@@ -27,16 +27,34 @@ def get_archive_type(file: Union[str, Path]) -> ArchiveTypes:
 	ValueError
 		[description]
 	"""
-	if is_zipfile(file):
-		return ArchiveTypes.Zip
-	elif is_7zfile(file):
-		return ArchiveTypes.SevenZip
-	elif Tar.is_tarfile(file):
-		return ArchiveTypes.Tar
-	elif is_rarfile(file):
-		return ArchiveTypes.Rar
+	is_path = False
+	if not isinstance(file, (str, PurePath)):
+		file.seek(0)
+		mime_type = magic.from_buffer(file.read(2048), True)
+		file.seek(0)
 	else:
-		raise ValueError("File is not a supported archive type.")
+		is_path = True
+		mime_type = magic.from_file(str(file), True)
+
+	is_text = mime_type.startswith("text/")
+
+	if not is_text:
+		if is_7zfile(file):
+			return ArchiveTypes.SevenZip
+		elif is_zipfile(file):
+			return ArchiveTypes.Zip
+
+		if is_path:
+			if Tar.is_tarfile(file):
+				return ArchiveTypes.Tar
+			elif is_rarfile(file):
+				return ArchiveTypes.Rar
+			else:
+				raise UnsupportedArchive
+		else:
+			raise FailedToReadArchive("Tar and RAR archives can only be read from file paths.")
+	else:
+		raise UnsupportedArchive("File is not an archive file.")
 
 class ArchiveReader:
 	"""Class to directly read from archives.
@@ -46,34 +64,29 @@ class ArchiveReader:
 
 	Attributes
 	----------
-	archive : zipfile.ZipFile | rarfile.TarFile | rarfile.RarFile | pathlib.Path
+	archive : zipfile.ZipFile | rarfile.TarFile | rarfile.RarFile | pathlib.PurePath
 		If it is a ``Path``, the path is to a temporary directory where a ``py7zr.SevenZipFile`` is
 		extracted.
 
 	type : ArchiveTypes(Enum)
 		The type of archive.
 	"""
-	def __init__(self, archive: Union[str, Path]):
+	def __init__(self, archive: Union[str, PurePath, BinaryIO]):
 		self.type: ArchiveTypes = get_archive_type(archive)
-
-		if isinstance(archive, str):
-			archive = Path(archive)
 
 		arc = None
 		if self.type == ArchiveTypes.Zip:
-			arc = ZipFile(str(archive), 'r')
+			arc = ZipFile(archive, 'r')
 		if self.type == ArchiveTypes.SevenZip:
-			self.tempdir = Path(archive.parent/('.' + archive.stem.replace(' ', '_') + "-" + ''.join(archive.suffixes)))
-			os.makedirs(str(self.tempdir), exist_ok=True)
-			arc = SevenZipFile(str(archive), 'r')
+			arc = SevenZipFile(archive, 'r')
 		if self.type == ArchiveTypes.Tar:
-			arc = Tar.open(str(archive), 'r')
+			arc = Tar.open(archive, 'r')
 		if self.type == ArchiveTypes.Rar:
-			arc = RarFile(str(archive), errors="strict")
+			arc = RarFile(archive)
 
-		self.archive: Union[ZipFile, SevenZipFile, Path, Tar.TarFile, RarFile] = arc
+		self.archive: Union[ZipFile, SevenZipFile, Tar.TarFile, RarFile] = arc
 
-	def read(self, file_path: Union[str, Path]) -> bytes:
+	def read(self, target: str) -> bytes:
 		"""Get file as bytes from archive.
 
 		Parameters
@@ -86,33 +99,27 @@ class ArchiveReader:
 		bytes
 			Contents of file.
 		"""
-		if isinstance(file_path, str):
-			file_path = Path(file_path)
-
 		contents = None
+
 		if self.type in [ArchiveTypes.Zip, ArchiveTypes.Rar]:
-			with self.archive.open(str(file_path), 'r') as file:
+			with self.archive.open(target, 'r') as file:
 				contents = file.read()
 
 		elif self.type == ArchiveTypes.SevenZip:
 			self.archive.reset()
-			if not os.path.exists(str(self.tempdir/file_path)):
-				self.archive.extract(str(self.tempdir), [str(file_path)])
-			with open(str(self.tempdir/file_path), 'rb') as file:
+			with self.archive.read([target])[target] as file:
 				contents = file.read()
 
 		elif self.type == ArchiveTypes.Tar:
-			contents = self.archive.extractfile(str(file_path)).read()
+			with self.archive.extractfile(target) as file:
+				contents = file.read()
 
 		return contents
 
 	def close(self):
 		"""Close archive file object or remove temporary directory.
 		"""
-		if self.type in [ArchiveTypes.Zip, ArchiveTypes.Tar, ArchiveTypes.Rar]:
-			self.archive.close()
-		elif self.type == ArchiveTypes.SevenZip:
-			shutil.rmtree(self.tempdir)
+		self.archive.close()
 
 	def _get_acbf_contents(self) -> Optional[str]:
 		acbf_file = None
@@ -132,6 +139,9 @@ class ArchiveReader:
 				if i.isfile() and '/' not in i.name and i.name.endswith(".acbf"):
 					acbf_file = i.name
 					break
+
+		if acbf_file is None:
+			raise InvalidBook
 
 		contents = str(self.read(acbf_file), "utf-8")
 		return contents

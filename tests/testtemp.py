@@ -1,8 +1,7 @@
-import time
+from pprint import pprint
 from libacbf import ACBFBook
 from tests.testsettings import samples
 
-with ACBFBook(samples[2]) as book:
+with ACBFBook(samples[1]) as book:
 	for i in book.Body.pages:
-		print(i.image_ref, i.image.filesize)
-	time.sleep(5)
+		print(i.image_ref, len(i.image.data))

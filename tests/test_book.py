@@ -1,15 +1,15 @@
 import os
 import json
-from pathlib import Path
+from pathlib import PurePath
 from tests.conftest import book, sample_path
 
-dir = f"tests/results/{Path(sample_path).name}/"
+dir = f"tests/results/{PurePath(sample_path).name}/"
 os.makedirs(dir, exist_ok=True)
 
 def test_book():
 	op = {
 		"sample": sample_path,
-		"file_path": book.file_path,
+		"file_path": str(book.book_path),
 		"archive_type": book.archive.type.name if book.archive is not None else None,
 		"namespace": book.namespace
 	}
