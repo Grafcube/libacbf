@@ -1,8 +1,8 @@
 import os
-from pathlib import PurePath
+from pathlib import Path
 from tests.conftest import book, sample_path
 
-dir = f"tests/results/{PurePath(sample_path).name}/metadata/publish_info/"
+dir = f"tests/results/{Path(sample_path).name}/metadata/publish_info/"
 os.makedirs(dir, exist_ok=True)
 
 def test_publisher():

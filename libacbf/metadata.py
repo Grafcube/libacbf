@@ -10,6 +10,40 @@ if TYPE_CHECKING:
 from libacbf.body import Page
 from libacbf.structs import Author, DBRef, Genre, LanguageLayer, Series
 
+def update_authors(author_items, ns) -> List[Author]:
+	authors = []
+
+	for au in author_items:
+		new_first_name = None
+		new_last_name = None
+		new_nickname = None
+		if au.find(f"{ns}first-name") is not None:
+			new_first_name = au.find(f"{ns}first-name").text
+		if au.find(f"{ns}last-name") is not None:
+			new_last_name = au.find(f"{ns}last-name").text
+		if au.find(f"{ns}nickname") is not None:
+			new_nickname = au.find(f"{ns}nickname").text
+
+		new_author: Author = Author(new_first_name, new_last_name, new_nickname)
+		new_author._element = au
+
+		if "activity" in au.keys():
+			new_author.activity = au.attrib["activity"]
+		if "lang" in au.keys():
+			new_author.lang = au.attrib["lang"]
+
+		# Optional
+		if au.find(f"{ns}middle-name") is not None:
+			new_author.middle_name = au.find(f"{ns}middle-name").text
+		if au.find(f"{ns}home-page") is not None:
+			new_author.home_page = au.find(f"{ns}home-page").text
+		if au.find(f"{ns}email") is not None:
+			new_author.email = au.find(f"{ns}email").text
+
+		authors.append(new_author)
+
+	return authors
+
 class BookInfo:
 	"""Metadata about the book itself.
 
@@ -353,37 +387,3 @@ class DocumentInfo:
 		if self._info.find(f"{self.book.namespace}history") is not None:
 			for item in self._info.findall(f"{self.book.namespace}history/{self.book.namespace}p"):
 				self.document_history.append(item.text)
-
-def update_authors(author_items, ns) -> List[Author]:
-	authors = []
-
-	for au in author_items:
-		new_first_name = None
-		new_last_name = None
-		new_nickname = None
-		if au.find(f"{ns}first-name") is not None:
-			new_first_name = au.find(f"{ns}first-name").text
-		if au.find(f"{ns}last-name") is not None:
-			new_last_name = au.find(f"{ns}last-name").text
-		if au.find(f"{ns}nickname") is not None:
-			new_nickname = au.find(f"{ns}nickname").text
-
-		new_author: Author = Author(new_first_name, new_last_name, new_nickname)
-		new_author._element = au
-
-		if "activity" in au.keys():
-			new_author.activity = au.attrib["activity"]
-		if "lang" in au.keys():
-			new_author.lang = au.attrib["lang"]
-
-		# Optional
-		if au.find(f"{ns}middle-name") is not None:
-			new_author.middle_name = au.find(f"{ns}middle-name").text
-		if au.find(f"{ns}home-page") is not None:
-			new_author.home_page = au.find(f"{ns}home-page").text
-		if au.find(f"{ns}email") is not None:
-			new_author.email = au.find(f"{ns}email").text
-
-		authors.append(new_author)
-
-	return authors

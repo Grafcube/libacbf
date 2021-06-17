@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, List, Dict, Optional
-from pathlib import PurePath
+from pathlib import Path
 import os
 import distutils.util
 import re
@@ -73,11 +73,11 @@ class Page:
 		elif self.image_ref.startswith("zip:"):
 			ref_t = ImageRefType.Archived
 			ref_path = re.sub("zip:", "", self.image_ref)
-			self._arch_path = PurePath(re.split("!", ref_path)[0])
-			self._file_path = PurePath(re.split("!", ref_path)[1])
+			self._arch_path = Path(re.split("!", ref_path)[0])
+			self._file_path = Path(re.split("!", ref_path)[1])
 			self._file_id = self._file_path.name
 			if not os.path.isabs(self._arch_path):
-				self._arch_path = PurePath(os.path.abspath(str(self._arch_path)))
+				self._arch_path = Path(os.path.abspath(str(self._arch_path)))
 
 		elif re.fullmatch(url_pattern, self.image_ref, re.IGNORECASE):
 			ref_t = ImageRefType.URL
@@ -85,9 +85,9 @@ class Page:
 
 		else:
 			if self.image_ref.startswith("file://"):
-				self._file_path = PurePath(os.path.abspath(self.image_ref))
+				self._file_path = Path(os.path.abspath(self.image_ref))
 			else:
-				self._file_path = PurePath(self.image_ref)
+				self._file_path = Path(self.image_ref)
 
 			if os.path.isabs(self.image_ref):
 				ref_t = ImageRefType.Local

@@ -1,9 +1,9 @@
 import os
 import json
-from pathlib import PurePath
+from pathlib import Path
 from tests.conftest import book, sample_path, get_au_op
 
-dir = f"tests/results/{PurePath(sample_path).name}/metadata/book_info/"
+dir = f"tests/results/{Path(sample_path).name}/metadata/book_info/"
 os.makedirs(dir, exist_ok=True)
 
 def test_authors():

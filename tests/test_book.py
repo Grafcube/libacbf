@@ -1,9 +1,9 @@
 import os
 import json
-from pathlib import PurePath
+from pathlib import Path
 from tests.conftest import book, sample_path
 
-dir = f"tests/results/{PurePath(sample_path).name}/"
+dir = f"tests/results/{Path(sample_path).name}/"
 os.makedirs(dir, exist_ok=True)
 
 def test_book():

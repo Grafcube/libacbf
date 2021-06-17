@@ -3,9 +3,10 @@ import langcodes
 import magic
 import dateutil.parser
 from typing import Optional, Union
+from io import UnsupportedOperation
 from datetime import date
 from functools import wraps
-from pathlib import PurePath
+from pathlib import Path
 from base64 import b64encode
 from lxml import etree
 
@@ -19,10 +20,12 @@ def check_book(func):
 	@wraps(func)
 	def wrapper(*args, **kwargs):
 		book: ACBFBook = kwargs["book"] if "book" in kwargs.keys() else args[0]
+		if book.mode == 'r':
+			raise UnsupportedOperation("Book is not writeable.")
+		if not book.is_open:
+			raise ValueError("Cannot edit closed book.")
 		if book.archive is not None and book.archive.type == ArchiveTypes.Rar:
 			raise EditRARArchiveError
-		if not book.is_open:
-			raise ValueError("I/O operation on closed file.")
 		func(*args, **kwargs)
 	return wrapper
 
@@ -168,9 +171,9 @@ class book:
 	class data: # Incomplete (Archive writing)
 		@staticmethod
 		@check_book
-		def add(book: ACBFBook, file_path: Union[str, PurePath], embed: bool = False):
+		def add(book: ACBFBook, file_path: Union[str, Path], embed: bool = False):
 			# TODO: Option to choose whether to embed in xml or add to archive
-			file_path = PurePath(file_path) if isinstance(file_path, str) else file_path
+			file_path = Path(file_path) if isinstance(file_path, str) else file_path
 
 			dat_section = book._root.find(f"{book.namespace}data")
 			if dat_section is None:

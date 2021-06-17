@@ -1,11 +1,11 @@
-import os
 import re
 import warnings
 import magic
-from io import TextIOBase
-from pathlib import PurePath
-from typing import List, Dict, Optional, Union, IO
+from io import TextIOBase, UnsupportedOperation
+from pathlib import Path
+from typing import List, Dict, Optional, Union, Literal, IO
 from lxml import etree
+from zipfile import ZipFile
 
 from libacbf.structs import Styles
 from libacbf.metadata import BookInfo, PublishInfo, DocumentInfo
@@ -13,12 +13,12 @@ from libacbf.body import Page
 from libacbf.bookdata import BookData
 from libacbf.archivereader import ArchiveReader
 
-def is_book_text(file: Union[str, PurePath, IO]) -> Optional[bool]:
+def is_book_text(file: Union[str, Path, IO]) -> Optional[bool]:
 	"""Check if file is a valid ACBF Ebook and if it is a text file or archive.
 
 	Parameters
 	----------
-	file : Union[str, PurePath]
+	file : Union[str, Path]
 		Path to file.
 
 	Returns
@@ -30,7 +30,7 @@ def is_book_text(file: Union[str, PurePath, IO]) -> Optional[bool]:
 	if isinstance(file, TextIOBase):
 		return True
 
-	if not isinstance(file, (str, PurePath)):
+	if not isinstance(file, (str, Path)):
 		file.seek(0)
 		mime_type = magic.from_buffer(file.read(2048), True)
 		file.seek(0)
@@ -38,6 +38,18 @@ def is_book_text(file: Union[str, PurePath, IO]) -> Optional[bool]:
 		mime_type = magic.from_file(str(file), True)
 
 	return mime_type.startswith("text/")
+
+def get_book_template() -> str:
+	"""[summary]
+
+	Returns
+	-------
+	str
+		[description]
+	"""
+	with open("libacbf/templates/base_template_1.1.acbf", 'r', encoding="utf-8") as template:
+		contents = template.read()
+	return contents
 
 def _validate_acbf(root, ns: str):
 	tree = root.getroottree()
@@ -146,33 +158,74 @@ class ACBFBook:
 		:attr:`ArchiveReader.archive <libacbf.archivereader.ArchiveReader.archive>` may be
 		``zipfile.ZipFile``, ``py7zr.SevenZipFile``, ``tarfile.TarFile`` or ``rarfile.RarFile``.
 	"""
-	def __init__(self, file: Union[str, PurePath, IO] = "libacbf/templates/base_template_1.1.acbf"):
-		if file == "libacbf/templates/base_template_1.1.acbf":
-			raise NotImplementedError("Create new books TBD")
+	def __init__(self, file: Union[str, Path, IO], mode: Literal['r', 'w', 'a', 'x'] = 'r',
+				create_archive: bool = True, encoding: str = 'utf-8'):
 
+		self.mode: Literal['r', 'w', 'a', 'x'] = mode
 		self.is_open: bool = True
 
 		self.book_path = None
 		if isinstance(file, str):
-			self.book_path = PurePath(os.path.abspath(file))
-		if isinstance(file, PurePath):
-			self.book_path = file
+			self.book_path = Path(file).resolve()
+		if isinstance(file, Path):
+			self.book_path = file.resolve()
 
 		self.archive: Optional[ArchiveReader] = None
+		self._created = None
+
+		arc_mode = mode
+
+		def create_file():
+			if create_archive:
+				self._created = ZipFile(self.book_path, mode)
+				data = get_book_template().encode(encoding, "strict")
+				self._created.writestr(self.book_path.stem + ".acbf", data)
+				self.archive = ArchiveReader(self._created, arc_mode)
+			else:
+				self._created = open(str(self.book_path), mode, encoding=encoding)
+				self._created = get_book_template().encode(encoding, "strict")
+
+		if mode == 'r':
+			if self.book_path is not None and not self.book_path.is_file():
+				raise FileNotFoundError
+		elif mode == 'a':
+			if self.book_path is not None and not self.book_path.is_file():
+				raise FileNotFoundError
+			elif self.book_path is None and not file.writable():
+				raise UnsupportedOperation("File is not writeable.")
+		elif mode == 'x':
+			arc_mode = 'a'
+			if self.book_path is not None:
+				if self.book_path.is_file():
+					raise FileExistsError
+				else:
+					create_file()
+			else:
+				raise FileExistsError
+		elif mode == 'w':
+			arc_mode = 'a'
+			if self.book_path is not None:
+				if not self.book_path.is_file():
+					create_file()
+			elif not file.writable():
+				raise UnsupportedOperation("File is not writeable.")
 
 		contents = None
-		if not is_book_text(file):
-			self.archive = ArchiveReader(file)
-			contents = self.archive._get_acbf_contents()
-		else:
-			if self.book_path is None:
-				if isinstance(file, TextIOBase):
-					contents = file.read()
-				else:
-					contents = str(file.read(), encoding="utf-8")
+		if self.archive is None:
+			if not is_book_text(file):
+				self.archive = ArchiveReader(file, arc_mode)
+				contents = self.archive._get_acbf_contents()
 			else:
-				with open(file, encoding="utf-8") as book:
-					contents = book.read()
+				if self.book_path is None:
+					if isinstance(file, TextIOBase):
+						contents = file.read()
+					else:
+						contents = str(file.read(), encoding="utf-8")
+				else:
+					with open(file, encoding="utf-8") as book:
+						contents = book.read()
+		else:
+			contents = self.archive._get_acbf_contents()
 
 		self._root = etree.fromstring(bytes(contents, encoding="utf-8"))
 
@@ -215,7 +268,10 @@ class ACBFBook:
 		"""
 		if self.archive is not None:
 			self.archive.close()
+			self.mode = 'r'
 			self.is_open = False
+		if self._created is not None:
+			self._created.close()
 
 	def sync_references(self):
 		ns = self.namespace

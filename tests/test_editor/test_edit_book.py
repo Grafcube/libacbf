@@ -1,10 +1,10 @@
 import os
 import json
-from pathlib import PurePath
+from pathlib import Path
 from tests.conftest import book, sample_path
 import libacbf.editor as edit_bookinfo
 
-dir = f"tests/results/{PurePath(sample_path).name}/editor/"
+dir = f"tests/results/{Path(sample_path).name}/editor/"
 os.makedirs(dir, exist_ok=True)
 
 def test_references():
