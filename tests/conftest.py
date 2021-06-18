@@ -4,7 +4,9 @@ from tests.testsettings import samples
 
 sample_path = samples[1]
 
-book: ACBFBook = ACBFBook(sample_path)
+md = 'a' if sample_path != samples[4] else 'r'
+
+book: ACBFBook = ACBFBook(sample_path, md)
 
 @pytest.fixture(scope="session", autouse=True)
 def run_around_tests():

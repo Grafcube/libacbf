@@ -6,6 +6,8 @@ from pathlib import Path
 from typing import List, Dict, Optional, Union, Literal, IO
 from lxml import etree
 from zipfile import ZipFile
+from py7zr import SevenZipFile
+import tarfile as tar
 
 from libacbf.structs import Styles
 from libacbf.metadata import BookInfo, PublishInfo, DocumentInfo
@@ -161,8 +163,7 @@ class ACBFBook:
 	def __init__(self, file: Union[str, Path, IO], mode: Literal['r', 'w', 'a', 'x'] = 'r',
 				create_archive: bool = True, encoding: str = 'utf-8'):
 
-		self.mode: Literal['r', 'w', 'a', 'x'] = mode
-		self.is_open: bool = True
+		self._enc = encoding
 
 		self.book_path = None
 		if isinstance(file, str):
@@ -170,20 +171,28 @@ class ACBFBook:
 		if isinstance(file, Path):
 			self.book_path = file.resolve()
 
+		if isinstance(file, (ZipFile, SevenZipFile, tar.TarFile)):
+			if mode != 'r':
+				warnings.warn("Attempted to open ACBFBook in write mode with an archive file created outside.")
+				warnings.warn("Edit archive files directly if they are created externally.")
+			mode = 'r'
+
+		self.mode: Literal['r', 'w', 'a', 'x'] = mode
+		self.is_open: bool = True
+
 		self.archive: Optional[ArchiveReader] = None
-		self._created = None
 
 		arc_mode = mode
 
 		def create_file():
 			if create_archive:
-				self._created = ZipFile(self.book_path, mode)
+				created = ZipFile(self.book_path, mode)
 				data = get_book_template().encode(encoding, "strict")
-				self._created.writestr(self.book_path.stem + ".acbf", data)
-				self.archive = ArchiveReader(self._created, arc_mode)
+				created.writestr(self.book_path.stem + ".acbf", data)
+				self.archive = ArchiveReader(created, arc_mode, True)
 			else:
-				self._created = open(str(self.book_path), mode, encoding=encoding)
-				self._created = get_book_template().encode(encoding, "strict")
+				with open(str(self.book_path), mode, encoding=encoding) as book:
+					book.write(get_book_template().encode(encoding, "strict"))
 
 		if mode == 'r':
 			if self.book_path is not None and not self.book_path.is_file():
@@ -194,7 +203,7 @@ class ACBFBook:
 			elif self.book_path is None and not file.writable():
 				raise UnsupportedOperation("File is not writeable.")
 		elif mode == 'x':
-			arc_mode = 'a'
+			arc_mode = 'w'
 			if self.book_path is not None:
 				if self.book_path.is_file():
 					raise FileExistsError
@@ -203,7 +212,7 @@ class ACBFBook:
 			else:
 				raise FileExistsError
 		elif mode == 'w':
-			arc_mode = 'a'
+			arc_mode = 'w'
 			if self.book_path is not None:
 				if not self.book_path.is_file():
 					create_file()
@@ -243,7 +252,17 @@ class ACBFBook:
 
 		self.sync_references()
 
-	def save(self, path: str = "", overwrite: bool = False):
+	def get_acbf_xml(self):
+		"""[summary]
+
+		Returns
+		-------
+		[type]
+			[description]
+		"""
+		return str(etree.tostring(self._root, encoding=self._enc, pretty_print=True))
+
+	def save(self, path: Union[str, Path, None] = None, overwrite: bool = False):
 		"""Save as file.
 
 		Parameters
@@ -252,26 +271,42 @@ class ACBFBook:
 			Path to save to.
 		overwrite : bool, optional
 			Whether to overwrite if file already exists at path. ``False`` by default.
-
-		Raises
-		------
-		NotImplementedError
-			To do when making editor.py
 		"""
-		if path == "":
-			path = self.book_path
-		raise NotImplementedError
+		if self.mode == 'r':
+			raise UnsupportedOperation("File is not writeable.")
+
+		if isinstance(path, str):
+			path = Path(path)
+
+		if path is not None:
+			if self.book_path is None:
+				self.book_path = path
+		else:
+			if self.book_path is not None:
+				path = self.book_path
+			else:
+				raise FileNotFoundError
+
+		if path.is_file() and not overwrite:
+			raise FileExistsError
+
+		if self.archive is None:
+			with open(str(path), 'w', encoding=self._enc) as book:
+				book.write(self.get_acbf_xml())
+		else:
+			self.archive.save(path)
 
 	def close(self):
 		"""Closes open archives if file is ``.cbz``, ``.cbt`` or ``.cbr``. Removes temporary
 		directory for ``.cb7`` files.
 		"""
+		# if self.mode != 'r':
+		# 	self.save()
+
 		if self.archive is not None:
 			self.archive.close()
 			self.mode = 'r'
 			self.is_open = False
-		if self._created is not None:
-			self._created.close()
 
 	def sync_references(self):
 		ns = self.namespace

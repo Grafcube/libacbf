@@ -1,6 +1,8 @@
+import os
+import shutil
 from io import UnsupportedOperation
 from pathlib import Path
-from typing import Optional, Union, Literal, BinaryIO
+from typing import Dict, Optional, Union, Literal, BinaryIO
 from tempfile import TemporaryDirectory
 from zipfile import ZipFile, is_zipfile
 from py7zr import SevenZipFile, is_7zfile
@@ -54,31 +56,37 @@ class ArchiveReader:
 	type : ArchiveTypes(Enum)
 		The type of archive.
 	"""
-	def __init__(self, archive: Union[str, Path, BinaryIO], mode: Literal['r', 'a'] = 'r'):
+	def __init__(self, archive: Union[str, Path, BinaryIO], mode: Literal['r', 'w'] = 'r', created=False):
+		arc = None
+		if created:
+			arc = archive
+
 		if isinstance(archive, str):
 			archive = Path(archive).resolve(True)
 
 		if not isinstance(archive, Path):
 			archive.seek(0)
 
-		self.mode: Literal['r', 'a'] = mode
+		self.changes: Dict[str, str] = {}
+
+		self.mode: Literal['r', 'w'] = mode
 		self.type: ArchiveTypes = get_archive_type(archive)
 
 		if mode != 'r' and self.type == ArchiveTypes.Rar:
 			raise EditRARArchiveError
 
-		arc = None
-		if self.type == ArchiveTypes.Zip:
-			arc = ZipFile(archive, mode)
-		elif self.type == ArchiveTypes.SevenZip:
-			arc = SevenZipFile(archive, mode)
-		elif self.type == ArchiveTypes.Tar:
-			if isinstance(archive, (str, Path)):
-				arc = tar.open(archive, mode=mode)
-			else:
-				arc = tar.open(fileobj=archive, mode=mode)
-		elif self.type == ArchiveTypes.Rar:
-			arc = RarFile(archive)
+		if arc is None:
+			if self.type == ArchiveTypes.Zip:
+				arc = ZipFile(archive, 'r')
+			elif self.type == ArchiveTypes.SevenZip:
+				arc = SevenZipFile(archive, 'r')
+			elif self.type == ArchiveTypes.Tar:
+				if isinstance(archive, (str, Path)):
+					arc = tar.open(archive, mode='r')
+				else:
+					arc = tar.open(fileobj=archive, mode='r')
+			elif self.type == ArchiveTypes.Rar:
+				arc = RarFile(archive)
 
 		self.archive: Union[ZipFile, SevenZipFile, tar.TarFile, RarFile] = arc
 
@@ -112,31 +120,82 @@ class ArchiveReader:
 
 		return contents
 
-	def write(self, file: Union[str, Path], arcname: Optional[str] = None):
-		"""[summary]
+	def write(self, target: Union[str, Path], arcname: Optional[str] = None):
+		"""Call ``ACBFBook.save()`` or ``ACBFBook.close()`` to apply changes.
 
 		Parameters
 		----------
 		file : str | Path
 			[description]
-		arcname : str | None, default=None
+		arcname : str | None, default=Name of target file
+			[description]
+		"""
+		if self.mode == 'r':
+			raise UnsupportedOperation("File is not writeable.")
+
+		if isinstance(target, str):
+			target = Path(target)
+		target = target.resolve(True)
+
+		if arcname is None:
+			arcname = target.name
+
+		self.changes[str(target)] = arcname
+
+	def remove(self, target: Union[str, Path]):
+		"""Call ``ACBFBook.save()`` or ``ACBFBook.close()`` to apply changes.
+
+		Parameters
+		----------
+		target : str | Path
 			[description]
 		"""
 		if self.mode == 'r':
 			UnsupportedOperation("File is not writeable.")
 
-		if isinstance(file, str):
-			file = Path(file)
-			if arcname is None:
-				arcname = file.name
-		file = str(file.resolve(True))
+		if isinstance(target, str):
+			target = Path(target)
+		target = str(target.resolve(True))
 
-		if self.type in [ArchiveTypes.Zip, ArchiveTypes.SevenZip]:
-			self.archive.write(file, arcname)
-		elif self.type == ArchiveTypes.Tar:
-			with TemporaryDirectory() as target:
-				pass
-			raise NotImplementedError("Fully extract and recompress on save?")
+		self.changes[target] = ""
+
+	def save(self, path: str):
+		with TemporaryDirectory() as td:
+			td = Path(td)
+
+			self.archive.extractall(str(td))
+
+			for source, action in self.changes.items():
+				if action != "":
+					shutil.copy(source, str(td/action))
+				else:
+					if not os.path.isabs(source):
+						source = Path(source).relative_to(td)
+						try:
+							os.remove(source)
+						except FileNotFoundError:
+							pass
+
+			files = [x.relative_to(td) for x in td.rglob('*') if x.is_file()]
+			self.archive.close()
+
+			if self.type == ArchiveTypes.Zip:
+				with ZipFile(path, 'w') as arc:
+					for i in files:
+						arc.write(str(td/i), str(i))
+				self.archive = ZipFile(path, 'r')
+
+			elif self.type == ArchiveTypes.SevenZip:
+				with SevenZipFile(path, 'w') as arc:
+					for i in files:
+						arc.write(str(td/i), str(i))
+				self.archive = SevenZipFile(path, 'r')
+
+			elif self.type == ArchiveTypes.Tar:
+				with tar.open(path, 'w') as arc:
+					for i in files:
+						arc.add(str(td/i), str(i))
+				self.archive = tar.open(path, 'r')
 
 	def close(self):
 		"""Close archive file object or remove temporary directory.

@@ -1,10 +1,12 @@
 import os
 import shutil
 from pprint import pprint
+from zipfile import ZipFile
 import tarfile as tar
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from libacbf import ACBFBook
+from lxml import etree
+# from libacbf import ACBFBook
 from tests.testsettings import samples
 
 # with ACBFBook(samples[1]) as book:
@@ -32,3 +34,21 @@ with TemporaryDirectory() as td:
 		for i in files:
 			arc.add(str(td/i), str(i))
 		arc.list(False)
+
+# ns = {None: "https://example.com/test/xml-schema.xsd"}
+
+# root = etree.Element("root", nsmap=ns)
+
+# element1 = etree.SubElement(root, "element1")
+# element1.set("exists", "true")
+
+# element2 = etree.SubElement(root, "element2")
+# element2.set("something", "false")
+
+# child1 = etree.SubElement(element2, "child1", {"index": "0"})
+# child1.text = "something here."
+# child2 = etree.SubElement(element2, "child2", {"index": "1"})
+# child2.text = "Here's a newline."
+
+# with open("tests/samples/more/test.xml", 'w', encoding="utf-8", newline='\n') as xml:
+# 	xml.write(str(etree.tostring(root, encoding="utf-8", pretty_print=True), 'utf-8'))

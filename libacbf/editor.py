@@ -779,7 +779,7 @@ class metadata:
 						if "type" in dbref._element.keys():
 							dbref._element.attrib.pop("type")
 
-				if dbname is not None or ref is not None or type is not "_":
+				if dbname is not None or ref is not None or type != "_":
 					book.Metadata.book_info.sync_database_ref()
 
 			@staticmethod
