@@ -1,7 +1,8 @@
 import re
 import warnings
 import magic
-from io import TextIOBase, UnsupportedOperation
+import tempfile
+from io import UnsupportedOperation
 from pathlib import Path
 from typing import List, Dict, Optional, Union, Literal, IO
 from lxml import etree
@@ -29,9 +30,6 @@ def is_book_text(file: Union[str, Path, IO]) -> Optional[bool]:
 		Returns ``None`` if file is not a valid ACBF book. Returns ``True`` if book is an archive.
 		Returns ``False`` if file is a text file.
 	"""
-	if isinstance(file, TextIOBase):
-		return True
-
 	if not isinstance(file, (str, Path)):
 		file.seek(0)
 		mime_type = magic.from_buffer(file.read(2048), True)
@@ -49,7 +47,7 @@ def get_book_template() -> str:
 	str
 		[description]
 	"""
-	with open("libacbf/templates/base_template_1.1.acbf", 'r', encoding="utf-8") as template:
+	with open("libacbf/templates/base_template_1.1.acbf", 'rb') as template:
 		contents = template.read()
 	return contents
 
@@ -161,9 +159,7 @@ class ACBFBook:
 		``zipfile.ZipFile``, ``py7zr.SevenZipFile``, ``tarfile.TarFile`` or ``rarfile.RarFile``.
 	"""
 	def __init__(self, file: Union[str, Path, IO], mode: Literal['r', 'w', 'a', 'x'] = 'r',
-				create_archive: bool = True, encoding: str = 'utf-8'):
-
-		self._enc = encoding
+				create_archive: bool = True):
 
 		self.book_path = None
 		if isinstance(file, str):
@@ -172,9 +168,6 @@ class ACBFBook:
 			self.book_path = file.resolve()
 
 		if isinstance(file, (ZipFile, SevenZipFile, tar.TarFile)):
-			if mode != 'r':
-				warnings.warn("Attempted to open ACBFBook in write mode with an archive file created outside.")
-				warnings.warn("Edit archive files directly if they are created externally.")
 			mode = 'r'
 
 		self.mode: Literal['r', 'w', 'a', 'x'] = mode
@@ -184,15 +177,17 @@ class ACBFBook:
 
 		arc_mode = mode
 
+		self._is_created: bool = False
+
 		def create_file():
 			if create_archive:
-				created = ZipFile(self.book_path, mode)
-				data = get_book_template().encode(encoding, "strict")
-				created.writestr(self.book_path.stem + ".acbf", data)
-				self.archive = ArchiveReader(created, arc_mode, True)
+				with ZipFile(self.book_path, mode) as arc:
+					arc.writestr(self.book_path.stem + ".acbf", get_book_template())
+				self.archive = ArchiveReader(file, arc_mode, True)
 			else:
-				with open(str(self.book_path), mode, encoding=encoding) as book:
-					book.write(get_book_template().encode(encoding, "strict"))
+				with open(str(self.book_path), 'w') as book:
+					book.write(str(get_book_template(), "utf-8"))
+			self._is_created = True
 
 		if mode == 'r':
 			if self.book_path is not None and not self.book_path.is_file():
@@ -214,35 +209,29 @@ class ACBFBook:
 		elif mode == 'w':
 			arc_mode = 'w'
 			if self.book_path is not None:
-				if not self.book_path.is_file():
-					create_file()
-			elif not file.writable():
-				raise UnsupportedOperation("File is not writeable.")
+				create_file()
+			else:
+				raise FileExistsError(f"Cannot create book from `{type(file)}`. Use `mode='a' instead.`")
 
 		contents = None
-		if self.archive is None:
-			if not is_book_text(file):
+		if not is_book_text(file):
+			if self.archive is not None:
 				self.archive = ArchiveReader(file, arc_mode)
-				contents = self.archive._get_acbf_contents()
-			else:
-				if self.book_path is None:
-					if isinstance(file, TextIOBase):
-						contents = file.read()
-					else:
-						contents = str(file.read(), encoding="utf-8")
-				else:
-					with open(file, encoding="utf-8") as book:
-						contents = book.read()
+				contents = self.archive.read(self.archive._get_acbf_file())
 		else:
-			contents = self.archive._get_acbf_contents()
+			if self.book_path is None:
+				contents = file.read()
+			else:
+				with open(file, 'rb') as book:
+					contents = book.read()
 
-		self._root = etree.fromstring(bytes(contents, encoding="utf-8"))
+		self._root = etree.fromstring(contents)
 
 		self.namespace: str = r"{" + self._root.nsmap[None] + r"}"
 
 		_validate_acbf(self._root, self.namespace)
 
-		self.Styles: Styles = Styles(self, contents)
+		self.Styles: Styles = Styles(self, str(contents))
 
 		self.Metadata: ACBFMetadata = ACBFMetadata(self)
 
@@ -260,7 +249,7 @@ class ACBFBook:
 		[type]
 			[description]
 		"""
-		return str(etree.tostring(self._root, encoding=self._enc, pretty_print=True))
+		return str(etree.tostring(self._root, pretty_print=True), encoding="utf-8")
 
 	def save(self, path: Union[str, Path, None] = None, overwrite: bool = False):
 		"""Save as file.
@@ -291,10 +280,14 @@ class ACBFBook:
 			raise FileExistsError
 
 		if self.archive is None:
-			with open(str(path), 'w', encoding=self._enc) as book:
+			with open(str(path), 'w') as book:
 				book.write(self.get_acbf_xml())
 		else:
-			self.archive.save(path)
+			acbf_path = Path(tempfile.gettempdir())/self.archive._get_acbf_file()
+			with open(acbf_path, 'w') as xml:
+				xml.write(self.get_acbf_xml())
+				self.archive.write(acbf_path)
+				self.archive.save(path, self._root)
 
 	def close(self):
 		"""Closes open archives if file is ``.cbz``, ``.cbt`` or ``.cbr``. Removes temporary

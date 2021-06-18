@@ -59,7 +59,7 @@ class ArchiveReader:
 	def __init__(self, archive: Union[str, Path, BinaryIO], mode: Literal['r', 'w'] = 'r', created=False):
 		arc = None
 		if created:
-			arc = archive
+			arc = ZipFile(archive, 'r')
 
 		if isinstance(archive, str):
 			archive = Path(archive).resolve(True)
@@ -202,9 +202,8 @@ class ArchiveReader:
 		"""
 		self.archive.close()
 
-	def _get_acbf_contents(self) -> Optional[str]:
+	def _get_acbf_file(self) -> str:
 		acbf_file = None
-		contents = None
 		if self.type in [ArchiveTypes.Zip, ArchiveTypes.Rar]:
 			for i in self.archive.infolist():
 				if not i.is_dir() and '/' not in i.filename and i.filename.endswith(".acbf"):
@@ -224,8 +223,7 @@ class ArchiveReader:
 		if acbf_file is None:
 			raise InvalidBook
 
-		contents = str(self.read(acbf_file), "utf-8")
-		return contents
+		return acbf_file
 
 	def __enter__(self):
 		return self

@@ -3,15 +3,17 @@
 	<meta-data>
 		<book-info>
 			<author>
-				<first-name>First</first-name>
-				<last-name>Last</last-name>
+				<first-name>First name</first-name>
+				<last-name>Last name</last-name>
 				<nickname>Nickname</nickname>
 			</author>
 			<book-title></book-title>
-			<genre>Other</genre>
-			<annotation></annotation>
+			<genre>other</genre>
+			<annotation>
+				<p>Annotation</p>
+			</annotation>
 			<coverpage>
-				<image href="cover.jpg" />
+				<image href="" />
 			</coverpage>
 		</book-info>
 		<publish-info>
@@ -20,8 +22,8 @@
 		</publish-info>
 		<document-info>
 			<author>
-				<first-name>First</first-name>
-				<last-name>Last</last-name>
+				<first-name>First name</first-name>
+				<last-name>Last name</last-name>
 				<nickname>Nickname</nickname>
 			</author>
 			<creation-date></creation-date>
@@ -30,7 +32,7 @@
 
 	<body>
 		<page>
-			<image href="page01.jpg" />
+			<image href="" />
 		</page>
 	</body>
 </ACBF>
