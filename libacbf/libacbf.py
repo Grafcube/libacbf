@@ -1,8 +1,7 @@
 import re
 import warnings
-import magic
 import tempfile
-from io import UnsupportedOperation
+from io import TextIOBase, UnsupportedOperation
 from pathlib import Path
 from typing import List, Dict, Optional, Union, Literal, IO
 from lxml import etree
@@ -15,29 +14,6 @@ from libacbf.metadata import BookInfo, PublishInfo, DocumentInfo
 from libacbf.body import Page
 from libacbf.bookdata import BookData
 from libacbf.archivereader import ArchiveReader
-
-def is_book_text(file: Union[str, Path, IO]) -> Optional[bool]:
-	"""Check if file is a valid ACBF Ebook and if it is a text file or archive.
-
-	Parameters
-	----------
-	file : Union[str, Path]
-		Path to file.
-
-	Returns
-	-------
-	bool | None
-		Returns ``None`` if file is not a valid ACBF book. Returns ``True`` if book is an archive.
-		Returns ``False`` if file is a text file.
-	"""
-	if not isinstance(file, (str, Path)):
-		file.seek(0)
-		mime_type = magic.from_buffer(file.read(2048), True)
-		file.seek(0)
-	else:
-		mime_type = magic.from_file(str(file), True)
-
-	return mime_type.startswith("text/")
 
 def get_book_template() -> str:
 	"""[summary]
@@ -177,7 +153,9 @@ class ACBFBook:
 
 		arc_mode = mode
 
-		self._is_created: bool = False
+		is_text = False
+		if (self.book_path is not None and self.book_path.suffix == ".acbf") or isinstance(file, TextIOBase):
+			is_text = True
 
 		def create_file():
 			if create_archive:
@@ -187,7 +165,6 @@ class ACBFBook:
 			else:
 				with open(str(self.book_path), 'w', encoding=enc) as book:
 					book.write(get_book_template())
-			self._is_created = True
 
 		if mode == 'r':
 			if self.book_path is not None and not self.book_path.is_file():
@@ -214,7 +191,7 @@ class ACBFBook:
 				raise FileExistsError(f"Cannot create book from `{type(file)}`. Use `mode='a' instead.`")
 
 		contents = None
-		if not is_book_text(file):
+		if not is_text:
 			if self.archive is None:
 				self.archive = ArchiveReader(file, arc_mode)
 				contents = str(self.archive.read(self.archive._get_acbf_file()), enc)
