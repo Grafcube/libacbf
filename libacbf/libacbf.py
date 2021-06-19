@@ -47,7 +47,7 @@ def get_book_template() -> str:
 	str
 		[description]
 	"""
-	with open("libacbf/templates/base_template_1.1.acbf", 'rb') as template:
+	with open("libacbf/templates/base_template_1.1.acbf", 'r') as template:
 		contents = template.read()
 	return contents
 
@@ -159,7 +159,7 @@ class ACBFBook:
 		``zipfile.ZipFile``, ``py7zr.SevenZipFile``, ``tarfile.TarFile`` or ``rarfile.RarFile``.
 	"""
 	def __init__(self, file: Union[str, Path, IO], mode: Literal['r', 'w', 'a', 'x'] = 'r',
-				create_archive: bool = True):
+				create_archive: bool = True, enc: str = "utf-8"):
 
 		self.book_path = None
 		if isinstance(file, str):
@@ -182,11 +182,11 @@ class ACBFBook:
 		def create_file():
 			if create_archive:
 				with ZipFile(self.book_path, mode) as arc:
-					arc.writestr(self.book_path.stem + ".acbf", get_book_template())
+					arc.writestr(self.book_path.stem + ".acbf", get_book_template().encode(enc))
 				self.archive = ArchiveReader(file, arc_mode, True)
 			else:
-				with open(str(self.book_path), 'w') as book:
-					book.write(str(get_book_template(), "utf-8"))
+				with open(str(self.book_path), 'w', encoding=enc) as book:
+					book.write(get_book_template())
 			self._is_created = True
 
 		if mode == 'r':
@@ -215,17 +215,17 @@ class ACBFBook:
 
 		contents = None
 		if not is_book_text(file):
-			if self.archive is not None:
+			if self.archive is None:
 				self.archive = ArchiveReader(file, arc_mode)
-				contents = self.archive.read(self.archive._get_acbf_file())
+				contents = str(self.archive.read(self.archive._get_acbf_file()), enc)
 		else:
 			if self.book_path is None:
-				contents = file.read()
+				contents = str(file.read(), enc)
 			else:
-				with open(file, 'rb') as book:
+				with open(str(file), 'r', encoding=enc) as book:
 					contents = book.read()
 
-		self._root = etree.fromstring(contents)
+		self._root = etree.fromstring(bytes(contents, enc))
 
 		self.namespace: str = r"{" + self._root.nsmap[None] + r"}"
 
@@ -264,6 +264,8 @@ class ACBFBook:
 		if self.mode == 'r':
 			raise UnsupportedOperation("File is not writeable.")
 
+		_validate_acbf(self._root, self.namespace)
+
 		if isinstance(path, str):
 			path = Path(path)
 
@@ -287,14 +289,16 @@ class ACBFBook:
 			with open(acbf_path, 'w') as xml:
 				xml.write(self.get_acbf_xml())
 				self.archive.write(acbf_path)
-				self.archive.save(path, self._root)
+				self.archive.save(path)
 
 	def close(self):
 		"""Closes open archives if file is ``.cbz``, ``.cbt`` or ``.cbr``. Removes temporary
 		directory for ``.cb7`` files.
 		"""
-		# if self.mode != 'r':
-		# 	self.save()
+		if self.mode == 'x':
+			self.save()
+		elif self.mode in ['w', 'a']:
+			self.save(overwrite=True)
 
 		if self.archive is not None:
 			self.archive.close()

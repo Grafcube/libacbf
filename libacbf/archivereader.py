@@ -72,7 +72,7 @@ class ArchiveReader:
 		self.mode: Literal['r', 'w'] = mode
 		self.type: ArchiveTypes = get_archive_type(archive)
 
-		if mode != 'r' and self.type == ArchiveTypes.Rar:
+		if mode == 'w' and self.type == ArchiveTypes.Rar:
 			raise EditRARArchiveError
 
 		if arc is None:
