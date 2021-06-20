@@ -179,23 +179,19 @@ class ArchiveReader:
 			files = [x.relative_to(td) for x in td.rglob('*') if x.is_file()]
 			self.archive.close()
 
-			if self.type == ArchiveTypes.Zip:
-				with ZipFile(path, 'w') as arc:
-					for i in files:
+			for i in files:
+				if self.type == ArchiveTypes.Zip:
+					with ZipFile(path, 'w') as arc:
 						arc.write(str(td/i), str(i))
-				self.archive = ZipFile(path, 'r')
-
-			elif self.type == ArchiveTypes.SevenZip:
-				with SevenZipFile(path, 'w') as arc:
-					for i in files:
+					self.archive = ZipFile(path, 'r')
+				elif self.type == ArchiveTypes.SevenZip:
+					with SevenZipFile(path, 'w') as arc:
 						arc.write(str(td/i), str(i))
-				self.archive = SevenZipFile(path, 'r')
-
-			elif self.type == ArchiveTypes.Tar:
-				with tar.open(path, 'w') as arc:
-					for i in files:
+					self.archive = SevenZipFile(path, 'r')
+				elif self.type == ArchiveTypes.Tar:
+					with tar.open(path, 'w') as arc:
 						arc.add(str(td/i), str(i))
-				self.archive = tar.open(path, 'r')
+					self.archive = tar.open(path, 'r')
 
 	def close(self):
 		"""Close archive file object or remove temporary directory.

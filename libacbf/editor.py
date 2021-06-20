@@ -20,8 +20,6 @@ def check_book(func):
 	@wraps(func)
 	def wrapper(*args, **kwargs):
 		book: ACBFBook = kwargs["book"] if "book" in kwargs.keys() else args[0]
-		if book.mode == 'r':
-			raise UnsupportedOperation("Book is not writeable.")
 		if not book.is_open:
 			raise ValueError("Cannot edit closed book.")
 		if book.archive is not None and book.archive.type == ArchiveTypes.Rar:

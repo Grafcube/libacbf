@@ -1,3 +1,4 @@
+import os
 import re
 import warnings
 import tempfile
@@ -134,8 +135,7 @@ class ACBFBook:
 		:attr:`ArchiveReader.archive <libacbf.archivereader.ArchiveReader.archive>` may be
 		``zipfile.ZipFile``, ``py7zr.SevenZipFile``, ``tarfile.TarFile`` or ``rarfile.RarFile``.
 	"""
-	def __init__(self, file: Union[str, Path, IO], mode: Literal['r', 'w', 'a', 'x'] = 'r',
-				create_archive: bool = True, enc: str = "utf-8"):
+	def __init__(self, file: Union[str, Path, IO], mode: Literal['r', 'w', 'a', 'x'] = 'r'):
 
 		self.book_path = None
 		if isinstance(file, str):
@@ -158,12 +158,12 @@ class ACBFBook:
 			is_text = True
 
 		def create_file():
-			if create_archive:
+			if not is_text:
 				with ZipFile(self.book_path, mode) as arc:
-					arc.writestr(self.book_path.stem + ".acbf", get_book_template().encode(enc))
+					arc.writestr(self.book_path.stem + ".acbf", get_book_template())
 				self.archive = ArchiveReader(file, arc_mode, True)
 			else:
-				with open(str(self.book_path), 'w', encoding=enc) as book:
+				with open(str(self.book_path), 'w') as book:
 					book.write(get_book_template())
 
 		if mode == 'r':
@@ -194,15 +194,18 @@ class ACBFBook:
 		if not is_text:
 			if self.archive is None:
 				self.archive = ArchiveReader(file, arc_mode)
-				contents = str(self.archive.read(self.archive._get_acbf_file()), enc)
+			contents = self.archive.read(self.archive._get_acbf_file())
 		else:
 			if self.book_path is None:
-				contents = str(file.read(), enc)
+				contents = file.read()
 			else:
-				with open(str(file), 'r', encoding=enc) as book:
+				with open(str(file), 'r') as book:
 					contents = book.read()
 
-		self._root = etree.fromstring(bytes(contents, enc))
+		if not isinstance(contents, str):
+			contents = contents.decode("utf-8")
+
+		self._root = etree.fromstring(bytes(contents, "utf-8"))
 
 		self.namespace: str = r"{" + self._root.nsmap[None] + r"}"
 
@@ -266,11 +269,11 @@ class ACBFBook:
 			with open(acbf_path, 'w') as xml:
 				xml.write(self.get_acbf_xml())
 				self.archive.write(acbf_path)
-				self.archive.save(path)
+			self.archive.save(path)
+			os.remove(str(acbf_path))
 
 	def close(self):
-		"""Closes open archives if file is ``.cbz``, ``.cbt`` or ``.cbr``. Removes temporary
-		directory for ``.cb7`` files.
+		"""Closes open archives if file is ``.cbz``, ``.cbt`` or ``.cbr`` or ``.cb7`` files.
 		"""
 		if self.mode == 'x':
 			self.save()
