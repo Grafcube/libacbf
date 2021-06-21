@@ -56,11 +56,7 @@ class ArchiveReader:
 	type : ArchiveTypes(Enum)
 		The type of archive.
 	"""
-	def __init__(self, archive: Union[str, Path, BinaryIO], mode: Literal['r', 'w'] = 'r', created=False):
-		arc = None
-		if created:
-			arc = ZipFile(archive, 'r')
-
+	def __init__(self, archive: Union[str, Path, BinaryIO], mode: Literal['r', 'w'] = 'r'):
 		if isinstance(archive, str):
 			archive = Path(archive).resolve(True)
 
@@ -75,6 +71,7 @@ class ArchiveReader:
 		if mode == 'w' and self.type == ArchiveTypes.Rar:
 			raise EditRARArchiveError
 
+		arc = None
 		if arc is None:
 			if self.type == ArchiveTypes.Zip:
 				arc = ZipFile(archive, 'r')
@@ -159,7 +156,7 @@ class ArchiveReader:
 
 		self.changes[target] = ""
 
-	def save(self, path: str):
+	def save(self, path: Union[str, BinaryIO]):
 		with TemporaryDirectory() as td:
 			td = Path(td)
 

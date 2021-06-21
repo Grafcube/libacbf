@@ -136,22 +136,24 @@ class ACBFBook:
 		``zipfile.ZipFile``, ``py7zr.SevenZipFile``, ``tarfile.TarFile`` or ``rarfile.RarFile``.
 	"""
 	def __init__(self, file: Union[str, Path, IO], mode: Literal['r', 'w', 'a', 'x'] = 'r'):
-
 		self.book_path = None
 		if isinstance(file, str):
 			self.book_path = Path(file).resolve()
 		if isinstance(file, Path):
 			self.book_path = file.resolve()
 
+		arc_mode = mode
+
+		self.savable: bool = mode != 'r'
+
 		if isinstance(file, (ZipFile, SevenZipFile, tar.TarFile)):
-			mode = 'r'
+			arc_mode = 'r'
+			self.savable = False
 
 		self.mode: Literal['r', 'w', 'a', 'x'] = mode
 		self.is_open: bool = True
 
 		self.archive: Optional[ArchiveReader] = None
-
-		arc_mode = mode
 
 		is_text = False
 		if (self.book_path is not None and self.book_path.suffix == ".acbf") or isinstance(file, TextIOBase):
@@ -159,12 +161,16 @@ class ACBFBook:
 
 		def create_file():
 			if not is_text:
-				with ZipFile(self.book_path, mode) as arc:
-					arc.writestr(self.book_path.stem + ".acbf", get_book_template())
+				with ZipFile(file, mode) as arc:
+					name = self.book_path.stem + ".acbf" if self.book_path is not None else "book.acbf"
+					arc.writestr(name, get_book_template())
 				self.archive = ArchiveReader(file, arc_mode, True)
 			else:
-				with open(str(self.book_path), 'w') as book:
-					book.write(get_book_template())
+				if self.book_path is not None:
+					with open(str(self.book_path), 'w') as book:
+						book.write(get_book_template())
+				else:
+					file.write(get_book_template())
 
 		if mode == 'r':
 			if self.book_path is not None and not self.book_path.is_file():
@@ -231,7 +237,7 @@ class ACBFBook:
 		"""
 		return str(etree.tostring(self._root, pretty_print=True), encoding="utf-8")
 
-	def save(self, path: Union[str, Path, None] = None, overwrite: bool = False):
+	def save(self, path: Union[str, Path, IO, None] = None, overwrite: bool = False):
 		"""Save as file.
 
 		Parameters
@@ -241,7 +247,7 @@ class ACBFBook:
 		overwrite : bool, optional
 			Whether to overwrite if file already exists at path. ``False`` by default.
 		"""
-		if self.mode == 'r':
+		if self.mode == 'r' or not self.savable:
 			raise UnsupportedOperation("File is not writeable.")
 
 		_validate_acbf(self._root, self.namespace)
@@ -249,21 +255,21 @@ class ACBFBook:
 		if isinstance(path, str):
 			path = Path(path)
 
-		if path is not None:
-			if self.book_path is None:
-				self.book_path = path
-		else:
+		if path is None:
 			if self.book_path is not None:
 				path = self.book_path
 			else:
 				raise FileNotFoundError
 
-		if path.is_file() and not overwrite:
+		if isinstance(path, Path) and path.is_file() and not overwrite:
 			raise FileExistsError
 
 		if self.archive is None:
-			with open(str(path), 'w') as book:
-				book.write(self.get_acbf_xml())
+			if isinstance(path, Path):
+				with open(str(path), 'w') as book:
+					book.write(self.get_acbf_xml())
+			else:
+				path.write(self.get_acbf_xml())
 		else:
 			acbf_path = Path(tempfile.gettempdir())/self.archive._get_acbf_file()
 			with open(acbf_path, 'w') as xml:
