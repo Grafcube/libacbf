@@ -3,7 +3,6 @@ import langcodes
 import magic
 import dateutil.parser
 from typing import Optional, Union
-from io import UnsupportedOperation
 from datetime import date
 from functools import wraps
 from pathlib import Path
@@ -20,6 +19,8 @@ def check_book(func):
 	@wraps(func)
 	def wrapper(*args, **kwargs):
 		book: ACBFBook = kwargs["book"] if "book" in kwargs.keys() else args[0]
+		if book.mode != 'r':
+			raise ValueError("Cannot edit read only book.")
 		if not book.is_open:
 			raise ValueError("Cannot edit closed book.")
 		if book.archive is not None and book.archive.type == ArchiveTypes.Rar:
@@ -33,8 +34,8 @@ def add_author(book: ACBFBook, section: Union[BookInfo, PublishInfo, DocumentInf
 	if section not in [book.Metadata.book_info, book.Metadata.publisher_info, book.Metadata.document_info]:
 		raise ValueError("Section is not from this book.")
 
-	au_element = etree.Element(f"{book.namespace}author")
-	idx = info_section.index(info_section.findall(f"{book.namespace}author")[-1]) + 1
+	au_element = etree.Element(f"{book._namespace}author")
+	idx = info_section.index(info_section.findall(f"{book._namespace}author")[-1]) + 1
 	info_section.insert(idx, au_element)
 	author._element = au_element
 
@@ -52,7 +53,7 @@ def add_author(book: ACBFBook, section: Union[BookInfo, PublishInfo, DocumentInf
 	edit_author(book, section, author, **attributes)
 
 def edit_author(book: ACBFBook, section: Union[BookInfo, PublishInfo, DocumentInfo], author: Union[int, Author], **attributes):
-	au_list = section._info.findall(f"{book.namespace}author")
+	au_list = section._info.findall(f"{book._namespace}author")
 
 	if section not in [book.Metadata.book_info, book.Metadata.publisher_info, book.Metadata.document_info]:
 		raise ValueError("Section is not from this book.")
@@ -94,9 +95,9 @@ def edit_author(book: ACBFBook, section: Union[BookInfo, PublishInfo, DocumentIn
 
 	for k, v in attributes.items():
 		if isinstance(v, str) or v is None:
-			element = au_element.find(book.namespace + re.sub(r'_', '-', k))
+			element = au_element.find(book._namespace + re.sub(r'_', '-', k))
 			if v is not None and element is None:
-				element = etree.Element(book.namespace + re.sub(r'_', '-', k))
+				element = etree.Element(book._namespace + re.sub(r'_', '-', k))
 				au_element.append(element)
 				element.text = v
 			elif v is not None and element is not None:
@@ -115,7 +116,7 @@ def remove_author(book: ACBFBook, section: Union[BookInfo, PublishInfo, Document
 	if section not in [book.Metadata.book_info, book.Metadata.publisher_info, book.Metadata.document_info]:
 		raise ValueError("Section is not from this book.")
 
-	au_list = section._info.findall(f"{book.namespace}author")
+	au_list = section._info.findall(f"{book._namespace}author")
 
 	if isinstance(author, int):
 		author_element = section.authors[author]._element
@@ -132,11 +133,11 @@ def remove_author(book: ACBFBook, section: Union[BookInfo, PublishInfo, Document
 	section.sync_authors()
 
 def edit_optional(book: ACBFBook, tag: str, section: Union[BookInfo, PublishInfo, DocumentInfo], attr: str, text: Optional[str] = None):
-	item = section._info.find(book.namespace + tag)
+	item = section._info.find(book._namespace + tag)
 
 	if text is not None:
 		if item is None:
-			item = etree.Element(book.namespace + tag)
+			item = etree.Element(book._namespace + tag)
 			section._info.append(item)
 		item.text = text
 		setattr(section, attr, item.text)
@@ -145,7 +146,7 @@ def edit_optional(book: ACBFBook, tag: str, section: Union[BookInfo, PublishInfo
 		item.getparent().remove(item)
 
 def edit_date(book: ACBFBook, tag: str, section: Union[BookInfo, PublishInfo, DocumentInfo], attr_s: str, attr_d: str, dt: Union[str, date], include_date: bool = True):
-	item = section._info.find(book.namespace + tag)
+	item = section._info.find(book._namespace + tag)
 
 	if isinstance(dt, str):
 		item.text = dt
@@ -173,9 +174,9 @@ class book:
 			# TODO: Option to choose whether to embed in xml or add to archive
 			file_path = Path(file_path) if isinstance(file_path, str) else file_path
 
-			dat_section = book._root.find(f"{book.namespace}data")
+			dat_section = book._root.find(f"{book._namespace}data")
 			if dat_section is None:
-				dat_section = etree.Element(f"{book.namespace}data")
+				dat_section = etree.Element(f"{book._namespace}data")
 				book._root.append(dat_section)
 
 			id = file_path.name
@@ -184,7 +185,7 @@ class book:
 				content_type = magic.from_buffer(contents, True)
 				data64 = str(b64encode(contents), encoding="utf-8")
 
-			bin_element = etree.Element(f"{book.namespace}binary")
+			bin_element = etree.Element(f"{book._namespace}binary")
 			bin_element.set("id", id)
 			bin_element.set("content-type", content_type)
 			bin_element.text = data64
@@ -195,16 +196,16 @@ class book:
 		@staticmethod
 		@check_book
 		def remove(book: ACBFBook, id: str):
-			dat_section = book._root.find(f"{book.namespace}data")
+			dat_section = book._root.find(f"{book._namespace}data")
 
 			if dat_section is not None:
-				for i in dat_section.findall(f"{book.namespace}binary"):
+				for i in dat_section.findall(f"{book._namespace}binary"):
 					if i.attrib["id"] == id:
 						i.clear()
 						dat_section.remove(i)
 						break
 
-				if len(dat_section.findall(f"{book.namespace}binary")) == 0:
+				if len(dat_section.findall(f"{book._namespace}binary")) == 0:
 					dat_section.clear()
 					dat_section.getparent().remove(dat_section)
 
@@ -214,12 +215,12 @@ class book:
 		@staticmethod
 		@check_book
 		def edit(book: ACBFBook, id: str, paragraph: str):
-			ref_section = book._root.find(f"{book.namespace}references")
+			ref_section = book._root.find(f"{book._namespace}references")
 			if ref_section is None:
-				ref_section = etree.Element(f"{book.namespace}references")
+				ref_section = etree.Element(f"{book._namespace}references")
 				book._root.append(ref_section)
 
-			ref_items = ref_section.findall(f"{book.namespace}reference")
+			ref_items = ref_section.findall(f"{book._namespace}reference")
 
 			ref_element = None
 			for i in ref_items:
@@ -228,7 +229,7 @@ class book:
 					break
 
 			if ref_element == None:
-				ref_element = etree.Element(f"{book.namespace}reference")
+				ref_element = etree.Element(f"{book._namespace}reference")
 				ref_section.append(ref_element)
 
 			ref_element.clear()
@@ -239,7 +240,7 @@ class book:
 				p = f"<p>{ref}</p>"
 				p_element = etree.fromstring(bytes(p, encoding="utf-8"))
 				for i in list(p_element.iter()):
-					i.tag = book.namespace + i.tag
+					i.tag = book._namespace + i.tag
 				ref_element.append(p_element)
 
 			book.sync_references()
@@ -247,16 +248,16 @@ class book:
 		@staticmethod
 		@check_book
 		def remove(book: ACBFBook, id: str):
-			ref_section = book._root.find(f"{book.namespace}references")
+			ref_section = book._root.find(f"{book._namespace}references")
 
 			if ref_section is not None:
-				for i in ref_section.findall(f"{book.namespace}reference"):
+				for i in ref_section.findall(f"{book._namespace}reference"):
 					if i.attrib["id"] == id:
 						i.clear()
 						ref_section.remove(i)
 						break
 
-				if len(ref_section.findall(f"{book.namespace}reference")) == 0:
+				if len(ref_section.findall(f"{book._namespace}reference")) == 0:
 					ref_section.getparent().remove(ref_section)
 
 				book.sync_references()
@@ -297,7 +298,7 @@ class metadata:
 			@check_book
 			def edit(book: ACBFBook, title: str, lang: str = "_"):
 				info_section = book.Metadata.book_info._info
-				title_elements = info_section.findall(f"{book.namespace}book-title")
+				title_elements = info_section.findall(f"{book._namespace}book-title")
 				idx = info_section.index(title_elements[-1]) + 1
 
 				t_element = None
@@ -314,7 +315,7 @@ class metadata:
 							break
 
 				if t_element == None:
-					t_element = etree.Element(f"{book.namespace}book-title")
+					t_element = etree.Element(f"{book._namespace}book-title")
 					info_section.insert(idx, t_element)
 
 				t_element.set("lang", key)
@@ -326,7 +327,7 @@ class metadata:
 			@check_book
 			def remove(book: ACBFBook, lang: str = "_"):
 				info_section = book.Metadata.book_info._info
-				title_elements = info_section.findall(f"{book.namespace}book-title")
+				title_elements = info_section.findall(f"{book._namespace}book-title")
 
 				if lang == "_":
 					for i in title_elements:
@@ -349,7 +350,7 @@ class metadata:
 			@check_book
 			def edit(book: ACBFBook, genre: Genres, match: Optional[int] = "_"):
 				info_section = book.Metadata.book_info._info
-				gn_elements = info_section.findall(f"{book.namespace}genre")
+				gn_elements = info_section.findall(f"{book._namespace}genre")
 				name = genre.name
 
 				gn_element = None
@@ -360,7 +361,7 @@ class metadata:
 
 				if gn_element is None:
 					idx = info_section.index(gn_elements[-1]) + 1
-					gn_element = etree.Element(f"{book.namespace}genre")
+					gn_element = etree.Element(f"{book._namespace}genre")
 					gn_element.text = name
 					info_section.insert(idx, gn_element)
 
@@ -375,7 +376,7 @@ class metadata:
 			@check_book
 			def remove(book: ACBFBook, genre: Genres):
 				info_section = book.Metadata.book_info._info
-				gn_elements = info_section.findall(f"{book.namespace}genre")
+				gn_elements = info_section.findall(f"{book._namespace}genre")
 				name = genre.name
 
 				for i in gn_elements:
@@ -390,7 +391,7 @@ class metadata:
 			@check_book
 			def edit(book: ACBFBook, text: str, lang: str = "_"):
 				info_section = book.Metadata.book_info._info
-				annotation_elements = info_section.findall(f"{book.namespace}annotation")
+				annotation_elements = info_section.findall(f"{book._namespace}annotation")
 
 				an_element = None
 				if lang == "_":
@@ -407,14 +408,14 @@ class metadata:
 
 				if an_element is None:
 					idx = info_section.index(annotation_elements[-1]) + 1
-					an_element = etree.Element(f"{book.namespace}annotation")
+					an_element = etree.Element(f"{book._namespace}annotation")
 					info_section.insert(idx, an_element)
 
 				an_element.clear()
 				an_element.set("lang", lang)
 
 				for pt in text.split(r'\n'):
-					p = etree.Element(f"{book.namespace}p")
+					p = etree.Element(f"{book._namespace}p")
 					p.text = pt
 					an_element.append(p)
 
@@ -424,7 +425,7 @@ class metadata:
 			@check_book
 			def remove(book: ACBFBook, lang: str = "_"):
 				info_section = book.Metadata.book_info._info
-				annotation_elements = info_section.findall(f"{book.namespace}annotation")
+				annotation_elements = info_section.findall(f"{book._namespace}annotation")
 
 				an_element = None
 				if lang == "_":
@@ -455,14 +456,14 @@ class metadata:
 			@staticmethod
 			@check_book
 			def add(book: ACBFBook, lang: str, show: bool):
-				ln_section = book.Metadata.book_info._info.find(f"{book.namespace}languages")
+				ln_section = book.Metadata.book_info._info.find(f"{book._namespace}languages")
 				if ln_section is None:
-					ln_section = etree.Element(f"{book.namespace}languages")
+					ln_section = etree.Element(f"{book._namespace}languages")
 					book.Metadata.book_info._info.append(ln_section)
 
 				lang = langcodes.standardize_tag(lang)
 
-				ln_item = etree.Element(f"{book.namespace}text-layer")
+				ln_item = etree.Element(f"{book._namespace}text-layer")
 				ln_item.set("lang", lang)
 				ln_item.set("show", str(show))
 				ln_section.append(ln_item)
@@ -487,7 +488,7 @@ class metadata:
 			@staticmethod
 			@check_book
 			def remove(book: ACBFBook, layer: Union[int, LanguageLayer]):
-				ln_section = book.Metadata.book_info._info.find(f"{book.namespace}languages")
+				ln_section = book.Metadata.book_info._info.find(f"{book._namespace}languages")
 
 				if isinstance(layer, int):
 					layer = book.Metadata.book_info.languages[layer]
@@ -495,7 +496,7 @@ class metadata:
 				layer._element.clear()
 				ln_section.remove(layer._element)
 
-				if len(ln_section.findall(f"{book.namespace}text-layer")) == 0:
+				if len(ln_section.findall(f"{book._namespace}text-layer")) == 0:
 					ln_section.clear()
 					ln_section.getparent().remove(ln_section)
 
@@ -505,12 +506,12 @@ class metadata:
 			@staticmethod
 			@check_book
 			def add(book: ACBFBook, name: str):
-				char_section = book.Metadata.book_info._info.find(f"{book.namespace}characters")
+				char_section = book.Metadata.book_info._info.find(f"{book._namespace}characters")
 
 				if char_section is None:
-					char_section = etree.Element(f"{book.namespace}characters")
+					char_section = etree.Element(f"{book._namespace}characters")
 
-				char = etree.Element(f"{book.namespace}name")
+				char = etree.Element(f"{book._namespace}name")
 				char.text = name
 				char_section.append(char)
 				book.Metadata.book_info.sync_characters()
@@ -518,10 +519,10 @@ class metadata:
 			@staticmethod
 			@check_book
 			def remove(book: ACBFBook, item: Union[str, int]):
-				char_section = book.Metadata.book_info._info.find(f"{book.namespace}characters")
+				char_section = book.Metadata.book_info._info.find(f"{book._namespace}characters")
 
 				if char_section is not None:
-					char_elements = char_section.findall(f"{book.namespace}name")
+					char_elements = char_section.findall(f"{book._namespace}name")
 
 					if isinstance(item, int):
 						char_elements[item].clear()
@@ -533,7 +534,7 @@ class metadata:
 								char_section.remove(i)
 								break
 
-					if len(char_section.findall(f"{book.namespace}name")) == 0:
+					if len(char_section.findall(f"{book._namespace}name")) == 0:
 						char_section.clear()
 						char_section.getparent().remove(char_section)
 
@@ -544,7 +545,7 @@ class metadata:
 			@check_book
 			def add(book: ACBFBook, *kwords: str, lang: str = "_"):
 				info_section = book.Metadata.book_info._info
-				key_elements = info_section.findall(f"{book.namespace}keywords")
+				key_elements = info_section.findall(f"{book._namespace}keywords")
 				idx = None
 
 				if len(key_elements) > 0:
@@ -564,7 +565,7 @@ class metadata:
 							break
 
 				if key_element is None:
-					key_element = etree.Element(f"{book.namespace}keywords")
+					key_element = etree.Element(f"{book._namespace}keywords")
 					if idx is not None:
 						info_section.insert(idx, key_element)
 					else:
@@ -586,7 +587,7 @@ class metadata:
 			@check_book
 			def remove(book: ACBFBook, *kwords: str, lang: str = "_"):
 				info_section = book.Metadata.book_info._info
-				key_elements = info_section.findall(f"{book.namespace}keywords")
+				key_elements = info_section.findall(f"{book._namespace}keywords")
 
 				key_element = None
 				if lang == "_":
@@ -613,7 +614,7 @@ class metadata:
 			@staticmethod
 			@check_book
 			def clear(book: ACBFBook, lang: str = "_"):
-				key_elements = book.Metadata.book_info._info.findall(f"{book.namespace}keywords")
+				key_elements = book.Metadata.book_info._info.findall(f"{book._namespace}keywords")
 				key_element = None
 				if lang == "_":
 					for i in key_elements:
@@ -636,7 +637,7 @@ class metadata:
 			@check_book
 			def edit(book: ACBFBook, title: str, sequence: Optional[str] = None, volume: Optional[str] = "_"):
 				info_section = book.Metadata.book_info._info
-				ser_items = info_section.findall(f"{book.namespace}sequence")
+				ser_items = info_section.findall(f"{book._namespace}sequence")
 				idx = None
 
 				if sequence is not None:
@@ -655,7 +656,7 @@ class metadata:
 				if ser_element is None:
 					if sequence is None:
 						raise AttributeError(f"`sequence` cannot be blank for new series entry `{title}`.")
-					ser_element = etree.Element(f"{book.namespace}sequence")
+					ser_element = etree.Element(f"{book._namespace}sequence")
 					ser_element.set("title", title)
 					if idx is not None:
 						info_section.insert(idx, ser_element)
@@ -675,7 +676,7 @@ class metadata:
 				book.Metadata.book_info.sync_series()
 
 			def remove(book: ACBFBook, title: str):
-				seq_items = book.Metadata.book_info._info.findall(f"{book.namespace}sequence")
+				seq_items = book.Metadata.book_info._info.findall(f"{book._namespace}sequence")
 
 				for i in seq_items:
 					if i.attrib["title"] == title:
@@ -689,7 +690,7 @@ class metadata:
 			@check_book
 			def edit(book: ACBFBook, rating: str, type: str = "_"):
 				info_section = book.Metadata.book_info._info
-				rt_items = info_section.findall(f"{book.namespace}content-rating")
+				rt_items = info_section.findall(f"{book._namespace}content-rating")
 				idx = None
 
 				if len(rt_items) > 0:
@@ -708,7 +709,7 @@ class metadata:
 							break
 
 				if rt_element is None:
-					rt_element = etree.Element(f"{book.namespace}content-rating")
+					rt_element = etree.Element(f"{book._namespace}content-rating")
 					if idx is not None:
 						info_section.insert(idx, rt_element)
 					else:
@@ -722,7 +723,7 @@ class metadata:
 			@staticmethod
 			@check_book
 			def remove(book: ACBFBook, type: str = "_"):
-				rt_items = book.Metadata.book_info._info.findall(f"{book.namespace}content-rating")
+				rt_items = book.Metadata.book_info._info.findall(f"{book._namespace}content-rating")
 
 				rt_element = None
 				for i in rt_items:
@@ -740,13 +741,13 @@ class metadata:
 			@check_book
 			def add(book: ACBFBook, dbname: str, ref: str, type: Optional[str] = None):
 				info_section = book.Metadata.book_info._info
-				db_items = info_section.findall(f"{book.namespace}databaseref")
+				db_items = info_section.findall(f"{book._namespace}databaseref")
 				idx = None
 
 				if len(db_items) > 0:
 					idx = info_section.index(db_items[-1]) + 1
 
-				db_element = etree.Element(f"{book.namespace}databaseref")
+				db_element = etree.Element(f"{book._namespace}databaseref")
 				db_element.set("dbname", dbname)
 				db_element.text = ref
 				if type is not None:
@@ -794,7 +795,7 @@ class metadata:
 		@staticmethod
 		@check_book
 		def publisher(book: ACBFBook, name: str):
-			pub_item = book.Metadata.publisher_info._info.find(f"{book.namespace}publisher")
+			pub_item = book.Metadata.publisher_info._info.find(f"{book._namespace}publisher")
 			pub_item.text = name
 			book.Metadata.publisher_info.publisher = pub_item.text
 
@@ -876,15 +877,15 @@ class metadata:
 		@staticmethod
 		@check_book
 		def source(book: ACBFBook, source: Optional[str] = None):
-			src_section = book.Metadata.document_info._info.find(f"{book.namespace}source")
+			src_section = book.Metadata.document_info._info.find(f"{book._namespace}source")
 
 			if source is not None:
 				if src_section is None:
-					src_section = etree.Element(f"{book.namespace}source")
+					src_section = etree.Element(f"{book._namespace}source")
 					book.Metadata.document_info._info.append(src_section)
 				src_section.clear()
 				for i in re.split('\n', source):
-					p = etree.Element(f"{book.namespace}p")
+					p = etree.Element(f"{book._namespace}p")
 					src_section.append(p)
 					p.text = i
 			else:
@@ -906,8 +907,8 @@ class metadata:
 			@staticmethod
 			@check_book
 			def insert(book: ACBFBook, index: int, entry: str):
-				history_section = book.Metadata.document_info._info.find(f"{book.namespace}history")
-				p = etree.Element(f"{book.namespace}p")
+				history_section = book.Metadata.document_info._info.find(f"{book._namespace}history")
+				p = etree.Element(f"{book._namespace}p")
 				history_section.insert(index, p)
 				p.text = entry
 				book.Metadata.document_info.sync_history()
@@ -915,20 +916,20 @@ class metadata:
 			@staticmethod
 			@check_book
 			def append(book: ACBFBook, entry: str):
-				idx = len(book.Metadata.document_info._info.findall(f"{book.namespace}history/{book.namespace}p"))
+				idx = len(book.Metadata.document_info._info.findall(f"{book._namespace}history/{book._namespace}p"))
 				metadata.documentinfo.document_history.insert(book, idx, entry)
 
 			@staticmethod
 			@check_book
 			def edit(book: ACBFBook, index: int, text: str):
-				item = book.Metadata.document_info._info.findall(f"{book.namespace}history/{book.namespace}p")[index]
+				item = book.Metadata.document_info._info.findall(f"{book._namespace}history/{book._namespace}p")[index]
 				item.text = text
 				book.Metadata.document_info.sync_history()
 
 			@staticmethod
 			@check_book
 			def remove(book: ACBFBook, index: int):
-				item = book.Metadata.document_info._info.findall(f"{book.namespace}history/{book.namespace}p")[index]
+				item = book.Metadata.document_info._info.findall(f"{book._namespace}history/{book._namespace}p")[index]
 				item.clear()
 				item.getparent().remove(item)
 				book.Metadata.document_info.sync_history()

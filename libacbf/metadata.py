@@ -123,7 +123,7 @@ class BookInfo:
 	def __init__(self, info, book: ACBFBook):
 		self.book = book
 		self._info = info
-		self._ns: str = book.namespace
+		self._ns: str = book._namespace
 
 		self.sync_authors()
 		self.sync_book_titles()
@@ -287,7 +287,7 @@ class PublishInfo:
 		The license that the book is under.
 	"""
 	def __init__(self, info, book: ACBFBook):
-		ns = book.namespace
+		ns = book._namespace
 		self._info = info
 
 		self.book = book
@@ -350,7 +350,7 @@ class DocumentInfo:
 	def __init__(self, info, book: ACBFBook):
 		self.book = book
 		self._info = info
-		ns = book.namespace
+		ns = book._namespace
 
 		self.sync_authors()
 
@@ -379,11 +379,11 @@ class DocumentInfo:
 		self.sync_history()
 
 	def sync_authors(self):
-		ns = self.book.namespace
+		ns = self.book._namespace
 		self.authors: List[Author] = update_authors(self._info.findall(f"{ns}author"), ns)
 
 	def sync_history(self):
 		self.document_history: Optional[List[str]] = []
-		if self._info.find(f"{self.book.namespace}history") is not None:
-			for item in self._info.findall(f"{self.book.namespace}history/{self.book.namespace}p"):
+		if self._info.find(f"{self.book._namespace}history") is not None:
+			for item in self._info.findall(f"{self.book._namespace}history/{self.book._namespace}p"):
 				self.document_history.append(item.text)

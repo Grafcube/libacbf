@@ -28,7 +28,7 @@ class Styles:
 		for i in style_refs:
 			self.styles[i] = None
 
-		if self.book._root.find(f"{self.book.namespace}style") is not None:
+		if self.book._root.find(f"{self.book._namespace}style") is not None:
 			self.styles["_"] = None
 
 	def __len__(self):
@@ -39,7 +39,7 @@ class Styles:
 			if self.styles[key] is not None:
 				return self.styles[key]
 			elif key == "_":
-				self.styles["_"] = self.book._root.find(f"{self.book.namespace}style").text.strip()
+				self.styles["_"] = self.book._root.find(f"{self.book._namespace}style").text.strip()
 			else:
 				if self.book.archive is None:
 					st_path = self.book.book_path.parent/Path(key)

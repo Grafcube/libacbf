@@ -53,7 +53,7 @@ class Page:
 		:class:`PageTransitions <libacbf.constants.PageTransitions>`.
 	"""
 	def __init__(self, page, book: ACBFBook, coverpage: bool = False):
-		ns = book.namespace
+		ns = book._namespace
 		self._page = page
 		self._text_layers = None
 		self._frames = None
@@ -172,7 +172,7 @@ class Page:
 		"""
 		if self._text_layers is None:
 			item = self._page
-			ns = self.book.namespace
+			ns = self.book._namespace
 			text_layers = {}
 			textlayer_items = item.findall(f"{ns}text-layer")
 			for lr in textlayer_items:
@@ -196,7 +196,7 @@ class Page:
 		"""
 		if self._frames is None:
 			item = self._page
-			ns = self.book.namespace
+			ns = self.book._namespace
 			frames = []
 			frame_items = item.findall(f"{ns}frame")
 			for fr in frame_items:
@@ -222,7 +222,7 @@ class Page:
 		"""
 		if self._jumps is None:
 			item = self._page
-			ns = self.book.namespace
+			ns = self.book._namespace
 			jumps = []
 			jump_items = item.findall(f"{ns}jump")
 			for jp in jump_items:
