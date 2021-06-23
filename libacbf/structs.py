@@ -8,6 +8,7 @@ import langcodes
 if TYPE_CHECKING:
 	from libacbf import ACBFBook
 from libacbf.constants import AuthorActivities, Genres
+from libacbf.editor import check_book
 
 Vec2 = namedtuple("Vector2", "x y")
 
@@ -30,6 +31,16 @@ class Styles:
 
 		if self.book._root.find(f"{self.book._namespace}style") is not None:
 			self.styles["_"] = None
+
+	def edit_styles(self, stylesheet: str, style_name: str = "_"): # Incomplete
+		check_book(self.book)
+
+		self.sync_styles()
+
+	def remove_styles(self, style_name: str = "_"): # Incomplete
+		check_book(self.book)
+
+		self.sync_styles()
 
 	def __len__(self):
 		len(self.styles.keys())

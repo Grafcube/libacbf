@@ -15,6 +15,7 @@ from libacbf.metadata import BookInfo, PublishInfo, DocumentInfo
 from libacbf.body import Page
 from libacbf.bookdata import BookData
 from libacbf.archivereader import ArchiveReader
+from libacbf.editor import check_book
 from libacbf.exceptions import InvalidBook
 
 def get_book_template() -> str:
@@ -290,8 +291,7 @@ class ACBFBook:
 		elif isinstance(file, Path):
 			if not overwrite:
 				raise FileExistsError
-			if self.book_path is None:
-				self.book_path = file
+			self.book_path = file.absolute()
 
 		if self.archive is None:
 			if isinstance(file, Path):
@@ -335,6 +335,72 @@ class ACBFBook:
 					pa.append(text)
 				references[ref.attrib["id"]] = {"paragraph": "\n".join(pa)}
 		self.References: Dict[str, Dict[str, str]] = references
+
+	def edit_reference(self, id: str, paragraph: str):
+		"""[summary]
+
+		Parameters
+		----------
+		id : str
+			[description]
+		paragraph : str
+			[description]
+		"""
+		check_book(self)
+
+		ref_section = self._root.find(f"{self._namespace}references")
+		if ref_section is None:
+			ref_section = etree.Element(f"{self._namespace}references")
+			self._root.append(ref_section)
+
+		ref_items = ref_section.findall(f"{self._namespace}reference")
+
+		ref_element = None
+		for i in ref_items:
+			if i.attrib["id"] == id:
+				ref_element = i
+				break
+
+		if ref_element == None:
+			ref_element = etree.Element(f"{self._namespace}reference")
+			ref_section.append(ref_element)
+
+		ref_element.clear()
+		ref_element.set("id", id)
+
+		p_list = re.split(r"\n", paragraph)
+		for ref in p_list:
+			p = f"<p>{ref}</p>"
+			p_element = etree.fromstring(bytes(p, encoding="utf-8"))
+			for i in list(p_element.iter()):
+				i.tag = self._namespace + i.tag
+			ref_element.append(p_element)
+
+		self.sync_references()
+
+	def remove_reference(self, id: str):
+		"""[summary]
+
+		Parameters
+		----------
+		id : str
+			[description]
+		"""
+		check_book(self)
+
+		ref_section = self._root.find(f"{self._namespace}references")
+
+		if ref_section is not None:
+			for i in ref_section.findall(f"{self._namespace}reference"):
+				if i.attrib["id"] == id:
+					i.clear()
+					ref_section.remove(i)
+					break
+
+			if len(ref_section.findall(f"{self._namespace}reference")) == 0:
+				ref_section.getparent().remove(ref_section)
+
+			self.sync_references()
 
 	def __enter__(self):
 		return self
@@ -468,6 +534,32 @@ class ACBFData:
 			self._data_elements = self._base.findall(f"{self._ns}binary")
 		for i in self._data_elements:
 			self.files[i.attrib["id"]] = None
+
+	def add_data(self, file, name, embed: bool = False): # Incomplete
+		"""[summary]
+
+		Parameters
+		----------
+		file : [type]
+			[description]
+		name : [type]
+			[description]
+		embed : bool, optional
+			[description], by default False
+		"""
+		check_book(self.book)
+
+		self.sync_data()
+
+	def add_data(self, file: str): # Incomplete
+		"""[summary]
+
+		Parameters
+		----------
+		file : str
+			[description]
+		"""
+		check_book(self.book)
 
 	def __len__(self):
 		return len(self.files.keys())

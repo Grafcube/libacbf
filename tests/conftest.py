@@ -2,14 +2,19 @@ import pytest
 from libacbf import ACBFBook
 from tests.testres import samples
 
-sample_path = samples["cbz"]
+@pytest.fixture(scope="module")
+def read_books():
+	books = {x: ACBFBook(x, 'r') for x in samples.values()}
+	yield books
+	for i in books.values():
+		i.close()
 
-book: ACBFBook = ACBFBook(sample_path)
-
-@pytest.fixture(scope="session", autouse=True)
-def run_around_tests():
-	yield
-	book.close()
+@pytest.fixture(scope="module")
+def edit_books():
+	books = {x: ACBFBook(x, 'a') for x in samples.values()}
+	yield books
+	for i in books.values():
+		i.close()
 
 def get_au_op(i):
 	new_op = i.__dict__.copy()
