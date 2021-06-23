@@ -98,7 +98,10 @@ class ArchiveReader:
 			name = self.archive.filename
 		elif self.type == ArchiveTypes.Tar:
 			name = self.archive.name
-		return Path(name).name
+
+		if name is not None:
+			name = Path(name).name
+		return name
 
 	def _get_acbf_file(self) -> Optional[str]:
 		acbf_file = None
