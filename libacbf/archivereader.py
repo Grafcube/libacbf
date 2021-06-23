@@ -59,6 +59,7 @@ class ArchiveReader:
 	def __init__(self, archive: Union[str, Path, BinaryIO], mode: Literal['r', 'w'] = 'r',
 				direct: bool = False):
 
+		arc = None
 		if direct:
 			arc = archive
 
