@@ -1,12 +1,9 @@
-import os
 import json
 from pathlib import Path
-from tests.conftest import book, sample_path
+from typing import Dict
+from libacbf import ACBFBook
 
-dir = f"tests/results/{Path(sample_path).name}/"
-os.makedirs(dir, exist_ok=True)
-
-def test_references():
-	print(book.References)
-	with open(dir + "test_references.json", 'w', encoding="utf-8", newline='\n') as result:
-		result.write(json.dumps(book.References, ensure_ascii=False))
+def test_references(read_books: Dict[Path, ACBFBook]):
+	for dir, book in read_books.items():
+		with open(dir/"test_references.json", 'w', encoding="utf-8", newline='\n') as result:
+			result.write(json.dumps(book.References, ensure_ascii=False))
