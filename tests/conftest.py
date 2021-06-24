@@ -9,6 +9,10 @@ dir = Path("tests/results/")
 def pytest_addoption(parser):
 	parser.addoption("--sample", action="store", default="cbz")
 
+def pytest_runtest_logreport(report):
+	if report.failed and report.when in ('setup', 'teardown'):
+		raise pytest.UsageError("Errors during collection, aborting")
+
 @pytest.fixture(scope="session")
 def book_path(pytestconfig) -> str:
 	path = pytestconfig.getoption("sample")
