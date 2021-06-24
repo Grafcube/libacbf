@@ -755,31 +755,55 @@ class PublishInfo:
 		The license that the book is under.
 	"""
 	def __init__(self, info, book: ACBFBook):
-		ns = book._namespace
+		self._ns = book._namespace
 		self._info = info
 
 		self.book = book
 
-		self.publisher: str = info.find(f"{ns}publisher").text
+		self.publisher: str = info.find(f"{self._ns}publisher").text
 
-		self.publish_date_string: str = info.find(f"{ns}publish-date").text
+		self.publish_date_string: str = info.find(f"{self._ns}publish-date").text
 
-		# Optional
+		# --- Optional ---
 		self.publish_date: Optional[date] = None
-		if "value" in info.find(f"{ns}publish-date").keys():
-			self.publish_date = date.fromisoformat(info.find(f"{ns}publish-date").attrib["value"])
+		if "value" in info.find(f"{self._ns}publish-date").keys():
+			self.publish_date = date.fromisoformat(info.find(f"{self._ns}publish-date").attrib["value"])
 
 		self.publish_city: Optional[str] = None
-		if info.find(f"{ns}city") is not None:
-			self.publish_city = info.find(f"{ns}city").text
+		if info.find(f"{self._ns}city") is not None:
+			self.publish_city = info.find(f"{self._ns}city").text
 
 		self.isbn: Optional[str] = None
-		if info.find(f"{ns}isbn") is not None:
-			self.isbn = info.find(f"{ns}isbn").text
+		if info.find(f"{self._ns}isbn") is not None:
+			self.isbn = info.find(f"{self._ns}isbn").text
 
 		self.license: Optional[str] = None
-		if info.find(f"{ns}license") is not None:
-			self.license = info.find(f"{ns}license").text
+		if info.find(f"{self._ns}license") is not None:
+			self.license = info.find(f"{self._ns}license").text
+
+	def set_publisher(self, name: str):
+		pub_item = self._info.find(f"{self._ns}publisher")
+		pub_item.text = name
+		self._publisher = pub_item.text
+
+	def set_publish_date(self, dt: Union[str, date], include_date: bool = True):
+		edit.edit_date("publish-date",
+						self,
+						"publish_date_string",
+						"publish_date",
+						dt,
+						include_date
+		)
+
+	# --- Optional ---
+	def set_publish_city(self, city: Optional[str]):
+		edit.edit_optional("city", self, "publish_city", city)
+
+	def set_isbn(self, isbn: Optional[str]):
+		edit.edit_optional("isbn", self, "isbn", isbn)
+
+	def set_license(self, license: Optional[str]):
+		edit.edit_optional("license", self, "license", license)
 
 class DocumentInfo:
 	"""Metadata about the ACBF file itself.
@@ -824,7 +848,7 @@ class DocumentInfo:
 
 		self.creation_date_string: str = info.find(f"{self._ns}creation-date").text
 
-		# Optional
+		# --- Optional ---
 		self.creation_date: Optional[date] = None
 		if "value" in info.find(f"{self._ns}creation-date").keys():
 			self.creation_date = date.fromisoformat(info.find(f"{self._ns}creation-date").attrib["value"])
@@ -851,6 +875,83 @@ class DocumentInfo:
 
 	def sync_history(self):
 		self.document_history: Optional[List[str]] = []
-		if self._info.find(f"{self._ns}history") is not None:
-			for item in self._info.findall(f"{self._ns}history/{self._ns}p"):
-				self.document_history.append(item.text)
+		for item in self._info.findall(f"{self._ns}history/{self._ns}p"):
+			self.document_history.append(item.text)
+
+	# Author
+	def add_author(self, author: structs.Author):
+		edit.check_book(self.book)
+		edit.add_author(self, author)
+
+	def edit_author(self, author: Union[structs.Author, int], **attributes):
+		edit.check_book(self.book)
+		edit.edit_author(self, author, **attributes)
+
+	def remove_author(self, author: Union[int, structs.Author]):
+		edit.check_book(self.book)
+		edit.remove_author(self, author)
+	# Author
+
+	def set_creation_date(self, dt: Union[str, date], include_date: bool = True):
+		edit.edit_date("creation-date",
+						self,
+						"creation_date_string",
+						"creation_date",
+						dt,
+						include_date
+		)
+
+	# --- Optional ---
+	def set_source(self, source: Optional[str]):
+		src_section = self._info.find(f"{self._ns}source")
+
+		if source is not None:
+			if src_section is None:
+				src_section = etree.Element(f"{self._ns}source")
+				self._info.append(src_section)
+			src_section.clear()
+			for i in re.split('\n', source):
+				p = etree.Element(f"{self._ns}p")
+				src_section.append(p)
+				p.text = i
+		else:
+			if src_section is not None:
+				src_section.clear()
+				src_section.getparent().remove(src_section)
+
+	def set_document_id(self, id: Optional[str]):
+		edit.edit_optional("id", self, "document_id", id)
+
+	def set_document_version(self, version: Optional[str] = None):
+		edit.edit_optional("version", self, "document_version", version)
+
+	# History
+	def insert_history(self, index: int, entry: str):
+		history_section = self._info.find(f"{self._ns}history")
+		if history_section is None:
+			history_section = etree.SubElement(self._info, f"{self._ns}history")
+
+		p = etree.Element(f"{self._ns}p")
+		history_section.insert(index, p)
+		p.text = entry
+		self.sync_history()
+
+	def append_history(self, entry: str):
+		idx = len(self._info.findall(f"{self._ns}history/{self._ns}p"))
+		self.insert_history(idx, entry)
+
+	def edit_history(self, index: int, text: str):
+		item = self._info.findall(f"{self._ns}history/{self._ns}p")[index]
+		item.text = text
+		self.sync_history()
+
+	def remove_history(self, index: int):
+		item = self._info.findall(f"{self._ns}history/{self._ns}p")[index]
+		item.clear()
+		item.getparent().remove(item)
+
+		history_section = self._info.find(f"{self._ns}history")
+		if len(history_section.findall(f"{self._ns}p")) == 0:
+			history_section.clear()
+			self._info.remove(history_section)
+		self.sync_history()

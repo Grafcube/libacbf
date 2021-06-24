@@ -32,9 +32,10 @@ def read_books(book_path):
 
 @pytest.fixture(scope="session")
 def edit_books(book_path):
-	book = (dir/Path(book_path).name, ACBFBook(book_path, 'a'))
-	yield book
-	book[1].close()
+	path = dir/f"editor/test_book{Path(book_path).suffix}"
+	book = ACBFBook(path, 'w')
+	yield (path, book)
+	book.close()
 
 def get_au_op(i):
 	new_op = i.__dict__.copy()

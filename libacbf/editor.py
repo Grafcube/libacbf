@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-import langcodes
 import dateutil.parser
 from typing import TYPE_CHECKING, Optional, Union
 from datetime import date
@@ -118,12 +117,12 @@ def remove_author(section: Union[BookInfo, DocumentInfo], author: Union[int, str
 
 	section.sync_authors()
 
-def edit_optional(book: ACBFBook, tag: str, section: Union[BookInfo, PublishInfo, DocumentInfo], attr: str, text: Optional[str] = None):
-	item = section._info.find(book._namespace + tag)
+def edit_optional(tag: str, section: Union[BookInfo, PublishInfo, DocumentInfo], attr: str, text: Optional[str]):
+	item = section._info.find(section._ns + tag)
 
 	if text is not None:
 		if item is None:
-			item = etree.Element(book._namespace + tag)
+			item = etree.Element(section._ns + tag)
 			section._info.append(item)
 		item.text = text
 		setattr(section, attr, item.text)
@@ -131,8 +130,10 @@ def edit_optional(book: ACBFBook, tag: str, section: Union[BookInfo, PublishInfo
 		item.clear()
 		item.getparent().remove(item)
 
-def edit_date(book: ACBFBook, tag: str, section: Union[BookInfo, PublishInfo, DocumentInfo], attr_s: str, attr_d: str, dt: Union[str, date], include_date: bool = True):
-	item = section._info.find(book._namespace + tag)
+def edit_date(tag: str, section: Union[BookInfo, PublishInfo, DocumentInfo], attr_s: str, attr_d: str,
+			dt: Union[str, date], include_date: bool = True):
+
+	item = section._info.find(section._ns + tag)
 
 	if isinstance(dt, str):
 		item.text = dt
@@ -152,133 +153,5 @@ def edit_date(book: ACBFBook, tag: str, section: Union[BookInfo, PublishInfo, Do
 			item.attrib.pop("value")
 		setattr(section, attr_d, None)
 
-def edit_coverpage(book: ACBFBook):
+def edit_coverpage(book: ACBFBook): # TODO
 	raise NotImplementedError
-
-class metadata:
-	class publishinfo:
-		@staticmethod
-		def publisher(book: ACBFBook, name: str):
-			pub_item = book.Metadata.publisher_info._info.find(f"{book._namespace}publisher")
-			pub_item.text = name
-			book.Metadata.publisher_info.publisher = pub_item.text
-
-		@staticmethod
-		def publish_date(book: ACBFBook, dt: Union[str, date], include_date: bool = True):
-			edit_date(book,
-					"publish-date",
-					book.Metadata.publisher_info,
-					"publish_date_string",
-					"publish_date",
-					dt,
-					include_date
-				)
-
-		# Optional
-		@staticmethod
-		def publish_city(book: ACBFBook, city: Optional[str] = None):
-			edit_optional(book, "city", book.Metadata.publisher_info, "publish_city", city)
-
-		@staticmethod
-		def isbn(book: ACBFBook, isbn: Optional[str] = None):
-			"""[summary]
-
-			Parameters
-			----------
-			book : ACBFBook
-				[description]
-			isbn : Optional[str], optional
-				[description], by default None
-			"""
-			edit_optional(book, "isbn", book.Metadata.publisher_info, "isbn", isbn)
-
-		@staticmethod
-		def license(book: ACBFBook, license: Optional[str]):
-			"""[summary]
-
-			Parameters
-			----------
-			book : ACBFBook
-				[description]
-			license : Optional[str]
-				[description]
-			"""
-			edit_optional(book, "license", book.Metadata.publisher_info, "license", license)
-
-	class documentinfo:
-		class authors:
-			@staticmethod
-			def add(book: ACBFBook, author: structs.Author):
-				add_author(book, book.Metadata.document_info, author)
-
-			@staticmethod
-			def edit(book: ACBFBook, author: Union[structs.Author, int], **attributes):
-				edit_author(book, book.Metadata.document_info, author, **attributes)
-
-			@staticmethod
-			def remove(book: ACBFBook, author: Union[int, structs.Author]):
-				remove_author(book, book.Metadata.document_info, author)
-
-		@staticmethod
-		def creation_date(book: ACBFBook, dt: Union[str, date], include_date: bool = True):
-			edit_date(book,
-				"creation-date",
-				book.Metadata.document_info,
-				"creation_date_string",
-				"creation_date",
-				dt,
-				include_date
-			)
-
-		@staticmethod
-		def source(book: ACBFBook, source: Optional[str] = None):
-			src_section = book.Metadata.document_info._info.find(f"{book._namespace}source")
-
-			if source is not None:
-				if src_section is None:
-					src_section = etree.Element(f"{book._namespace}source")
-					book.Metadata.document_info._info.append(src_section)
-				src_section.clear()
-				for i in re.split('\n', source):
-					p = etree.Element(f"{book._namespace}p")
-					src_section.append(p)
-					p.text = i
-			else:
-				if src_section is not None:
-					src_section.clear()
-					src_section.getparent().remove(src_section)
-
-		@staticmethod
-		def document_id(book: ACBFBook, id: Optional[str] = None):
-			edit_optional(book, "id", book.Metadata.document_info, "document_id", id)
-
-		@staticmethod
-		def document_version(book: ACBFBook, version: Optional[str] = None):
-			edit_optional(book, "version", book.Metadata.document_info, "document_version", version)
-
-		class document_history:
-			@staticmethod
-			def insert(book: ACBFBook, index: int, entry: str):
-				history_section = book.Metadata.document_info._info.find(f"{book._namespace}history")
-				p = etree.Element(f"{book._namespace}p")
-				history_section.insert(index, p)
-				p.text = entry
-				book.Metadata.document_info.sync_history()
-
-			@staticmethod
-			def append(book: ACBFBook, entry: str):
-				idx = len(book.Metadata.document_info._info.findall(f"{book._namespace}history/{book._namespace}p"))
-				metadata.documentinfo.document_history.insert(book, idx, entry)
-
-			@staticmethod
-			def edit(book: ACBFBook, index: int, text: str):
-				item = book.Metadata.document_info._info.findall(f"{book._namespace}history/{book._namespace}p")[index]
-				item.text = text
-				book.Metadata.document_info.sync_history()
-
-			@staticmethod
-			def remove(book: ACBFBook, index: int):
-				item = book.Metadata.document_info._info.findall(f"{book._namespace}history/{book._namespace}p")[index]
-				item.clear()
-				item.getparent().remove(item)
-				book.Metadata.document_info.sync_history()
