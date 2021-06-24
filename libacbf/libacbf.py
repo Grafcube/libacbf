@@ -123,9 +123,9 @@ class ACBFBook:
 
 			style = book.Styles["style_name.css"]
 
-		If a style is embedded in the ACBF file, use ``Styles["_"]`` to get its contents. ::
+		If a style is embedded in the ACBF file, use ``Styles['_']`` to get its contents. ::
 
-			embedded_stylesheet = book.Styles["_"]
+			embedded_stylesheet = book.Styles['_']
 
 	file_path : str
 		Absolute path to source file.
@@ -222,16 +222,16 @@ class ACBFBook:
 		if not is_text:
 			if self.archive is None:
 				self.archive = ArchiveReader(file, arc_mode)
-			contents = self.archive.read()
+			acbf_file = self.archive._get_acbf_file()
+			if acbf_file is None:
+				raise InvalidBook
+			contents = self.archive.read(acbf_file)
 		else:
 			if self.book_path is None:
 				contents = file.read()
 			else:
 				with open(str(file), 'r') as book:
 					contents = book.read()
-
-		if contents is None:
-			raise InvalidBook
 
 		if isinstance(contents, bytes):
 			contents = contents.decode("utf-8")

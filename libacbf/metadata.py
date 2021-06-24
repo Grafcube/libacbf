@@ -155,7 +155,7 @@ class BookInfo:
 				lang = langcodes.standardize_tag(title.attrib["lang"])
 				self.book_title[lang] = title.text
 			else:
-				self.book_title["_"] = title.text
+				self.book_title['_'] = title.text
 
 	def sync_genres(self):
 		self.genres: Dict[str, structs.Genre] = {}
@@ -183,7 +183,7 @@ class BookInfo:
 				lang = langcodes.standardize_tag(an.attrib["lang"])
 				self.annotations[lang] = p
 			else:
-				self.annotations["_"] = p
+				self.annotations['_'] = p
 
 	def sync_coverpage(self):
 		cpage = self._info.find(f"{self._ns}coverpage")
@@ -218,7 +218,7 @@ class BookInfo:
 			if "lang" in k.keys():
 				lang = langcodes.standardize_tag(k.attrib["lang"])
 			else:
-				lang = "_"
+				lang = '_'
 
 			if k.text is not None:
 				self.keywords[lang] = {x.lower() for x in re.split(", |,", k.text)}
@@ -243,7 +243,7 @@ class BookInfo:
 			if "type" in rt.keys():
 				self.content_rating[rt.attrib["type"]] = rt.text
 			else:
-				self.content_rating["_"] = rt.text
+				self.content_rating['_'] = rt.text
 
 	def sync_database_ref(self):
 		self.database_ref: List[structs.DBRef] = []
@@ -275,12 +275,12 @@ class BookInfo:
 		edit.remove_author(self, author)
 
 	# Titles
-	def edit_title(self, title: str, lang: str = "_"):
+	def edit_title(self, title: str, lang: str = '_'):
 		title_elements = self._info.findall(f"{self._ns}book-title")
 		idx = self._info.index(title_elements[-1]) + 1
 
 		t_element = None
-		if lang == "_":
+		if lang == '_':
 			for i in title_elements:
 				if "lang" not in i.keys():
 					t_element = i
@@ -301,10 +301,10 @@ class BookInfo:
 
 		self.sync_book_titles()
 
-	def remove_title(self, lang: str = "_"):
+	def remove_title(self, lang: str = '_'):
 		title_elements = self._info.findall(f"{self._ns}book-title")
 
-		if lang == "_":
+		if lang == '_':
 			for i in title_elements:
 				if "lang" not in i.keys():
 					i.clear()
@@ -321,7 +321,7 @@ class BookInfo:
 					break
 
 	# Genres
-	def edit_genre(self, genre: constants.Genres, match: Optional[int] = "_"):
+	def edit_genre(self, genre: constants.Genres, match: Optional[int] = '_'):
 		gn_elements = self._info.findall(f"{self._ns}genre")
 		name = genre.name
 
@@ -337,7 +337,7 @@ class BookInfo:
 			gn_element.text = name
 			self._info.insert(idx, gn_element)
 
-		if match is not None and match != "_":
+		if match is not None and match != '_':
 			gn_element.set("match", str(match))
 		elif match is None:
 			gn_element.attrib.pop("match")
@@ -356,11 +356,11 @@ class BookInfo:
 				break
 
 	# Annotations
-	def edit_annotation(self, text: str, lang: str = "_"):
+	def edit_annotation(self, text: str, lang: str = '_'):
 		annotation_elements = self._info.findall(f"{self._ns}annotation")
 
 		an_element = None
-		if lang == "_":
+		if lang == '_':
 			for i in annotation_elements:
 				if "lang" not in i.keys():
 					an_element = i
@@ -387,11 +387,11 @@ class BookInfo:
 
 		self.sync_annotations()
 
-	def remove_annotation(self, lang: str = "_"):
+	def remove_annotation(self, lang: str = '_'):
 		annotation_elements = self._info.findall(f"{self._ns}annotation")
 
 		an_element = None
-		if lang == "_":
+		if lang == '_':
 			for i in annotation_elements:
 				if "lang" not in i.keys():
 					an_element = i
@@ -495,7 +495,7 @@ class BookInfo:
 			self.sync_characters()
 
 	# Keywords
-	def add_keyword(self, *kwords: str, lang: str = "_"):
+	def add_keyword(self, *kwords: str, lang: str = '_'):
 		key_elements = self._info.findall(f"{self._ns}keywords")
 		idx = None
 
@@ -503,7 +503,7 @@ class BookInfo:
 			idx = self._info.index(key_elements[-1]) + 1
 
 		key_element = None
-		if lang == "_":
+		if lang == '_':
 			for i in key_elements:
 				if "lang" not in i.keys():
 					key_element = i
@@ -522,7 +522,7 @@ class BookInfo:
 			else:
 				self._info.append(key_element)
 
-		if lang != "_":
+		if lang != '_':
 			key_element.set("lang", lang)
 
 		kwords = {x.lower() for x in kwords}
@@ -534,11 +534,11 @@ class BookInfo:
 
 		self.sync_keywords()
 
-	def remove_keyword(self, *kwords: str, lang: str = "_"):
+	def remove_keyword(self, *kwords: str, lang: str = '_'):
 		key_elements = self._info.findall(f"{self._ns}keywords")
 
 		key_element = None
-		if lang == "_":
+		if lang == '_':
 			for i in key_elements:
 				if "lang" not in i.keys():
 					key_element = i
@@ -559,10 +559,10 @@ class BookInfo:
 
 		self.sync_keywords()
 
-	def clear_keywords(self, lang: str = "_"):
+	def clear_keywords(self, lang: str = '_'):
 		key_elements = self._info.findall(f"{self._ns}keywords")
 		key_element = None
-		if lang == "_":
+		if lang == '_':
 			for i in key_elements:
 				if "lang" not in i.keys():
 					key_element = i
@@ -579,7 +579,7 @@ class BookInfo:
 			self.sync_keywords()
 
 	# Series
-	def edit_series(self, title: str, sequence: Optional[str] = None, volume: Optional[str] = "_"):
+	def edit_series(self, title: str, sequence: Optional[str] = None, volume: Optional[str] = '_'):
 		ser_items = self._info.findall(f"{self._ns}sequence")
 		idx = None
 
@@ -609,7 +609,7 @@ class BookInfo:
 		if sequence is not None:
 			ser_element.text = sequence
 
-		if volume != "_":
+		if volume != '_':
 			if volume is not None:
 				ser_element.set("volume", volume)
 			else:
@@ -629,7 +629,7 @@ class BookInfo:
 				break
 
 	# Content Rating
-	def edit_content_rating(self, rating: str, type: str = "_"):
+	def edit_content_rating(self, rating: str, type: str = '_'):
 		rt_items = self._info.findall(f"{self._ns}content-rating")
 		idx = None
 
@@ -637,7 +637,7 @@ class BookInfo:
 			idx = self._info.index(rt_items[-1]) + 1
 
 		rt_element = None
-		if type != "_":
+		if type != '_':
 			for i in rt_items:
 				if "type" in i.keys() and i.attrib["type"] == type:
 					rt_element = i
@@ -654,18 +654,18 @@ class BookInfo:
 				self._info.insert(idx, rt_element)
 			else:
 				self._info.append(rt_element)
-			if type != "_":
+			if type != '_':
 				rt_element.set("type", type)
 
 		rt_element.text = rating
 		self.sync_content_rating()
 
-	def remove_content_rating(self, type: str = "_"):
+	def remove_content_rating(self, type: str = '_'):
 		rt_items = self._info.findall(f"{self._ns}content-rating")
 
 		rt_element = None
 		for i in rt_items:
-			if (type == "_" and "type" not in i.keys()) or (type != "_" and "type" in i.keys() and i.attrib["type"] == type):
+			if (type == '_' and "type" not in i.keys()) or (type != '_' and "type" in i.keys() and i.attrib["type"] == type):
 				rt_element = i
 				break
 
@@ -695,7 +695,7 @@ class BookInfo:
 
 		self.sync_database_ref()
 
-	def edit_database_ref(self, dbref: Union[int, structs.DBRef], dbname: Optional[str] = None, ref: Optional[str] = None, type: Optional[str] = "_"):
+	def edit_database_ref(self, dbref: Union[int, structs.DBRef], dbname: Optional[str] = None, ref: Optional[str] = None, type: Optional[str] = '_'):
 		if isinstance(dbref, int):
 			dbref = self.database_ref[dbref]
 
@@ -704,14 +704,14 @@ class BookInfo:
 		if ref is not None:
 			dbref._element.text = ref
 
-		if type != "_":
+		if type != '_':
 			if type is not None:
 				dbref._element.set("type", type)
 			else:
 				if "type" in dbref._element.keys():
 					dbref._element.attrib.pop("type")
 
-		if dbname is not None or ref is not None or type != "_":
+		if dbname is not None or ref is not None or type != '_':
 			self.sync_database_ref()
 
 	def remove_database_ref(self, dbref: Union[int, structs.DBRef]):

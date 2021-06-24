@@ -1,18 +1,22 @@
 import os
 import json
 from pathlib import Path
-from tests.conftest import book, sample_path
+from typing import Tuple
+from libacbf import ACBFBook
 
-dir = f"tests/results/{Path(sample_path).name}/body/"
-os.makedirs(dir, exist_ok=True)
+def make_body_dir(path):
+	os.makedirs(path/"body", exist_ok=True)
+	return path/"body"
 
-def test_body_info():
-	print(book.Body.bgcolor)
-	print(len(book.Body.pages))
-	with open(dir + "test_body_info.json", "w", encoding="utf-8", newline="\n") as result:
+def test_body_info(read_books: Tuple[Path, ACBFBook]):
+	path, book = read_books
+	dir = make_body_dir(path)
+	with open(dir/"test_body_info.json", "w", encoding="utf-8", newline="\n") as result:
 		result.write(json.dumps({"bgcolour": book.Body.bgcolor, "pages": len(book.Body.pages)}, ensure_ascii=False))
 
-def test_body_pages():
+def test_body_pages(read_books: Tuple[Path, ACBFBook]):
+	path, book = read_books
+
 	page_output = {}
 	textlayer_output = {}
 	fr_jm_output = {
@@ -74,14 +78,18 @@ def test_body_pages():
 				}
 				new_tl["text_areas"].append(new_ta)
 			textlayer_output[pg.image_ref] = new_tl
-	with open(dir + "test_body_pages.json", "w", encoding="utf-8", newline="\n") as result:
+
+	dir = make_body_dir(path)
+	with open(dir/"test_body_pages.json", "w", encoding="utf-8", newline="\n") as result:
 		result.write(json.dumps(page_output, ensure_ascii=False))
-	with open(dir + "test_body_textlayers.json", "w", encoding="utf-8", newline="\n") as result:
+	with open(dir/"test_body_textlayers.json", "w", encoding="utf-8", newline="\n") as result:
 		result.write(json.dumps(textlayer_output, ensure_ascii=False))
-	with open(dir + "test_body_frames_jumps.json", "w", encoding="utf-8", newline="\n") as result:
+	with open(dir/"test_body_frames_jumps.json", "w", encoding="utf-8", newline="\n") as result:
 		result.write(json.dumps(fr_jm_output, ensure_ascii=False))
 
-def test_body_images():
+def test_body_images(read_books: Tuple[Path, ACBFBook]):
+	path, book = read_books
+
 	op = {}
 	for pg in book.Body.pages:
 		img = pg.image
@@ -91,6 +99,6 @@ def test_body_images():
 			"is_embedded": img.is_embedded,
 			"filesize": len(img.data)
 		}
-	print(op)
-	with open(dir + "test_body_images.json", "w", encoding="utf-8", newline="\n") as result:
+	dir = make_body_dir(path)
+	with open(dir/"test_body_images.json", "w", encoding="utf-8", newline="\n") as result:
 		result.write(json.dumps(op, ensure_ascii=False))

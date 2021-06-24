@@ -144,7 +144,7 @@ class ArchiveReader:
 		elif self.type == ArchiveTypes.SevenZip:
 			return [x.filename for x in self.archive.list() if x.is_directory]
 
-	def read(self, target: str = '') -> Optional[bytes]:
+	def read(self, target: str) -> Optional[bytes]:
 		"""Get file as bytes from archive. Defaults to contents of ACBF file.
 
 		Parameters
@@ -157,9 +157,6 @@ class ArchiveReader:
 		bytes
 			Contents of file.
 		"""
-		if target == '':
-			target = self._get_acbf_file()
-
 		contents = None
 
 		if self.type in [ArchiveTypes.Zip, ArchiveTypes.Rar]:

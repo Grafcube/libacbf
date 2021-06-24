@@ -6,24 +6,31 @@ from tests.testres import samples
 
 dir = Path("tests/results/")
 
+def pytest_addoption(parser):
+	parser.addoption("--sample", action="store", default="cbz")
+
+@pytest.fixture(scope="session")
+def book_path(pytestconfig) -> str:
+	path = pytestconfig.getoption("sample")
+	if path in samples.keys():
+		path = samples[path]
+	return path
+
 @pytest.fixture(scope="session", autouse=True)
-def make_dirs():
-	for path in samples.values():
-		os.makedirs(str(dir/Path(path).name), exist_ok=True)
+def make_dir(book_path):
+	os.makedirs(dir/Path(book_path).name, exist_ok=True)
 
 @pytest.fixture(scope="session")
-def read_books():
-	books = {dir/Path(x).name: ACBFBook(x, 'r') for x in samples.values()}
-	yield books
-	for i in books.values():
-		i.close()
+def read_books(book_path):
+	book = (dir/Path(book_path).name, ACBFBook(book_path, 'r'))
+	yield book
+	book[1].close()
 
 @pytest.fixture(scope="session")
-def edit_books():
-	books = {dir/Path(x).name: ACBFBook(x, 'a') for x in samples.values()}
-	yield books
-	for i in books.values():
-		i.close()
+def edit_books(book_path):
+	book = (dir/Path(book_path).name, ACBFBook(book_path, 'a'))
+	yield book
+	book[1].close()
 
 def get_au_op(i):
 	new_op = i.__dict__.copy()

@@ -113,14 +113,13 @@ class Page:
 				self.transition = PageTransitions[page.attrib["transition"]]
 
 		## Optional
-		if not coverpage:
 			self.title: Dict[str, str] = {}
 			title_items = page.findall(f"{ns}title")
 			for t in title_items:
 				if "lang" in t.keys():
 					self.title[t.attrib["lang"]] = t.text
 				else:
-					self.title["_"] = t.text
+					self.title['_'] = t.text
 
 	@property
 	def image(self) -> BookData:

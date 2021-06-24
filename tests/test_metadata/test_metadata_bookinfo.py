@@ -1,7 +1,7 @@
 import os
 import json
 from pathlib import Path
-from typing import Dict
+from typing import Tuple
 from tests.conftest import get_au_op
 from libacbf import ACBFBook
 
@@ -9,155 +9,147 @@ def make_bookinfo_dir(path):
 	os.makedirs(path/"metadata/book_info/", exist_ok=True)
 	return path/"metadata/book_info/"
 
-def test_authors(read_books: Dict[Path, ACBFBook]):
-	for path, book in read_books.items():
-		dir = make_bookinfo_dir(path)
-		op = []
-		for i in book.Metadata.book_info.authors:
-			op.append(get_au_op(i))
-		print(op)
-		with open(dir/"test_bookinfo_authors.json", 'w', encoding="utf-8", newline='\n') as result:
-			result.write(json.dumps(op, ensure_ascii=False))
+def test_authors(read_books: Tuple[Path, ACBFBook]):
+	path, book = read_books
+	op = [get_au_op(x) for x in book.Metadata.book_info.authors]
+	dir = make_bookinfo_dir(path)
+	with open(dir/"test_bookinfo_authors.json", 'w', encoding="utf-8", newline='\n') as result:
+		result.write(json.dumps(op, ensure_ascii=False))
 
-def test_titles(read_books: Dict[Path, ACBFBook]):
-	for path, book in read_books.items():
-		dir = make_bookinfo_dir(path)
-		op = book.Metadata.book_info.book_title
-		print(op)
-		with open(dir/"test_bookinfo_titles.json", 'w', encoding="utf-8", newline='\n') as result:
-			result.write(json.dumps(op, ensure_ascii=False))
+def test_titles(read_books: Tuple[Path, ACBFBook]):
+	path, book = read_books
+	dir = make_bookinfo_dir(path)
+	with open(dir/"test_bookinfo_titles.json", 'w', encoding="utf-8", newline='\n') as result:
+		result.write(json.dumps(book.Metadata.book_info.book_title, ensure_ascii=False))
 
-def test_genres(read_books: Dict[Path, ACBFBook]):
-	for path, book in read_books.items():
-		dir = make_bookinfo_dir(path)
-		op = {}
-		for i in book.Metadata.book_info.genres.keys():
-			op[book.Metadata.book_info.genres[i].Genre.name] = book.Metadata.book_info.genres[i].Match
-		print(op)
-		with open(dir/"test_bookinfo_genres.json", 'w', encoding="utf-8", newline='\n') as result:
-			result.write(json.dumps(op, ensure_ascii=False))
+def test_genres(read_books: Tuple[Path, ACBFBook]):
+	path, book = read_books
+	genres = book.Metadata.book_info.genres.values()
+	op = {x.Genre.name: x.Match for x in genres}
 
-def test_annotations(read_books: Dict[Path, ACBFBook]):
-	for path, book in read_books.items():
-		dir = make_bookinfo_dir(path)
-		op = book.Metadata.book_info.annotations
-		print(op)
-		with open(dir/"test_bookinfo_annotations.json", 'w', encoding="utf-8", newline='\n') as result:
-			result.write(json.dumps(op, ensure_ascii=False))
+	dir = make_bookinfo_dir(path)
+	with open(dir/"test_bookinfo_genres.json", 'w', encoding="utf-8", newline='\n') as result:
+		result.write(json.dumps(op, ensure_ascii=False))
 
-def test_languages(read_books: Dict[Path, ACBFBook]):
-	for path, book in read_books.items():
-		dir = make_bookinfo_dir(path)
-		op = []
-		for i in book.Metadata.book_info.languages:
-			new_op = {
-				"lang": i.lang,
-				"show": i.show
-			}
-			op.append(new_op)
-		print(op)
-		with open(dir/"test_bookinfo_languages.json", 'w', encoding="utf-8", newline='\n') as result:
-			result.write(json.dumps(op, ensure_ascii=False))
+def test_annotations(read_books: Tuple[Path, ACBFBook]):
+	path, book = read_books
+	dir = make_bookinfo_dir(path)
+	with open(dir/"test_bookinfo_annotations.json", 'w', encoding="utf-8", newline='\n') as result:
+		result.write(json.dumps(book.Metadata.book_info.annotations, ensure_ascii=False))
 
-def test_characters(read_books: Dict[Path, ACBFBook]):
-	for path, book in read_books.items():
-		dir = make_bookinfo_dir(path)
-		print(book.Metadata.book_info.characters)
-		with open(dir/"test_bookinfo_characters.json", 'w', encoding="utf-8", newline='\n') as result:
-			result.write(json.dumps(book.Metadata.book_info.characters, ensure_ascii=False))
+def test_languages(read_books: Tuple[Path, ACBFBook]):
+	path, book = read_books
+	op = [{x.lang: x.show} for x in book.Metadata.book_info.languages]
+	dir = make_bookinfo_dir(path)
+	with open(dir/"test_bookinfo_languages.json", 'w', encoding="utf-8", newline='\n') as result:
+		result.write(json.dumps(op, ensure_ascii=False))
 
-def test_keywords(read_books: Dict[Path, ACBFBook]):
-	for path, book in read_books.items():
-		dir = make_bookinfo_dir(path)
-		op = book.Metadata.book_info.keywords
-		print(op)
-		with open(dir/"test_bookinfo_keywords.json", 'w', encoding="utf-8", newline='\n') as result:
-			result.write(json.dumps(op, default=list, ensure_ascii=False))
+def test_characters(read_books: Tuple[Path, ACBFBook]):
+	path, book = read_books
+	dir = make_bookinfo_dir(path)
+	with open(dir/"test_bookinfo_characters.json", 'w', encoding="utf-8", newline='\n') as result:
+		result.write(json.dumps(book.Metadata.book_info.characters, ensure_ascii=False))
 
-def test_series(read_books: Dict[Path, ACBFBook]):
-	for path, book in read_books.items():
-		dir = make_bookinfo_dir(path)
-		op = {}
-		for i in book.Metadata.book_info.series.keys():
-			op[i] = {
-				"title": book.Metadata.book_info.series[i].title,
-				"sequence": book.Metadata.book_info.series[i].sequence,
-				"volume": book.Metadata.book_info.series[i].volume
-			}
-		print(op)
-		with open(dir/"test_bookinfo_series.json", 'w', encoding="utf-8", newline='\n') as result:
-			result.write(json.dumps(op, ensure_ascii=False))
+def test_keywords(read_books: Tuple[Path, ACBFBook]):
+	path, book = read_books
+	op = book.Metadata.book_info.keywords
+	dir = make_bookinfo_dir(path)
+	with open(dir/"test_bookinfo_keywords.json", 'w', encoding="utf-8", newline='\n') as result:
+		result.write(json.dumps(op, default=list, ensure_ascii=False))
 
-def test_content_rating(read_books: Dict[Path, ACBFBook]):
-	for path, book in read_books.items():
-		dir = make_bookinfo_dir(path)
-		print(book.Metadata.book_info.content_rating)
-		with open(dir/"test_bookinfo_content_rating.json", 'w', encoding="utf-8", newline='\n') as result:
-			result.write(json.dumps(book.Metadata.book_info.content_rating, ensure_ascii=False))
+def test_series(read_books: Tuple[Path, ACBFBook]):
+	path, book = read_books
+	series = book.Metadata.book_info.series.values()
+	op = {x.title: {"sequence": x.sequence, "volume": x.volume} for x in series}
+	dir = make_bookinfo_dir(path)
+	with open(dir/"test_bookinfo_series.json", 'w', encoding="utf-8", newline='\n') as result:
+		result.write(json.dumps(op, ensure_ascii=False))
 
-def test_database_ref(read_books: Dict[Path, ACBFBook]):
-	for path, book in read_books.items():
-		dir = make_bookinfo_dir(path)
-		op = []
-		for i in book.Metadata.book_info.database_ref:
-			new_op = {
-				"dbname": i.dbname,
-				"text": i.reference,
-				"type": i.type
-			}
-			op.append(new_op)
-		print(op)
-		with open(dir/"test_bookinfo_database_ref.json", 'w', encoding="utf-8", newline='\n') as result:
-			result.write(json.dumps(op, ensure_ascii=False))
+def test_content_rating(read_books: Tuple[Path, ACBFBook]):
+	path, book = read_books
+	dir = make_bookinfo_dir(path)
+	with open(dir/"test_bookinfo_content_rating.json", 'w', encoding="utf-8", newline='\n') as result:
+		result.write(json.dumps(book.Metadata.book_info.content_rating, ensure_ascii=False))
 
-def test_coverpage(read_books: Dict[Path, ACBFBook]):
-	for path, book in read_books.items():
-		dir = make_bookinfo_dir(path)
-		op = {
-			"image_ref": book.Metadata.book_info.cover_page.image_ref,
-			"image_name": book.Metadata.book_info.cover_page.image.id,
-			"image_size": len(book.Metadata.book_info.cover_page.image.data),
-			"text_layers": None,
-			"frames": None,
-			"jumps": None
+def test_database_ref(read_books: Tuple[Path, ACBFBook]):
+	path, book = read_books
+	op = []
+	for i in book.Metadata.book_info.database_ref:
+		new_op = {
+			"dbname": i.dbname,
+			"text": i.reference,
+			"type": i.type
 		}
-		op_tlayers = {}
-		for i in book.Metadata.book_info.cover_page.text_layers.keys():
-			op_tlayers[i] = {
-				"language": book.Metadata.book_info.cover_page.text_layers[i].language,
-				"bg_color": book.Metadata.book_info.cover_page.text_layers[i].bgcolor,
-				"text_areas": None
+		op.append(new_op)
+
+	dir = make_bookinfo_dir(path)
+	with open(dir/"test_bookinfo_database_ref.json", 'w', encoding="utf-8", newline='\n') as result:
+		result.write(json.dumps(op, ensure_ascii=False))
+
+def test_coverpage(read_books: Tuple[Path, ACBFBook]):
+	path, book = read_books
+	page_output = {}
+	textlayer_output = {}
+	fr_jm_output = {
+		"frames": {},
+		"jumps": {}
+	}
+
+	pg = book.Metadata.book_info.cover_page
+
+	page_output["image_ref"] = pg.image_ref
+	page_output["ref_type"] = pg.ref_type.name
+
+	for fr in pg.frames:
+		pts = []
+		for p in fr.points:
+			pts.append(f"({p.x},{p.y})")
+
+		new_fr = {
+			"bgcolor": fr.bgcolor,
+			"points": pts
+		}
+		fr_jm_output["frames"][pg.image_ref] = new_fr
+
+	for jm in pg.jumps:
+		pts = []
+		for p in jm.points:
+			pts.append(f"({p.x},{p.y})")
+
+		new_jm = {
+			"page": jm.page,
+			"points": pts
+		}
+		fr_jm_output["jumps"][pg.image_ref] = new_jm
+
+	for tl in pg.text_layers.keys():
+		new_tl = {
+			"lang": pg.text_layers[tl].language,
+			"bgcolour": pg.text_layers[tl].bgcolor,
+			"text_areas": []
+		}
+		for ta in pg.text_layers[tl].text_areas:
+			pts = []
+			for p in ta.points:
+				pts.append(f"({p.x},{p.y})")
+
+			type = ta.type.name if ta.type is not None else None
+			new_ta = {
+				"points": pts,
+				"p": ta.paragraph,
+				"bgcolour": ta.bgcolor,
+				"rotation": ta.rotation,
+				"type": type,
+				"inverted": ta.inverted,
+				"transparent": ta.transparent
 			}
-			op_tareas = []
-			for j in book.Metadata.book_info.cover_page.text_layers[i].text_areas:
-				new_tarea = {
-					"points": j.points,
-					"paragraph": j.paragraph,
-					"bg_color": j.bgcolor,
-					"rotation": j.rotation,
-					"type": j.type,
-					"inverted": j.inverted,
-					"transparent": j.transparent
-				}
-				op_tareas.append(new_tarea)
-			op_tlayers[i]["text_areas"] = op_tareas
-		op["text_layers"] = op_tlayers
-		op_frames = []
-		for i in book.Metadata.book_info.cover_page.frames:
-			new_fr = {
-				"points": i.points,
-				"bgcolor": i.bgcolor
-			}
-			op_frames.append(new_fr)
-		op["frames"] = op_frames
-		op_jumps = []
-		for i in book.Metadata.book_info.cover_page.jumps:
-			new_jm = {
-				"page": i.page,
-				"points": i.points
-			}
-			op_jumps.append(new_jm)
-		op["jumps"] = op_jumps
-		print(op)
-		with open(dir/"test_bookinfo_cover_page.json", 'w', encoding="utf-8", newline='\n') as result:
-			result.write(json.dumps(op, ensure_ascii=False))
+			new_tl["text_areas"].append(new_ta)
+		textlayer_output[pg.image_ref] = new_tl
+
+	dir = make_bookinfo_dir(path)
+	with open(dir/"test_cover_pages.json", "w", encoding="utf-8", newline="\n") as result:
+		result.write(json.dumps(page_output, ensure_ascii=False))
+	with open(dir/"test_cover_textlayers.json", "w", encoding="utf-8", newline="\n") as result:
+		result.write(json.dumps(textlayer_output, ensure_ascii=False))
+	with open(dir/"test_cover_frames_jumps.json", "w", encoding="utf-8", newline="\n") as result:
+		result.write(json.dumps(fr_jm_output, ensure_ascii=False))

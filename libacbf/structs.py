@@ -30,14 +30,14 @@ class Styles:
 			self.styles[i] = None
 
 		if self.book._root.find(f"{self.book._namespace}style") is not None:
-			self.styles["_"] = None
+			self.styles['_'] = None
 
-	def edit_styles(self, stylesheet: str, style_name: str = "_"): # Incomplete
+	def edit_styles(self, stylesheet: str, style_name: str = '_'): # Incomplete
 		check_book(self.book)
 
 		self.sync_styles()
 
-	def remove_styles(self, style_name: str = "_"): # Incomplete
+	def remove_styles(self, style_name: str = '_'): # Incomplete
 		check_book(self.book)
 
 		self.sync_styles()
@@ -49,8 +49,8 @@ class Styles:
 		if key in self.styles.keys():
 			if self.styles[key] is not None:
 				return self.styles[key]
-			elif key == "_":
-				self.styles["_"] = self.book._root.find(f"{self.book._namespace}style").text.strip()
+			elif key == '_':
+				self.styles['_'] = self.book._root.find(f"{self.book._namespace}style").text.strip()
 			else:
 				if self.book.archive is None:
 					st_path = self.book.book_path.parent/Path(key)

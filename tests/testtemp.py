@@ -1,6 +1,6 @@
 from pprint import pprint
 from libacbf import ACBFBook
-from tests.testres import samples
+import tests.testres as res
 
-with ACBFBook(samples["cbz"]) as book:
+with ACBFBook(res.samples["cbz"]) as book:
 	pprint([x.__dict__ for x in book.Metadata.book_info.authors])
