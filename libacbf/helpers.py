@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 import dateutil.parser
 from typing import TYPE_CHECKING, Optional, Union
+from functools import wraps
 from datetime import date
 from lxml import etree
 
@@ -14,7 +15,14 @@ from libacbf.constants import ArchiveTypes, AuthorActivities
 from libacbf.metadata import BookInfo, PublishInfo, DocumentInfo
 from libacbf.exceptions import EditRARArchiveError
 
-def check_book(book: ACBFBook):
+def check_book(func):
+	@wraps(func)
+	def wrapper(self, *args, **kwargs):
+		check_write(self.book)
+		func(self, *args, **kwargs)
+	return wrapper
+
+def check_write(book: ACBFBook):
 	if book.mode != 'r':
 		raise ValueError("Cannot edit read only book.")
 	if not book.is_open:

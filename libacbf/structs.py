@@ -1,16 +1,46 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Dict, List, Tuple, Optional, Union
 from collections import namedtuple
 from pathlib import Path
+from lxml import etree
 import re
 import langcodes
 
 if TYPE_CHECKING:
 	from libacbf import ACBFBook
 from libacbf.constants import AuthorActivities, Genres
-from libacbf.editor import check_book
+import libacbf.helpers as helpers
 
 Vec2 = namedtuple("Vector2", "x y")
+
+def pts_to_vec(pts_str: str):
+	pts = []
+	pts_l = re.split(" ", pts_str)
+	for pt in pts_l:
+		ls = re.split(",", pt)
+		pts.append(Vec2(int(ls[0]), int(ls[1])))
+	return pts
+
+def vec_to_pts(points: List[Tuple[int, int]]):
+	return ' '.join([f"{x},{y}" for x, y in points])
+
+def tree_to_para(p_root, ns):
+	pa = []
+	for p in p_root.findall(f"{ns}p"):
+		p_text = str(etree.tostring(p, encoding="utf-8")).strip()
+		text = re.sub(r'<\/?p[^>]*>', '', p_text)
+		pa.append(text)
+	return '\n'.join(pa)
+
+def para_to_tree(paragraph: str, ns):
+	p_elements = []
+	for p in re.split(r'\n', paragraph):
+		p = f"<p>{p}</p>"
+		p_root = etree.fromstring(p)
+		for i in p_root.iter():
+			i.tag = ns + i
+		p_elements.append(p_root)
+	return p_elements
 
 class Styles:
 	def __init__(self, book: ACBFBook, contents: str):
@@ -25,21 +55,20 @@ class Styles:
 
 	def sync_styles(self):
 		self.styles.clear()
-		style_refs = re.findall(r'<\?xml-stylesheet type="text\/css" href="(.+)"\?>', self._contents, re.IGNORECASE)
+		style_refs = re.findall(r'<\?xml-stylesheet type="text\/css" href="(.+)"\?>', self._contents,
+								re.IGNORECASE)
 		for i in style_refs:
 			self.styles[i] = None
 
 		if self.book._root.find(f"{self.book._namespace}style") is not None:
 			self.styles['_'] = None
 
+	@helpers.check_book
 	def edit_styles(self, stylesheet: str, style_name: str = '_'): # Incomplete
-		check_book(self.book)
-
 		self.sync_styles()
 
+	@helpers.check_book
 	def remove_styles(self, style_name: str = '_'): # Incomplete
-		check_book(self.book)
-
 		self.sync_styles()
 
 	def __len__(self):
@@ -375,8 +404,30 @@ class Frame:
 		if ``None``.
 	"""
 	def __init__(self, points: List[Vec2]):
+		self._element = None
+
 		self.points: List[Vec2] = points
 		self.bgcolor: Optional[str] = None
+
+	@helpers.check_book
+	def set_point(self, idx: int, x: int, y: int):
+		self.points[idx] = Vec2(x, y)
+		self._element.set("points", vec_to_pts(self.points))
+
+	@helpers.check_book
+	def remove_point(self, idx: int):
+		if len(self.points) == 1:
+			raise ValueError("`points` cannot be empty.")
+		self.points.pop(idx)
+		self._element.set("points", vec_to_pts(self.points))
+
+	@helpers.check_book
+	def set_bgcolor(self, bg: Optional[str]):
+		if bg is not None:
+			self._element.set("bgcolor", bg)
+		elif "bgcolor" in self._element.attrib:
+			self._element.attrib.pop("bgcolor")
+		self.bgcolor = bg
 
 class Jump:
 	"""Clickable area on a page which navigates to another page.
@@ -396,5 +447,24 @@ class Jump:
 		``2`` and so on.
 	"""
 	def __init__(self, points: List[Vec2], page: int):
-		self.points: List[Vec2] = points
+		self._element = None
+
 		self.page: int = page
+		self.points: List[Vec2] = points
+
+	@helpers.check_book
+	def set_target_page(self, target_page: int):
+		self._element.set("page", str(target_page))
+		self.page = target_page
+
+	@helpers.check_book
+	def set_point(self, idx: int, x: int, y: int):
+		self.points[idx] = Vec2(x, y)
+		self._element.set("points", vec_to_pts(self.points))
+
+	@helpers.check_book
+	def remove_point(self, idx: int):
+		if len(self.points) == 1:
+			raise ValueError("`points` cannot be empty.")
+		self.points.pop(idx)
+		self._element.set("points", vec_to_pts(self.points))

@@ -15,7 +15,7 @@ from libacbf.metadata import BookInfo, PublishInfo, DocumentInfo
 from libacbf.body import Page
 from libacbf.bookdata import BookData
 from libacbf.archivereader import ArchiveReader
-from libacbf.editor import check_book
+import libacbf.helpers as helpers
 from libacbf.exceptions import InvalidBook
 
 def get_book_template() -> str:
@@ -346,7 +346,7 @@ class ACBFBook:
 		paragraph : str
 			[description]
 		"""
-		check_book(self)
+		helpers.check_write(self)
 
 		ref_section = self._root.find(f"{self._namespace}references")
 		if ref_section is None:
@@ -386,7 +386,7 @@ class ACBFBook:
 		id : str
 			[description]
 		"""
-		check_book(self)
+		helpers.check_write(self)
 
 		ref_section = self._root.find(f"{self._namespace}references")
 
@@ -477,17 +477,20 @@ class ACBFBody:
 		for pg in self._body.findall(f"{self._ns}page"):
 			self.pages.append(Page(pg, self.book))
 
+	@helpers.check_book
 	def insert_new_page(self, index: int, image_ref: str) -> Page:
 		pg = etree.SubElement(self._body, f"{self._ns}page")
 		pg.insert(index, etree.Element(f"{self._ns}image", {"href": image_ref}))
 		self.pages.insert(index, Page(pg, self.book))
 		return self.pages[index]
 
+	@helpers.check_book
 	def remove_page(self, index: int):
 		pg = self.pages.pop(index)
 		pg._page.clear()
 		self._body.remove(pg._page)
 
+	@helpers.check_book
 	def change_page_index(self, src_index: int, dest_index: int):
 		pg = self.pages.pop(src_index)
 		self._body.remove(pg._page)
@@ -495,6 +498,7 @@ class ACBFBody:
 		self.pages.insert(dest_index, pg)
 
 	# --- Optional ---
+	@helpers.check_book
 	def set_bgcolor(self, bg: Optional[str]):
 		if bg is not None:
 			self._body.set("bgcolor", bg)
@@ -561,13 +565,13 @@ class ACBFData:
 		for i in self._data_elements:
 			self.files[i.attrib["id"]] = None
 
+	@helpers.check_book
 	def add_data(self, file, name, embed: bool = False):
-		check_book(self.book)
-
 		self.sync_data()
 
-	def add_data(self, file: str):
-		check_book(self.book)
+	@helpers.check_book
+	def remove_data(self, file: str):
+		pass
 
 	def __len__(self):
 		return len(self.files.keys())

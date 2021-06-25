@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 from libacbf.body import Page
 import libacbf.structs as structs
 import libacbf.constants as constants
-import libacbf.editor as edit
+import libacbf.helpers as helpers
 
 def update_authors(author_items, ns) -> List[structs.Author]:
 	authors = []
@@ -262,19 +262,20 @@ class BookInfo:
 
 	#region Editing
 	# Author
+	@helpers.check_book
 	def add_author(self, author: structs.Author):
-		edit.check_book(self.book)
-		edit.add_author(self, author)
+		helpers.add_author(self, author)
 
+	@helpers.check_book
 	def edit_author(self, author: Union[structs.Author, int], **attributes):
-		edit.check_book(self.book)
-		edit.edit_author(self, author, **attributes)
+		helpers.edit_author(self, author, **attributes)
 
+	@helpers.check_book
 	def remove_author(self, author: Union[int, structs.Author]):
-		edit.check_book(self.book)
-		edit.remove_author(self, author)
+		helpers.remove_author(self, author)
 
 	# Titles
+	@helpers.check_book
 	def edit_title(self, title: str, lang: str = '_'):
 		title_elements = self._info.findall(f"{self._ns}book-title")
 		idx = self._info.index(title_elements[-1]) + 1
@@ -301,6 +302,7 @@ class BookInfo:
 
 		self.sync_book_titles()
 
+	@helpers.check_book
 	def remove_title(self, lang: str = '_'):
 		title_elements = self._info.findall(f"{self._ns}book-title")
 
@@ -321,6 +323,7 @@ class BookInfo:
 					break
 
 	# Genres
+	@helpers.check_book
 	def edit_genre(self, genre: constants.Genres, match: Optional[int] = '_'):
 		gn_elements = self._info.findall(f"{self._ns}genre")
 		name = genre.name
@@ -344,6 +347,7 @@ class BookInfo:
 
 		self.sync_genres()
 
+	@helpers.check_book
 	def remove_genre(self, genre: constants.Genres):
 		gn_elements = self._info.findall(f"{self}genre")
 		name = genre.name
@@ -356,6 +360,7 @@ class BookInfo:
 				break
 
 	# Annotations
+	@helpers.check_book
 	def edit_annotation(self, text: str, lang: str = '_'):
 		annotation_elements = self._info.findall(f"{self._ns}annotation")
 
@@ -387,6 +392,7 @@ class BookInfo:
 
 		self.sync_annotations()
 
+	@helpers.check_book
 	def remove_annotation(self, lang: str = '_'):
 		annotation_elements = self._info.findall(f"{self._ns}annotation")
 
@@ -410,6 +416,7 @@ class BookInfo:
 
 	# --- Optional ---
 	# Languages
+	@helpers.check_book
 	def add_language(self, lang: str, show: bool):
 		ln_section = self._info.find(f"{self._ns}languages")
 		if ln_section is None:
@@ -425,6 +432,7 @@ class BookInfo:
 
 		self.sync_languages()
 
+	@helpers.check_book
 	def edit_language(self, layer: Union[int, structs.LanguageLayer], lang: Optional[str] = None, show: Optional[bool] = None):
 		if lang is None and show is None:
 			return
@@ -441,6 +449,7 @@ class BookInfo:
 			layer._element.set("show", str(show).lower())
 		self.sync_languages()
 
+	@helpers.check_book
 	def remove_language(self, layer: Union[int, structs.LanguageLayer]):
 		ln_section = self._info.find(f"{self._ns}languages")
 
@@ -457,6 +466,7 @@ class BookInfo:
 		self.sync_languages()
 
 	# Characters
+	@helpers.check_book
 	def add_character(self, name: str):
 		char_section = self._info.find(f"{self._ns}characters")
 
@@ -468,6 +478,7 @@ class BookInfo:
 		char_section.append(char)
 		self.sync_characters()
 
+	@helpers.check_book
 	def remove_character(self, item: Union[str, int]):
 		char_section = self._info.find(f"{self._ns}characters")
 
@@ -491,6 +502,7 @@ class BookInfo:
 			self.sync_characters()
 
 	# Keywords
+	@helpers.check_book
 	def add_keyword(self, *kwords: str, lang: str = '_'):
 		key_elements = self._info.findall(f"{self._ns}keywords")
 		idx = None
@@ -530,6 +542,7 @@ class BookInfo:
 
 		self.sync_keywords()
 
+	@helpers.check_book
 	def remove_keyword(self, *kwords: str, lang: str = '_'):
 		key_elements = self._info.findall(f"{self._ns}keywords")
 
@@ -555,6 +568,7 @@ class BookInfo:
 
 		self.sync_keywords()
 
+	@helpers.check_book
 	def clear_keywords(self, lang: str = '_'):
 		key_elements = self._info.findall(f"{self._ns}keywords")
 		key_element = None
@@ -575,6 +589,7 @@ class BookInfo:
 			self.sync_keywords()
 
 	# Series
+	@helpers.check_book
 	def edit_series(self, title: str, sequence: Optional[str] = None, volume: Optional[str] = '_'):
 		ser_items = self._info.findall(f"{self._ns}sequence")
 		idx = None
@@ -614,6 +629,7 @@ class BookInfo:
 
 		self.sync_series()
 
+	@helpers.check_book
 	def remove_series(self, title: str):
 		seq_items = self._info.findall(f"{self._ns}sequence")
 
@@ -625,6 +641,7 @@ class BookInfo:
 				break
 
 	# Content Rating
+	@helpers.check_book
 	def edit_content_rating(self, rating: str, type: str = '_'):
 		rt_items = self._info.findall(f"{self._ns}content-rating")
 		idx = None
@@ -656,6 +673,7 @@ class BookInfo:
 		rt_element.text = rating
 		self.sync_content_rating()
 
+	@helpers.check_book
 	def remove_content_rating(self, type: str = '_'):
 		rt_items = self._info.findall(f"{self._ns}content-rating")
 
@@ -671,6 +689,7 @@ class BookInfo:
 			self.sync_content_rating()
 
 	# Database Ref
+	@helpers.check_book
 	def add_database_ref(self, dbname: str, ref: str, type: Optional[str] = None):
 		db_items = self._info.findall(f"{self._ns}databaseref")
 		idx = None
@@ -691,6 +710,7 @@ class BookInfo:
 
 		self.sync_database_ref()
 
+	@helpers.check_book
 	def edit_database_ref(self, dbref: Union[int, structs.DBRef], dbname: Optional[str] = None, ref: Optional[str] = None, type: Optional[str] = '_'):
 		if isinstance(dbref, int):
 			dbref = self.database_ref[dbref]
@@ -710,6 +730,7 @@ class BookInfo:
 		if dbname is not None or ref is not None or type != '_':
 			self.sync_database_ref()
 
+	@helpers.check_book
 	def remove_database_ref(self, dbref: Union[int, structs.DBRef]):
 		if isinstance(dbref, int):
 			dbref = self.database_ref[dbref]
@@ -777,13 +798,15 @@ class PublishInfo:
 		if info.find(f"{self._ns}license") is not None:
 			self.license = info.find(f"{self._ns}license").text
 
+	@helpers.check_book
 	def set_publisher(self, name: str):
 		pub_item = self._info.find(f"{self._ns}publisher")
 		pub_item.text = name
 		self._publisher = pub_item.text
 
+	@helpers.check_book
 	def set_publish_date(self, dt: Union[str, date], include_date: bool = True):
-		edit.edit_date("publish-date",
+		helpers.edit_date("publish-date",
 						self,
 						"publish_date_string",
 						"publish_date",
@@ -792,14 +815,17 @@ class PublishInfo:
 		)
 
 	# --- Optional ---
+	@helpers.check_book
 	def set_publish_city(self, city: Optional[str]):
-		edit.edit_optional("city", self, "publish_city", city)
+		helpers.edit_optional("city", self, "publish_city", city)
 
+	@helpers.check_book
 	def set_isbn(self, isbn: Optional[str]):
-		edit.edit_optional("isbn", self, "isbn", isbn)
+		helpers.edit_optional("isbn", self, "isbn", isbn)
 
+	@helpers.check_book
 	def set_license(self, license: Optional[str]):
-		edit.edit_optional("license", self, "license", license)
+		helpers.edit_optional("license", self, "license", license)
 
 class DocumentInfo:
 	"""Metadata about the ACBF file itself.
@@ -866,30 +892,33 @@ class DocumentInfo:
 
 		self.sync_history()
 
+	@helpers.check_book
 	def sync_authors(self):
 		self.authors: List[structs.Author] = update_authors(self._info.findall(f"{self._ns}author"), self._ns)
 
+	@helpers.check_book
 	def sync_history(self):
 		self.document_history: Optional[List[str]] = []
 		for item in self._info.findall(f"{self._ns}history/{self._ns}p"):
 			self.document_history.append(item.text)
 
 	# Author
+	@helpers.check_book
 	def add_author(self, author: structs.Author):
-		edit.check_book(self.book)
-		edit.add_author(self, author)
+		helpers.add_author(self, author)
 
+	@helpers.check_book
 	def edit_author(self, author: Union[structs.Author, int], **attributes):
-		edit.check_book(self.book)
-		edit.edit_author(self, author, **attributes)
+		helpers.edit_author(self, author, **attributes)
 
+	@helpers.check_book
 	def remove_author(self, author: Union[int, structs.Author]):
-		edit.check_book(self.book)
-		edit.remove_author(self, author)
+		helpers.remove_author(self, author)
 	# Author
 
+	@helpers.check_book
 	def set_creation_date(self, dt: Union[str, date], include_date: bool = True):
-		edit.edit_date("creation-date",
+		helpers.edit_date("creation-date",
 						self,
 						"creation_date_string",
 						"creation_date",
@@ -898,6 +927,7 @@ class DocumentInfo:
 		)
 
 	# --- Optional ---
+	@helpers.check_book
 	def set_source(self, source: Optional[str]):
 		src_section = self._info.find(f"{self._ns}source")
 
@@ -915,13 +945,16 @@ class DocumentInfo:
 				src_section.clear()
 				src_section.getparent().remove(src_section)
 
+	@helpers.check_book
 	def set_document_id(self, id: Optional[str]):
-		edit.edit_optional("id", self, "document_id", id)
+		helpers.edit_optional("id", self, "document_id", id)
 
+	@helpers.check_book
 	def set_document_version(self, version: Optional[str] = None):
-		edit.edit_optional("version", self, "document_version", version)
+		helpers.edit_optional("version", self, "document_version", version)
 
 	# History
+	@helpers.check_book
 	def insert_history(self, index: int, entry: str):
 		history_section = self._info.find(f"{self._ns}history")
 		if history_section is None:
@@ -932,15 +965,18 @@ class DocumentInfo:
 		p.text = entry
 		self.sync_history()
 
+	@helpers.check_book
 	def append_history(self, entry: str):
 		idx = len(self._info.findall(f"{self._ns}history/{self._ns}p"))
 		self.insert_history(idx, entry)
 
+	@helpers.check_book
 	def edit_history(self, index: int, text: str):
 		item = self._info.findall(f"{self._ns}history/{self._ns}p")[index]
 		item.text = text
 		self.sync_history()
 
+	@helpers.check_book
 	def remove_history(self, index: int):
 		item = self._info.findall(f"{self._ns}history/{self._ns}p")[index]
 		item.clear()

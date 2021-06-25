@@ -12,40 +12,12 @@ from lxml import etree
 if TYPE_CHECKING:
 	from libacbf import ACBFBook
 import libacbf.structs as structs
+import libacbf.helpers as helpers
 from libacbf.constants import ImageRefType, PageTransitions, TextAreas
 from libacbf.archivereader import ArchiveReader
 from libacbf.bookdata import BookData
 
 url_pattern = r'(((ftp|http|https):\/\/)|(\/)|(..\/))(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?'
-
-def pts_to_vec(pts_str: str):
-	pts = []
-	pts_l = re.split(" ", pts_str)
-	for pt in pts_l:
-		ls = re.split(",", pt)
-		pts.append(structs.Vec2(int(ls[0]), int(ls[1])))
-	return pts
-
-def vec_to_pts(points: List[Tuple[int, int]]):
-	return ' '.join([f"{x},{y}" for x, y in points])
-
-def tree_to_para(p_root, ns):
-	pa = []
-	for p in p_root.findall(f"{ns}p"):
-		p_text = str(etree.tostring(p, encoding="utf-8")).strip()
-		text = re.sub(r'<\/?p[^>]*>', '', p_text)
-		pa.append(text)
-	return '\n'.join(pa)
-
-def para_to_tree(paragraph: str, ns):
-	p_elements = []
-	for p in re.split(r'\n', paragraph):
-		p = f"<p>{p}</p>"
-		p_root = etree.fromstring(p)
-		for i in p_root.iter():
-			i.tag = ns + i
-		p_elements.append(p_root)
-	return p_elements
 
 class Page:
 	"""A page in the book.
@@ -188,7 +160,8 @@ class Page:
 			frames = []
 			frame_items = item.findall(f"{self._ns}frame")
 			for fr in frame_items:
-				frame = structs.Frame(pts_to_vec(fr.attrib["points"]))
+				frame = structs.Frame(structs.pts_to_vec(fr.attrib["points"]))
+				frame._element = fr
 				if "bgcolor" in fr.keys():
 					frame.bgcolor = fr.attrib["bgcolor"]
 				frames.append(frame)
@@ -213,7 +186,8 @@ class Page:
 			jumps = []
 			jump_items = item.findall(f"{self._ns}jump")
 			for jp in jump_items:
-				jump = structs.Jump(pts_to_vec(jp.attrib["points"]), int(jp.attrib["page"]))
+				jump = structs.Jump(structs.pts_to_vec(jp.attrib["points"]), int(jp.attrib["page"]))
+				jump._element = jp
 				jumps.append(jump)
 			self._jumps = jumps
 		return self._jumps
@@ -260,11 +234,13 @@ class Page:
 		self.ref_type: ImageRefType = ref_t
 
 	# Editor
+	@helpers.check_book
 	def set_image_ref(self, img_ref: str):
 		self._page.find(f"{self._ns}image").set("href", img_ref)
 		self.sync_image_ref()
 
 	# --- Optional ---
+	@helpers.check_book
 	def set_bgcolor(self, bg: Optional[str]):
 		if self.is_coverpage:
 			raise AttributeError("`coverpage` has no attribute `bgcolor`.")
@@ -275,6 +251,7 @@ class Page:
 			self._page.attrib.pop("bgcolor")
 		self.bgcolor = bg
 
+	@helpers.check_book
 	def set_transition(self, tr: Optional[PageTransitions]):
 		if self.is_coverpage:
 			raise AttributeError("`coverpage` has no attribute `transition`.")
@@ -286,6 +263,7 @@ class Page:
 			self._page.attrib.pop("transition")
 			self.transition = None
 
+	@helpers.check_book
 	def set_title(self, tl: Optional[str], lang: str = '_'):
 		if self.is_coverpage:
 			raise AttributeError("`coverpage` has no attribute `title`.")
@@ -317,23 +295,77 @@ class Page:
 			self._page.remove(tl_element)
 			self.title[lang] = tl
 
+	# Text Layers
+	@helpers.check_book
 	def add_textlayer(self, lang: str) -> TextLayer:
 		lang = langcodes.standardize_tag(lang)
 		t_layer = etree.SubElement(self._page, f"{self._ns}text-layer", {"lang": lang})
 		self.text_layers[lang] = TextLayer(t_layer, self._ns)
 		return self.text_layers[lang]
 
+	@helpers.check_book
 	def remove_textlayer(self, lang: str):
 		t_layer = self.text_layers.pop(lang)
 		t_layer._layer.clear()
 		self._page.remove(t_layer._layer)
 
+	@helpers.check_book
 	def change_textlayer_lang(self, src_lang: str, dest_lang: str):
 		src_lang, dest_lang = map(langcodes.standardize_tag, (src_lang, dest_lang))
 		t_layer = self.text_layers.pop(src_lang)
 		t_layer._layer.set("lang", dest_lang)
 		t_layer.language = dest_lang
 		self.text_layers[dest_lang] = t_layer
+
+	# Frames
+	@helpers.check_book
+	def insert_new_frame(self, index: int, points: List[Tuple[int, int]]) -> structs.Frame:
+		fr_element = etree.Element(f"{self._ns}frame", {"points": structs.vec_to_pts(points)})
+		fr = structs.Frame([structs.Vec2(x, y) for x, y in points])
+		fr._element = fr_element
+
+		if index == len(self.frames):
+			self.frames[-1]._element.addnext(fr_element)
+			self.frames.append(fr)
+		else:
+			self.frames[index]._element.addprevious(fr_element)
+			self.frames.insert(index, fr)
+		return fr
+
+	@helpers.check_book
+	def remove_frame(self, index: int):
+		fr = self.frames.pop(index)
+		fr._element.clear()
+		self._page.remove(fr._element)
+
+	@helpers.check_book
+	def reorder_frame(self, src_index: int, dest_index: int):
+		fr = self.frames.pop(src_index)
+		if dest_index == len(self.frames):
+			self._page.remove(fr._element)
+			self.frames[-1]._element.addnext(fr._element)
+		else:
+			self.frames[dest_index] # Checks if index is in bounds before removing element
+			self._page.remove(fr._element)
+			self.frames[dest_index]._element.addprevious(fr._element)
+		self.frames.insert(dest_index, fr)
+
+	# Jumps
+	@helpers.check_book
+	def add_jump(self, target_page: int, points: List[Tuple[int, int]]) -> structs.Jump:
+		jp_element = etree.SubElement(self._page, f"{self._ns}jump")
+		jp_element.set("page", str(target_page))
+		jp_element.set("points", structs.vec_to_pts(points))
+		jp = structs.Jump([structs.Vec2(x, y) for x, y in points], target_page)
+		jp._element = jp_element
+		self.jumps.append(jp)
+		return jp
+
+	@helpers.check_book
+	def remove_jump(self, index: int):
+		jp = self.jumps.pop(index)
+		jp._element.clear()
+		self._page.remove(jp._element)
 
 class TextLayer:
 	"""Defines a text layer drawn on a page.
@@ -369,6 +401,7 @@ class TextLayer:
 		for ar in areas:
 			self.text_areas.append(TextArea(ar, ns))
 
+	@helpers.check_book
 	def set_bgcolor(self, bg: Optional[str]):
 		if bg is not None:
 			self._layer.set("bgcolor", bg)
@@ -376,19 +409,22 @@ class TextLayer:
 			self._layer.attrib.pop("bgcolor")
 		self.bgcolor = bg
 
+	@helpers.check_book
 	def insert_new_textarea(self, idx: int, points: List[Tuple[int, int]], paragraph: str) -> TextArea:
 		ta = etree.Element(f"{self._ns}text-area")
-		ta.set("points", vec_to_pts(points))
-		ta.extend(para_to_tree(paragraph, self._ns))
+		ta.set("points", structs.vec_to_pts(points))
+		ta.extend(structs.para_to_tree(paragraph, self._ns))
 		self._layer.insert(idx, ta)
 		self.text_areas.insert(idx, TextArea(ta, self._ns))
 		return self.text_areas[idx]
 
+	@helpers.check_book
 	def remove_textarea(self, idx: int):
 		ta = self.text_areas.pop(idx)
 		ta._area.clear()
 		self._layer.remove(ta._area)
 
+	@helpers.check_book
 	def reorder_textarea(self, src_index: int, dest_index: int):
 		ta = self.text_areas.pop(src_index)
 		self._layer.remove(ta._area)
@@ -452,9 +488,9 @@ class TextArea:
 		self._area = area
 		self._ns = ns
 
-		self.points: List[structs.Vec2] = pts_to_vec(area.attrib["points"])
+		self.points: List[structs.Vec2] = structs.pts_to_vec(area.attrib["points"])
 
-		self.paragraph: str = tree_to_para(area, ns)
+		self.paragraph: str = structs.tree_to_para(area, ns)
 
 		# Optional
 		self.bgcolor: Optional[str] = None
@@ -482,25 +518,29 @@ class TextArea:
 			self.transparent = bool(distutils.util.strtobool(area.attrib["transparent"]))
 
 	# Editor
+	@helpers.check_book
 	def set_point(self, idx: int, x: int, y: int):
 		self.points[idx] = structs.Vec2(x, y)
-		self._area.set("points", vec_to_pts(self.points))
+		self._area.set("points", structs.vec_to_pts(self.points))
 
+	@helpers.check_book
 	def remove_point(self, idx: int):
 		if len(self.points) == 1:
 			raise ValueError("`points` cannot be empty.")
 		self.points.pop(idx)
-		self._area.set("points", vec_to_pts(self.points))
+		self._area.set("points", structs.vec_to_pts(self.points))
 
+	@helpers.check_book
 	def set_paragraph(self, paragraph: str):
 		for i in self._area.iter():
 			if i != self._area:
 				i.clear()
 				self._area.remove(i)
-		self._area.extend(para_to_tree(paragraph, self._ns))
+		self._area.extend(structs.para_to_tree(paragraph, self._ns))
 		self.paragraph = paragraph
 
 	# --- Optional ---
+	@helpers.check_book
 	def set_bgcolor(self, bg: Optional[str]):
 		if bg is not None:
 			self._area.set("bgcolor", bg)
@@ -508,6 +548,7 @@ class TextArea:
 			self._area.attrib.pop("bgcolor")
 		self.bgcolor = bg
 
+	@helpers.check_book
 	def set_rotation(self, rot: Optional[int]):
 		if rot is None:
 			if "text-rotation" in self._area.keys():
@@ -518,6 +559,7 @@ class TextArea:
 			raise ValueError("Rotation must be an integer from 0 to 360.")
 		self.rotation = rot
 
+	@helpers.check_book
 	def set_type(self, ty: Optional[TextAreas]):
 		if ty is None:
 			if "type" in self._area.keys():
@@ -526,6 +568,7 @@ class TextArea:
 			self._area.set("type", ty.name)
 		self.type = ty
 
+	@helpers.check_book
 	def set_inverted(self, inv: Optional[bool]):
 		if inv is None:
 			if "inverted" in self._area.keys():
@@ -534,6 +577,7 @@ class TextArea:
 			self._area.set("inverted", str(inv).lower())
 		self.inverted = inv
 
+	@helpers.check_book
 	def set_transparent(self, tra: Optional[bool]):
 		if tra is None:
 			if "transparent" in self._area.keys():
