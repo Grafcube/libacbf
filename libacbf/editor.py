@@ -152,6 +152,3 @@ def edit_date(tag: str, section: Union[BookInfo, PublishInfo, DocumentInfo], att
 		if "value" in item.attrib.keys():
 			item.attrib.pop("value")
 		setattr(section, attr_d, None)
-
-def edit_coverpage(book: ACBFBook): # TODO
-	raise NotImplementedError

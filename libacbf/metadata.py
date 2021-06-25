@@ -408,10 +408,6 @@ class BookInfo:
 			self._info.remove(an_element)
 			self.sync_annotations()
 
-	# Cover Page
-	def edit_coverpage(self): # Incomplete
-		raise NotImplementedError("TODO when making Page editor") # Put common function in editor
-
 	# --- Optional ---
 	# Languages
 	def add_language(self, lang: str, show: bool):
