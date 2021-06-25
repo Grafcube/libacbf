@@ -461,20 +461,46 @@ class ACBFBody:
 	def __init__(self, book: ACBFBook):
 		self.book = book
 
-		ns = book._namespace
-		body = book._root.find(f"{ns}body")
-		page_items = body.findall(f"{ns}page")
+		self._ns = book._namespace
+		self._body = book._root.find(f"{self._ns}body")
 
-		pgs = []
-		for pg in page_items:
-			pgs.append(Page(pg, book))
-
-		self.pages: List[Page] = pgs
+		self.pages: List[Page] = []
+		self.sync_pages()
 
 		# Optional
 		self.bgcolor: Optional[str] = None
-		if "bgcolor" in body.keys():
-			self.bgcolor = body.attrib["bgcolor"]
+		if "bgcolor" in self._body.keys():
+			self.bgcolor = self._body.attrib["bgcolor"]
+
+	def sync_pages(self):
+		self.pages.clear()
+		for pg in self._body.findall(f"{self._ns}page"):
+			self.pages.append(Page(pg, self.book))
+
+	def insert_new_page(self, index: int, image_ref: str) -> Page:
+		pg = etree.SubElement(self._body, f"{self._ns}page")
+		pg.insert(index, etree.Element(f"{self._ns}image", {"href": image_ref}))
+		self.pages.insert(index, Page(pg, self.book))
+		return self.pages[index]
+
+	def remove_page(self, index: int):
+		pg = self.pages.pop(index)
+		pg._page.clear()
+		self._body.remove(pg._page)
+
+	def change_page_index(self, src_index: int, dest_index: int):
+		pg = self.pages.pop(src_index)
+		self._body.remove(pg._page)
+		self._body.insert(dest_index, pg._page)
+		self.pages.insert(dest_index, pg)
+
+	# --- Optional ---
+	def set_bgcolor(self, bg: Optional[str]):
+		if bg is not None:
+			self._body.set("bgcolor", bg)
+		elif "bgcolor" in self._body.attrib:
+			self._body.attrib.pop("bgcolor")
+		self.bgcolor = bg
 
 class ACBFData:
 	"""Get any binary data embedded in the ACBF file.
