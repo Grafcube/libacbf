@@ -561,30 +561,12 @@ class ACBFData:
 		for i in self._data_elements:
 			self.files[i.attrib["id"]] = None
 
-	def add_data(self, file, name, embed: bool = False): # Incomplete
-		"""[summary]
-
-		Parameters
-		----------
-		file : [type]
-			[description]
-		name : [type]
-			[description]
-		embed : bool, optional
-			[description], by default False
-		"""
+	def add_data(self, file, name, embed: bool = False):
 		check_book(self.book)
 
 		self.sync_data()
 
-	def add_data(self, file: str): # Incomplete
-		"""[summary]
-
-		Parameters
-		----------
-		file : str
-			[description]
-		"""
+	def add_data(self, file: str):
 		check_book(self.book)
 
 	def __len__(self):
