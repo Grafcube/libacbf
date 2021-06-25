@@ -424,7 +424,7 @@ class BookInfo:
 
 		ln_item = etree.Element(f"{self._ns}text-layer")
 		ln_item.set("lang", lang)
-		ln_item.set("show", str(show))
+		ln_item.set("show", str(show).lower())
 		ln_section.append(ln_item)
 
 		self.sync_languages()
@@ -442,7 +442,7 @@ class BookInfo:
 		if lang is not None:
 			layer._element.set("lang", lang)
 		if show is not None:
-			layer._element.set("show", str(show))
+			layer._element.set("show", str(show).lower())
 		self.sync_languages()
 
 	def remove_language(self, layer: Union[int, structs.LanguageLayer]):
