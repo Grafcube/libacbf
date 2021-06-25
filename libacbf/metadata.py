@@ -4,6 +4,7 @@ import distutils.util
 import langcodes
 from typing import TYPE_CHECKING, Dict, List, Set, Optional, Union
 from datetime import date
+import dateutil.parser
 from lxml import etree
 
 if TYPE_CHECKING:
@@ -46,6 +47,137 @@ def update_authors(author_items, ns) -> List[structs.Author]:
 		authors.append(new_author)
 
 	return authors
+
+def add_author(section: Union[BookInfo, DocumentInfo], author: structs.Author):
+	info_section = section._info
+
+	au_element = etree.Element(f"{section._ns}author")
+	idx = info_section.index(info_section.findall(f"{section._ns}author")[-1]) + 1
+	info_section.insert(idx, au_element)
+	author._element = au_element
+
+	attributes = author.__dict__.copy()
+	attributes.pop("_element")
+	attributes["activity"] = attributes["_activity"]
+	attributes.pop("_activity")
+	attributes["lang"] = attributes["_lang"]
+	attributes.pop("_lang")
+	attributes["first_name"] = attributes["_first_name"]
+	attributes.pop("_first_name")
+	attributes["last_name"] = attributes["_last_name"]
+	attributes.pop("_last_name")
+
+	edit_author(section, author, **attributes)
+
+def edit_author(section: Union[BookInfo, DocumentInfo], author: Union[int, structs.Author], **attributes):
+	au_list = section._info.findall(f"{section._ns}author")
+
+	if isinstance(author, int):
+		au_element = section.authors[author]._element
+		author = section.authors[author]
+	elif isinstance(author, structs.Author):
+		if author._element is None:
+			raise ValueError("Author is not part of a book.")
+		elif author._element not in au_list:
+			raise ValueError("Author is not part of this book.")
+		else:
+			au_element = author._element
+
+	for i in attributes.keys():
+		if not hasattr(author, i):
+			raise AttributeError(f"`Author` has no attribute `{i}`.")
+
+	names = {x: attributes[x] for x in ["first_name", "last_name", "nickname"] if x in attributes}
+
+	if len(names) > 0:
+		for i in ["first_name", "last_name", "nickname"]:
+			if i not in names:
+				names[i] = getattr(author, i)
+		_ = structs.Author(**names)
+
+	attrs = {x: attributes.pop(x) for x in ["activity", "lang"] if x in attributes}
+
+	for k, v in attrs.items():
+		if (k == "activity" and (type(v) is constants.AuthorActivities or v is None)) or (k == "lang" and (isinstance(v, str) or v is None)):
+			if v is not None:
+				au_element.set(k, v.name if k == "activity" else v)
+			else:
+				if k in au_element.attrib:
+					au_element.attrib.pop(k)
+		else:
+			raise TypeError(f"`{k}` is not of an accepted type.")
+
+	for k, v in attributes.items():
+		if isinstance(v, str) or v is None:
+			element = au_element.find(section._ns + re.sub(r'_', '-', k))
+			if v is not None and element is None:
+				element = etree.Element(section._ns + re.sub(r'_', '-', k))
+				au_element.append(element)
+				element.text = v
+			elif v is not None and element is not None:
+				element.text = v
+			elif v is None and element is not None:
+				element.clear()
+				au_element.remove(element)
+		else:
+			raise TypeError(f"`{k}` is not of an accepted type.")
+
+	section.sync_authors()
+
+def remove_author(section: Union[BookInfo, DocumentInfo], author: Union[int, structs.Author]):
+	info_section = section._info
+
+	au_list = section._info.findall(f"{section._ns}author")
+
+	if isinstance(author, int):
+		author_element = section.authors[author]._element
+	elif isinstance(author, structs.Author):
+		if author._element is None:
+			raise ValueError("Author is not part of a book.")
+		elif author._element not in au_list:
+			raise ValueError("Author is not part of this book.")
+		author_element = author._element
+
+	author_element.clear()
+	info_section.remove(author_element)
+
+	section.sync_authors()
+
+def edit_optional(tag: str, section: Union[BookInfo, PublishInfo, DocumentInfo], attr: str, text: Optional[str]):
+	item = section._info.find(section._ns + tag)
+
+	if text is not None:
+		if item is None:
+			item = etree.Element(section._ns + tag)
+			section._info.append(item)
+		item.text = text
+		setattr(section, attr, item.text)
+	elif text is None and item is not None:
+		item.clear()
+		item.getparent().remove(item)
+
+def edit_date(tag: str, section: Union[BookInfo, PublishInfo, DocumentInfo], attr_s: str, attr_d: str,
+			dt: Union[str, date], include_date: bool = True):
+
+	item = section._info.find(section._ns + tag)
+
+	if isinstance(dt, str):
+		item.text = dt
+	elif isinstance(dt, date):
+		item.text = dt.isoformat()
+
+	setattr(section, attr_s, item.text)
+
+	if include_date:
+		if isinstance(dt, str):
+			item.set("value", dateutil.parser.parse(dt, fuzzy=True).date().isoformat())
+		elif isinstance(dt, date):
+			item.set("value", dt.isoformat())
+		setattr(section, attr_d, date.fromisoformat(item.attrib["value"]))
+	else:
+		if "value" in item.attrib.keys():
+			item.attrib.pop("value")
+		setattr(section, attr_d, None)
 
 class BookInfo:
 	"""Metadata about the book itself.
@@ -264,15 +396,15 @@ class BookInfo:
 	# Author
 	@helpers.check_book
 	def add_author(self, author: structs.Author):
-		helpers.add_author(self, author)
+		add_author(self, author)
 
 	@helpers.check_book
 	def edit_author(self, author: Union[structs.Author, int], **attributes):
-		helpers.edit_author(self, author, **attributes)
+		edit_author(self, author, **attributes)
 
 	@helpers.check_book
 	def remove_author(self, author: Union[int, structs.Author]):
-		helpers.remove_author(self, author)
+		remove_author(self, author)
 
 	# Titles
 	@helpers.check_book
@@ -806,7 +938,7 @@ class PublishInfo:
 
 	@helpers.check_book
 	def set_publish_date(self, dt: Union[str, date], include_date: bool = True):
-		helpers.edit_date("publish-date",
+		edit_date("publish-date",
 						self,
 						"publish_date_string",
 						"publish_date",
@@ -817,15 +949,15 @@ class PublishInfo:
 	# --- Optional ---
 	@helpers.check_book
 	def set_publish_city(self, city: Optional[str]):
-		helpers.edit_optional("city", self, "publish_city", city)
+		edit_optional("city", self, "publish_city", city)
 
 	@helpers.check_book
 	def set_isbn(self, isbn: Optional[str]):
-		helpers.edit_optional("isbn", self, "isbn", isbn)
+		edit_optional("isbn", self, "isbn", isbn)
 
 	@helpers.check_book
 	def set_license(self, license: Optional[str]):
-		helpers.edit_optional("license", self, "license", license)
+		edit_optional("license", self, "license", license)
 
 class DocumentInfo:
 	"""Metadata about the ACBF file itself.
@@ -905,20 +1037,20 @@ class DocumentInfo:
 	# Author
 	@helpers.check_book
 	def add_author(self, author: structs.Author):
-		helpers.add_author(self, author)
+		add_author(self, author)
 
 	@helpers.check_book
 	def edit_author(self, author: Union[structs.Author, int], **attributes):
-		helpers.edit_author(self, author, **attributes)
+		edit_author(self, author, **attributes)
 
 	@helpers.check_book
 	def remove_author(self, author: Union[int, structs.Author]):
-		helpers.remove_author(self, author)
+		remove_author(self, author)
 	# Author
 
 	@helpers.check_book
 	def set_creation_date(self, dt: Union[str, date], include_date: bool = True):
-		helpers.edit_date("creation-date",
+		edit_date("creation-date",
 						self,
 						"creation_date_string",
 						"creation_date",
@@ -947,11 +1079,11 @@ class DocumentInfo:
 
 	@helpers.check_book
 	def set_document_id(self, id: Optional[str]):
-		helpers.edit_optional("id", self, "document_id", id)
+		edit_optional("id", self, "document_id", id)
 
 	@helpers.check_book
 	def set_document_version(self, version: Optional[str] = None):
-		helpers.edit_optional("version", self, "document_version", version)
+		edit_optional("version", self, "document_version", version)
 
 	# History
 	@helpers.check_book

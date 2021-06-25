@@ -1,8 +1,6 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Dict, List, Tuple, Optional, Union
-from collections import namedtuple
+from typing import TYPE_CHECKING, Dict, List, Optional, Union
 from pathlib import Path
-from lxml import etree
 import re
 import langcodes
 
@@ -10,37 +8,6 @@ if TYPE_CHECKING:
 	from libacbf import ACBFBook
 from libacbf.constants import AuthorActivities, Genres
 import libacbf.helpers as helpers
-
-Vec2 = namedtuple("Vector2", "x y")
-
-def pts_to_vec(pts_str: str):
-	pts = []
-	pts_l = re.split(" ", pts_str)
-	for pt in pts_l:
-		ls = re.split(",", pt)
-		pts.append(Vec2(int(ls[0]), int(ls[1])))
-	return pts
-
-def vec_to_pts(points: List[Tuple[int, int]]):
-	return ' '.join([f"{x},{y}" for x, y in points])
-
-def tree_to_para(p_root, ns):
-	pa = []
-	for p in p_root.findall(f"{ns}p"):
-		p_text = str(etree.tostring(p, encoding="utf-8")).strip()
-		text = re.sub(r'<\/?p[^>]*>', '', p_text)
-		pa.append(text)
-	return '\n'.join(pa)
-
-def para_to_tree(paragraph: str, ns):
-	p_elements = []
-	for p in re.split(r'\n', paragraph):
-		p = f"<p>{p}</p>"
-		p_root = etree.fromstring(p)
-		for i in p_root.iter():
-			i.tag = ns + i
-		p_elements.append(p_root)
-	return p_elements
 
 class Styles:
 	def __init__(self, book: ACBFBook, contents: str):
@@ -403,23 +370,23 @@ class Frame:
 		Defines the background colour for the page. Inherits from :attr:`Page.bgcolor <libacbf.body.Page.bgcolor>`
 		if ``None``.
 	"""
-	def __init__(self, points: List[Vec2]):
+	def __init__(self, points: List[helpers.Vec2]):
 		self._element = None
 
-		self.points: List[Vec2] = points
+		self.points: List[helpers.Vec2] = points
 		self.bgcolor: Optional[str] = None
 
 	@helpers.check_book
 	def set_point(self, idx: int, x: int, y: int):
-		self.points[idx] = Vec2(x, y)
-		self._element.set("points", vec_to_pts(self.points))
+		self.points[idx] = helpers.Vec2(x, y)
+		self._element.set("points", helpers.vec_to_pts(self.points))
 
 	@helpers.check_book
 	def remove_point(self, idx: int):
 		if len(self.points) == 1:
 			raise ValueError("`points` cannot be empty.")
 		self.points.pop(idx)
-		self._element.set("points", vec_to_pts(self.points))
+		self._element.set("points", helpers.vec_to_pts(self.points))
 
 	@helpers.check_book
 	def set_bgcolor(self, bg: Optional[str]):
@@ -446,11 +413,11 @@ class Jump:
 		Target page to go to when clicked. Pages start from 1 so first page is ``1``, second page is
 		``2`` and so on.
 	"""
-	def __init__(self, points: List[Vec2], page: int):
+	def __init__(self, points: List[helpers.Vec2], page: int):
 		self._element = None
 
 		self.page: int = page
-		self.points: List[Vec2] = points
+		self.points: List[helpers.Vec2] = points
 
 	@helpers.check_book
 	def set_target_page(self, target_page: int):
@@ -459,12 +426,12 @@ class Jump:
 
 	@helpers.check_book
 	def set_point(self, idx: int, x: int, y: int):
-		self.points[idx] = Vec2(x, y)
-		self._element.set("points", vec_to_pts(self.points))
+		self.points[idx] = helpers.Vec2(x, y)
+		self._element.set("points", helpers.vec_to_pts(self.points))
 
 	@helpers.check_book
 	def remove_point(self, idx: int):
 		if len(self.points) == 1:
 			raise ValueError("`points` cannot be empty.")
 		self.points.pop(idx)
-		self._element.set("points", vec_to_pts(self.points))
+		self._element.set("points", helpers.vec_to_pts(self.points))

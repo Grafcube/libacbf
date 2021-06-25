@@ -133,13 +133,14 @@ class Page:
 			A dictionary with keys being a standard language object and values being
 			:class:`TextLayer` objects.
 		"""
-		if self._text_layers is None:
+		if self._text_layers is None or len(self._text_layers) == 0:
 			item = self._page
-			self.text_layers = {}
+			text_layers = {}
 			textlayer_items = item.findall(f"{self._ns}text-layer")
 			for lr in textlayer_items:
 				new_lr = TextLayer(lr, self._ns)
-				self.text_layers[new_lr.language] = new_lr
+				text_layers[new_lr.language] = new_lr
+			self._text_layers = text_layers
 		return self._text_layers
 
 	@property
@@ -155,12 +156,12 @@ class Page:
 		List[Frame]
 			A list of :class:`Frame <libacbf.structs.Frame>` objects.
 		"""
-		if self._frames is None:
+		if self._frames is None or len(self._frames) == 0:
 			item = self._page
 			frames = []
 			frame_items = item.findall(f"{self._ns}frame")
 			for fr in frame_items:
-				frame = structs.Frame(structs.pts_to_vec(fr.attrib["points"]))
+				frame = structs.Frame(structs.helpers.pts_to_vec(fr.attrib["points"]))
 				frame._element = fr
 				if "bgcolor" in fr.keys():
 					frame.bgcolor = fr.attrib["bgcolor"]
@@ -181,12 +182,12 @@ class Page:
 		List[Jump]
 			A list of :class:`Jump <libacbf.structs.Jump>` objects.
 		"""
-		if self._jumps is None:
+		if self._jumps is None or len(self._jumps) == 0:
 			item = self._page
 			jumps = []
 			jump_items = item.findall(f"{self._ns}jump")
 			for jp in jump_items:
-				jump = structs.Jump(structs.pts_to_vec(jp.attrib["points"]), int(jp.attrib["page"]))
+				jump = structs.Jump(structs.helpers.pts_to_vec(jp.attrib["points"]), int(jp.attrib["page"]))
 				jump._element = jp
 				jumps.append(jump)
 			self._jumps = jumps
@@ -320,8 +321,8 @@ class Page:
 	# Frames
 	@helpers.check_book
 	def insert_new_frame(self, index: int, points: List[Tuple[int, int]]) -> structs.Frame:
-		fr_element = etree.Element(f"{self._ns}frame", {"points": structs.vec_to_pts(points)})
-		fr = structs.Frame([structs.Vec2(x, y) for x, y in points])
+		fr_element = etree.Element(f"{self._ns}frame", {"points": structs.helpers.vec_to_pts(points)})
+		fr = structs.Frame([structs.helpers.Vec2(x, y) for x, y in points])
 		fr._element = fr_element
 
 		if index == len(self.frames):
@@ -355,8 +356,8 @@ class Page:
 	def add_jump(self, target_page: int, points: List[Tuple[int, int]]) -> structs.Jump:
 		jp_element = etree.SubElement(self._page, f"{self._ns}jump")
 		jp_element.set("page", str(target_page))
-		jp_element.set("points", structs.vec_to_pts(points))
-		jp = structs.Jump([structs.Vec2(x, y) for x, y in points], target_page)
+		jp_element.set("points", structs.helpers.vec_to_pts(points))
+		jp = structs.Jump([structs.helpers.Vec2(x, y) for x, y in points], target_page)
 		jp._element = jp_element
 		self.jumps.append(jp)
 		return jp
@@ -412,8 +413,8 @@ class TextLayer:
 	@helpers.check_book
 	def insert_new_textarea(self, idx: int, points: List[Tuple[int, int]], paragraph: str) -> TextArea:
 		ta = etree.Element(f"{self._ns}text-area")
-		ta.set("points", structs.vec_to_pts(points))
-		ta.extend(structs.para_to_tree(paragraph, self._ns))
+		ta.set("points", structs.helpers.vec_to_pts(points))
+		ta.extend(structs.helpers.para_to_tree(paragraph, self._ns))
 		self._layer.insert(idx, ta)
 		self.text_areas.insert(idx, TextArea(ta, self._ns))
 		return self.text_areas[idx]
@@ -488,9 +489,9 @@ class TextArea:
 		self._area = area
 		self._ns = ns
 
-		self.points: List[structs.Vec2] = structs.pts_to_vec(area.attrib["points"])
+		self.points: List[structs.helpers.Vec2] = structs.helpers.pts_to_vec(area.attrib["points"])
 
-		self.paragraph: str = structs.tree_to_para(area, ns)
+		self.paragraph: str = structs.helpers.tree_to_para(area, ns)
 
 		# Optional
 		self.bgcolor: Optional[str] = None
@@ -520,15 +521,15 @@ class TextArea:
 	# Editor
 	@helpers.check_book
 	def set_point(self, idx: int, x: int, y: int):
-		self.points[idx] = structs.Vec2(x, y)
-		self._area.set("points", structs.vec_to_pts(self.points))
+		self.points[idx] = structs.helpers.Vec2(x, y)
+		self._area.set("points", structs.helpers.vec_to_pts(self.points))
 
 	@helpers.check_book
 	def remove_point(self, idx: int):
 		if len(self.points) == 1:
 			raise ValueError("`points` cannot be empty.")
 		self.points.pop(idx)
-		self._area.set("points", structs.vec_to_pts(self.points))
+		self._area.set("points", structs.helpers.vec_to_pts(self.points))
 
 	@helpers.check_book
 	def set_paragraph(self, paragraph: str):
@@ -536,7 +537,7 @@ class TextArea:
 			if i != self._area:
 				i.clear()
 				self._area.remove(i)
-		self._area.extend(structs.para_to_tree(paragraph, self._ns))
+		self._area.extend(structs.helpers.para_to_tree(paragraph, self._ns))
 		self.paragraph = paragraph
 
 	# --- Optional ---
