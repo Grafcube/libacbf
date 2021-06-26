@@ -149,7 +149,7 @@ class ArchiveReader:
 
 		Parameters
 		----------
-		file_path : str, default=ACBF File
+		target : str, default=ACBF File
 			Path relative to root of archive.
 
 		Returns
@@ -179,7 +179,7 @@ class ArchiveReader:
 
 		Parameters
 		----------
-		file : str | Path
+		target : str | Path
 			[description]
 		arcname : str | None, default=Name of target file
 			[description]

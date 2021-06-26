@@ -205,9 +205,9 @@ class BookInfo:
 				"en_US": "English (US) title"
 			}
 
-	genres : Dict[str, Genre]
+	genres : Dict[str, genre]
 		A dictionary with keys being a string representation of :class:`Genres <libacbf.constants.Genres>`
-		Enum and values being :class:`Genre <libacbf.structs.Genre>` objects.
+		Enum and values being :class:`genre <libacbf.structs.genre>` objects.
 
 	annotations : Dict[str, str]
 		A short summary describing the book.
@@ -297,9 +297,9 @@ class BookInfo:
 			new_genre = structs.Genre(genre.text)
 
 			if "match" in genre.keys():
-				new_genre.Match = int(genre.attrib["match"])
+				new_genre.match = int(genre.attrib["match"])
 
-			self.genres[new_genre.Genre.name] = new_genre
+			self.genres[new_genre.genre.name] = new_genre
 
 	def sync_annotations(self):
 		self.annotations: Dict[str, str] = {}

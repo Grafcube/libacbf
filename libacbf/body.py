@@ -197,7 +197,6 @@ class Page:
 		self._image = None
 		self.image_ref: str = self._page.find(f"{self._ns}image").attrib["href"]
 
-		ref_t = None
 		if self.image_ref.startswith("#"):
 			ref_t = ImageRefType.Embedded
 			self._file_id = re.sub("#", "", self.image_ref)
@@ -346,7 +345,7 @@ class Page:
 			self._page.remove(fr._element)
 			self.frames[-1]._element.addnext(fr._element)
 		else:
-			self.frames[dest_index] # Checks if index is in bounds before removing element
+			_ = self.frames[dest_index] # Checks if index is in bounds before removing element
 			self._page.remove(fr._element)
 			self.frames[dest_index]._element.addprevious(fr._element)
 		self.frames.insert(dest_index, fr)

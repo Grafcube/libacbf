@@ -22,7 +22,7 @@ class AuthorActivities(Enum):
 	Other = 100
 
 class Genres(Enum):
-	"""List of accepted values for :attr:`Genre.Genre <libacbf.structs.Genre.Genre>`.
+	"""List of accepted values for :attr:`genre.genre <libacbf.structs.genre.genre>`.
 
 	See Also
 	--------

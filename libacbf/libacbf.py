@@ -32,7 +32,7 @@ def get_book_template() -> str:
 
 def _validate_acbf(root, ns: str):
 	tree = root.getroottree()
-	version = re.split(r'/', re.sub(r'\{|\}', "", ns))[-1]
+	version = re.split(r'/', re.sub(r'[{}]', "", ns))[-1]
 	xsd_path = f"libacbf/schema/acbf-{version}.xsd"
 
 	with open(xsd_path, encoding="utf-8") as file:
@@ -56,7 +56,7 @@ class ACBFBook:
 
 	Parameters
 	----------
-	file_path : str, default=Empty book template
+	file : str, default=Empty book template
 		Path to ACBF book. May be absolute or relative.
 
 	Raises
@@ -127,7 +127,7 @@ class ACBFBook:
 
 			embedded_stylesheet = book.Styles['_']
 
-	file_path : str
+	book_path : Path
 		Absolute path to source file.
 
 	archive : ArchiveReader, optional
@@ -218,7 +218,6 @@ class ACBFBook:
 			create_file()
 			arc_mode = 'w'
 
-		contents = None
 		if not is_text:
 			if self.archive is None:
 				self.archive = ArchiveReader(file, arc_mode)
@@ -267,7 +266,7 @@ class ACBFBook:
 
 		Parameters
 		----------
-		path : str, optional
+		file : str, optional
 			Path to save to.
 		overwrite : bool, optional
 			Whether to overwrite if file already exists at path. ``False`` by default.
@@ -331,7 +330,7 @@ class ACBFBook:
 			for ref in reference_items:
 				pa = []
 				for p in ref.findall(f"{ns}p"):
-					text = re.sub(r"<\/?p[^>]*>", "", str(etree.tostring(p, encoding="utf-8"), encoding="utf-8").strip())
+					text = re.sub(r'</?p[^>]*>', "", str(etree.tostring(p, encoding="utf-8"), encoding="utf-8").strip())
 					pa.append(text)
 				references[ref.attrib["id"]] = {"paragraph": "\n".join(pa)}
 		self.References: Dict[str, Dict[str, str]] = references
@@ -361,7 +360,7 @@ class ACBFBook:
 				ref_element = i
 				break
 
-		if ref_element == None:
+		if ref_element is None:
 			ref_element = etree.Element(f"{self._namespace}reference")
 			ref_section.append(ref_element)
 
@@ -566,11 +565,11 @@ class ACBFData:
 			self.files[i.attrib["id"]] = None
 
 	@helpers.check_book
-	def add_data(self, file, name, embed: bool = False):
+	def add_data(self, file, name, embed: bool = False): # TODO
 		self.sync_data()
 
 	@helpers.check_book
-	def remove_data(self, file: str):
+	def remove_data(self, file: str): # TODO
 		pass
 
 	def __len__(self):

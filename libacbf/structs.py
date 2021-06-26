@@ -22,7 +22,7 @@ class Styles:
 
 	def sync_styles(self):
 		self.styles.clear()
-		style_refs = re.findall(r'<\?xml-stylesheet type="text\/css" href="(.+)"\?>', self._contents,
+		style_refs = re.findall(r'<\?xml-stylesheet type="text/css" href="(.+)"\?>', self._contents,
 								re.IGNORECASE)
 		for i in style_refs:
 			self.styles[i] = None
@@ -31,11 +31,11 @@ class Styles:
 			self.styles['_'] = None
 
 	@helpers.check_book
-	def edit_styles(self, stylesheet: str, style_name: str = '_'): # Incomplete
+	def edit_styles(self, stylesheet: str, style_name: str = '_'): # TODO
 		self.sync_styles()
 
 	@helpers.check_book
-	def remove_styles(self, style_name: str = '_'): # Incomplete
+	def remove_styles(self, style_name: str = '_'): # TODO
 		self.sync_styles()
 
 	def __len__(self):
@@ -224,7 +224,7 @@ class Genre:
 
 	See Also
 	--------
-	`Body Info Genre specifications <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#Genre>`_.
+	`Body Info genre specifications <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#Genre>`_.
 
 	Parameters
 	----------
@@ -236,11 +236,11 @@ class Genre:
 		The match value. Must be an integer from 0 to 100.
 	"""
 	def __init__(self, genre_type: Union[str, Genres, int], match: Optional[int] = None):
-		self.Genre: Genres = genre_type
-		self.Match: Optional[int] = match
+		self.genre: Genres = genre_type
+		self.match: Optional[int] = match
 
 	@property
-	def Genre(self) -> Genres:
+	def genre(self) -> Genres:
 		"""Defines the activity that a particular author carried out on the comic book.
 
 		Allowed values are defined in :class:`Genres <libacbf.constants.Genres>`.
@@ -252,8 +252,8 @@ class Genre:
 		"""
 		return self._genre
 
-	@Genre.setter
-	def Genre(self, gn: Union[str, Genres, int]):
+	@genre.setter
+	def genre(self, gn: Union[str, Genres, int]):
 		if type(gn) is Genres:
 			self._genre = gn
 		elif type(gn) is str:
@@ -262,7 +262,7 @@ class Genre:
 			self._genre = Genres(gn)
 
 	@property
-	def Match(self) -> Optional[int]:
+	def match(self) -> Optional[int]:
 		"""Defines the match percentage to that particular genre.
 
 		Returns
@@ -272,14 +272,14 @@ class Genre:
 		"""
 		return self._match
 
-	@Match.setter
-	def Match(self, val: Optional[int] = None):
+	@match.setter
+	def match(self, val: Optional[int] = None):
 		self._match = None
 		if val is not None:
-			if val >= 0 and val <= 100:
+			if 0 <= val <= 100:
 				self._match = val
 			else:
-				raise ValueError("Match must be an int from 0 to 100.")
+				raise ValueError("match must be an int from 0 to 100.")
 
 class LanguageLayer:
 	"""Used by :attr:`BookInfo.languages <libacbf.metadata.BookInfo.languages>`.

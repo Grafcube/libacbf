@@ -55,19 +55,19 @@ from pathlib import Path
 
 # def test_genres():
 # 	op = {}
-# 	op["original"] = {x.Genre.name: x.Match for x in book.Metadata.book_info.genres.values()}
+# 	op["original"] = {x.genre.name: x.match for x in book.Metadata.book_info.genres.values()}
 
 # 	book.Metadata.book_info.edit_genre(book, Genres.other)
-# 	op["added"] = {x.Genre.name: x.Match for x in book.Metadata.book_info.genres.values()}
+# 	op["added"] = {x.genre.name: x.match for x in book.Metadata.book_info.genres.values()}
 
 # 	book.Metadata.book_info.edit_genre(book, Genres.other, 42)
-# 	op["edited"] = {x.Genre.name: x.Match for x in book.Metadata.book_info.genres.values()}
+# 	op["edited"] = {x.genre.name: x.match for x in book.Metadata.book_info.genres.values()}
 
 # 	book.Metadata.book_info.edit_genre(book, Genres.other, None)
-# 	op["modified"] = {x.Genre.name: x.Match for x in book.Metadata.book_info.genres.values()}
+# 	op["modified"] = {x.genre.name: x.match for x in book.Metadata.book_info.genres.values()}
 
 # 	book.Metadata.book_info.remove_genre(book, Genres.other)
-# 	op["removed"] = {x.Genre.name: x.Match for x in book.Metadata.book_info.genres.values()}
+# 	op["removed"] = {x.genre.name: x.match for x in book.Metadata.book_info.genres.values()}
 
 # 	with open(dir + "test_genres.json", 'w', encoding="utf-8", newline='\n') as result:
 # 		result.write(json.dumps(op, ensure_ascii=False))

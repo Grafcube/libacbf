@@ -25,7 +25,7 @@ def test_titles(read_books: Tuple[Path, ACBFBook]):
 def test_genres(read_books: Tuple[Path, ACBFBook]):
 	path, book = read_books
 	genres = book.Metadata.book_info.genres.values()
-	op = {x.Genre.name: x.Match for x in genres}
+	op = {x.genre.name: x.match for x in genres}
 
 	dir = make_bookinfo_dir(path)
 	with open(dir/"test_bookinfo_genres.json", 'w', encoding="utf-8", newline='\n') as result:
