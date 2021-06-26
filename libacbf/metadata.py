@@ -1024,11 +1024,9 @@ class DocumentInfo:
 
 		self.sync_history()
 
-	@helpers.check_book
 	def sync_authors(self):
 		self.authors: List[structs.Author] = update_authors(self._info.findall(f"{self._ns}author"), self._ns)
 
-	@helpers.check_book
 	def sync_history(self):
 		self.document_history: Optional[List[str]] = []
 		for item in self._info.findall(f"{self._ns}history/{self._ns}p"):

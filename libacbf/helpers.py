@@ -1,5 +1,4 @@
 from __future__ import annotations
-
 import re
 from typing import TYPE_CHECKING, List, Tuple
 from collections import namedtuple
@@ -22,7 +21,7 @@ def check_book(func):
 	return wrapper
 
 def check_write(book: ACBFBook):
-	if book.mode != 'r':
+	if book.mode == 'r':
 		raise ValueError("Cannot edit read only book.")
 	if not book.is_open:
 		raise ValueError("Cannot edit closed book.")
