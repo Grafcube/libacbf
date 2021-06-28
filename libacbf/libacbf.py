@@ -2,9 +2,11 @@ import os
 import re
 import warnings
 import tempfile
+import magic
 from io import TextIOBase, UnsupportedOperation
 from pathlib import Path
-from typing import List, Dict, Optional, Union, Literal, IO
+from typing import List, Dict, Optional, Set, Union, Literal, IO
+from base64 import b64encode
 from lxml import etree
 from zipfile import ZipFile
 from py7zr import SevenZipFile
@@ -137,9 +139,7 @@ class ACBFBook:
 		:attr:`ArchiveReader.archive <libacbf.archivereader.ArchiveReader.archive>` may be
 		``zipfile.ZipFile``, ``py7zr.SevenZipFile``, ``tarfile.TarFile`` or ``rarfile.RarFile``.
 	"""
-	def __init__(self, file: Union[str, Path, IO], mode: Literal['r', 'w', 'a', 'x'] = 'r',
-				direct: bool = False):
-
+	def __init__(self, file: Union[str, Path, IO], mode: Literal['r', 'w', 'a', 'x'] = 'r', direct: bool = False):
 		self.book_path = None
 
 		self.archive: Optional[ArchiveReader] = None
@@ -535,42 +535,74 @@ class ACBFData:
 	def __init__(self, book: ACBFBook):
 		self._ns = book._namespace
 		self.book: ACBFBook = book
-		self._root = book._root
-		self._base = book._root.find(f"{self._ns}data")
-		self._data_elements = []
-
 		self.files: Dict[str, Optional[BookData]] = {}
-
 		self.sync_data()
 
-	def list_files(self) -> List[str]:
+	def list_files(self) -> Set[str]:
 		"""Returns a list of all the names of the files embedded in the ACBF file. May be images,
 		fonts etc.
 
 		Returns
 		-------
-		List[str]
-			A list of file names.
+		Set[str]
+			A set of file names.
 		"""
-		fl = []
-		for i in self.files.keys():
-			fl.append(str(i))
-		return fl
+		return set(self.files.keys())
 
 	def sync_data(self):
-		self._base = self._root.find(f"{self._ns}data")
-		if self._base is not None:
-			self._data_elements = self._base.findall(f"{self._ns}binary")
-		for i in self._data_elements:
+		data_elements = self.book._root.findall(f"{self._ns}data/{self._ns}binary")
+		for i in data_elements:
 			self.files[i.attrib["id"]] = None
 
 	@helpers.check_book
-	def add_data(self, file, name, embed: bool = False): # TODO
+	def add_data(self, target: Union[str, Path], name: str = '', embed: bool = False):
+		if not self.book.savable and not embed:
+			raise ValueError("Archive was created externally. Add files to it directly.")
+
+		if isinstance(target, str):
+			target = Path(target).resolve(True)
+
+		name = target.name if name == '' else name
+
+		if embed:
+			base = self.book._root.find(f"{self._ns}data")
+			if base is None:
+				base = etree.SubElement(self.book._root, f"{self._ns}data")
+
+			with open(target, 'rb') as file:
+				contents = file.read()
+			type = magic.from_buffer(contents, True)
+			data = b64encode(contents).decode("utf-8")
+
+			bin_element = etree.SubElement(base, f"{self._ns}binary", {"id": name, "content-type": type})
+			bin_element.text = data
+
+			self.files[name] = BookData(name, type, data)
+		else:
+			self.book.archive.write(target, name)
+
 		self.sync_data()
 
 	@helpers.check_book
-	def remove_data(self, file: str): # TODO
-		pass
+	def remove_data(self, target: Union[str, Path], embedded: bool = False):
+		if not self.book.savable and not embedded:
+			raise ValueError("Archive was created externally. Remove files directly.")
+
+		if isinstance(target, str) and not embedded:
+			target = Path(target)
+
+		if embedded:
+			data_elements = self.book._root.findall(f"{self._ns}data/{self._ns}binary")
+			for i in data_elements:
+				if i.attrib["id"] == target:
+					i.clear()
+					i.getparent().remove(i)
+			self.files.pop(target)
+		else:
+			if not target.is_absolute() and target in [Path(x) for x in self.book.archive.list_files()]:
+				self.book.archive.remove(target)
+			else:
+				raise FileNotFoundError("File not in archive.")
 
 	def __len__(self):
 		return len(self.files.keys())
@@ -580,7 +612,8 @@ class ACBFData:
 			if self.files[key] is not None:
 				return self.files[key]
 			else:
-				for i in self._data_elements:
+				data_elements = self.book._root.findall(f"{self._ns}data/{self._ns}binary")
+				for i in data_elements:
 					if i.attrib["id"] == key:
 						new_data = BookData(key, i.attrib["content-type"], i.text)
 						self.files[key] = new_data

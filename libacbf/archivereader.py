@@ -56,9 +56,7 @@ class ArchiveReader:
 	type : ArchiveTypes(Enum)
 		The type of archive.
 	"""
-	def __init__(self, archive: Union[str, Path, BinaryIO], mode: Literal['r', 'w'] = 'r',
-				direct: bool = False):
-
+	def __init__(self, archive: Union[str, Path, BinaryIO], mode: Literal['r', 'w'] = 'r', direct: bool = False):
 		arc = None
 		if direct:
 			arc = archive
@@ -210,9 +208,10 @@ class ArchiveReader:
 
 		if isinstance(target, str):
 			target = Path(target)
-		target = str(target.resolve(True))
 
-		self.changes[target] = ""
+		files = [Path(x) for x in self.list_files() + self.list_dirs()]
+		if not target.is_absolute() and target in files:
+			self.changes[str(target)] = ""
 
 	def save(self, file: Union[str, BinaryIO]):
 		with TemporaryDirectory() as td:
