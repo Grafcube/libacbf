@@ -30,11 +30,21 @@ class Styles:
 			self.styles['_'] = None
 
 	@helpers.check_book
-	def edit_styles(self, stylesheet: str, style_name: str = '_'):  # TODO
-		self.sync_styles()
+	def edit_style(self, stylesheet_ref: Union[str, Path], style_name: Optional[str] = None, embed: bool = False):
+		if isinstance(stylesheet_ref, str):
+			stylesheet_ref = Path(stylesheet_ref)
+
+		if style_name is None and not embed:
+			style_name = stylesheet_ref.name
+
+		if embed:
+			pass
+		else:
+			self.book.archive.write(stylesheet_ref, style_name)
+
 
 	@helpers.check_book
-	def remove_styles(self, style_name: str = '_'):  # TODO
+	def remove_style(self, style_name: str = '_'): # TODO
 		self.sync_styles()
 
 	def __len__(self):
