@@ -47,8 +47,11 @@ def _validate_acbf(root, ns: str):
 		try:
 			acbf_schema.assertValid(tree)
 		except etree.DocumentInvalid as err:
-			warnings.warn("Validation failed. Books with 1.0 schema are not fully supported.", UserWarning)
-			warnings.warn('Change the ACBF tag at the top of the `.acbf` XML file to `<ACBF xmlns="http://www.acbf.info/xml/acbf/1.1">` to use the 1.1 schema.', UserWarning)
+			warnings.warn("Validation failed. Books with 1.0 schema are not fully supported.",
+						UserWarning)
+			warnings.warn('Change the ACBF tag at the top of the `.acbf` XML file to \
+						`<ACBF xmlns="http://www.acbf.info/xml/acbf/1.1">` to use the 1.1 schema.',
+						UserWarning)
 			print(err)
 	else:
 		acbf_schema.assertValid(tree)
@@ -139,7 +142,9 @@ class ACBFBook:
 		:attr:`ArchiveReader.archive <libacbf.archivereader.ArchiveReader.archive>` may be
 		``zipfile.ZipFile``, ``py7zr.SevenZipFile``, ``tarfile.TarFile`` or ``rarfile.RarFile``.
 	"""
-	def __init__(self, file: Union[str, Path, IO], mode: Literal['r', 'w', 'a', 'x'] = 'r', direct: bool = False):
+	def __init__(self, file: Union[str, Path, IO], mode: Literal['r', 'w', 'a', 'x'] = 'r',
+				direct: bool = False):
+
 		self.book_path = None
 
 		self.archive: Optional[ArchiveReader] = None
@@ -195,7 +200,7 @@ class ACBFBook:
 					name = "book.acbf"
 					if self.archive.filename is not None:
 						name = Path(self.archive.filename).with_suffix(".acbf")
-					acbf_path = Path(tempfile.gettempdir())/name
+					acbf_path = Path(tempfile.gettempdir()) / name
 
 					with open(acbf_path, 'w') as xml:
 						xml.write(self.get_acbf_xml())
@@ -249,7 +254,8 @@ class ACBFBook:
 
 		self.Data: ACBFData = ACBFData(self)
 
-		self.sync_references() # self.References
+		self.References: Dict[str, Dict[str, str]] = {}
+		self.sync_references()
 
 	def get_acbf_xml(self):
 		"""[summary]
@@ -299,7 +305,7 @@ class ACBFBook:
 			else:
 				file.write(self.get_acbf_xml())
 		else:
-			acbf_path = Path(tempfile.gettempdir())/self.archive._get_acbf_file()
+			acbf_path = Path(tempfile.gettempdir()) / self.archive._get_acbf_file()
 			with open(acbf_path, 'w') as xml:
 				xml.write(self.get_acbf_xml())
 			self.archive.write(acbf_path)
@@ -324,7 +330,7 @@ class ACBFBook:
 	def sync_references(self):
 		ns = self._namespace
 		ref_root = self._root.find(f"{ns}references")
-		references = {}
+		self.References.clear()
 		if ref_root is not None:
 			reference_items = ref_root.findall(f"{ns}reference")
 			for ref in reference_items:
@@ -332,8 +338,7 @@ class ACBFBook:
 				for p in ref.findall(f"{ns}p"):
 					text = re.sub(r'</?p[^>]*>', "", str(etree.tostring(p, encoding="utf-8"), encoding="utf-8").strip())
 					pa.append(text)
-				references[ref.attrib["id"]] = {"paragraph": "\n".join(pa)}
-		self.References: Dict[str, Dict[str, str]] = references
+				self.References[ref.attrib["id"]] = {"paragraph": "\n".join(pa)}
 
 	def edit_reference(self, id: str, paragraph: str):
 		"""[summary]
@@ -550,6 +555,7 @@ class ACBFData:
 		return set(self.files.keys())
 
 	def sync_data(self):
+		self.files.clear()
 		data_elements = self.book._root.findall(f"{self._ns}data/{self._ns}binary")
 		for i in data_elements:
 			self.files[i.attrib["id"]] = None

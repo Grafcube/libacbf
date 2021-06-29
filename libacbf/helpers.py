@@ -43,7 +43,7 @@ def tree_to_para(p_root, ns):
 	pa = []
 	for p in p_root.findall(f"{ns}p"):
 		p_text = str(etree.tostring(p, encoding="utf-8")).strip()
-		text = re.sub(r'<\/?p[^>]*>', '', p_text)
+		text = re.sub(r'</?p[^>]*>', '', p_text)
 		pa.append(text)
 	return '\n'.join(pa)
 

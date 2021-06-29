@@ -72,6 +72,7 @@ def add_author(section: Union[BookInfo, DocumentInfo], author: structs.Author):
 def edit_author(section: Union[BookInfo, DocumentInfo], author: Union[int, structs.Author], **attributes):
 	au_list = section._info.findall(f"{section._ns}author")
 
+	au_element = None
 	if isinstance(author, int):
 		au_element = section.authors[author]._element
 		author = section.authors[author]
@@ -129,6 +130,7 @@ def remove_author(section: Union[BookInfo, DocumentInfo], author: Union[int, str
 
 	au_list = section._info.findall(f"{section._ns}author")
 
+	author_element = None
 	if isinstance(author, int):
 		author_element = section.authors[author]._element
 	elif isinstance(author, structs.Author):
@@ -194,7 +196,7 @@ class BookInfo:
 	authors : List[Author]
 		A list of :class:`Author <libacbf.structs.Author>` objects.
 
-	book_titles : Dict[str, str]
+	book_title : Dict[str, str]
 		A dictionary with standard language codes as keys and titles as values. Key is ``"_"`` if no
 		language is defined. ::
 
@@ -260,27 +262,47 @@ class BookInfo:
 		self._info = info
 		self._ns: str = book._namespace
 
+		self.authors: List[structs.Author] = []
 		self.sync_authors()
+
+		self.book_title: Dict[str, str] = {}
 		self.sync_book_titles()
+
+		self.genres: Dict[str, structs.Genre] = {}
 		self.sync_genres()
+
+		self.annotations: Dict[str, str] = {}
 		self.sync_annotations()
+
+		self.cover_page: Page = None
 		self.sync_coverpage()
 
 		# Optional
+		self.languages: List[structs.LanguageLayer] = []
 		self.sync_languages()
+
+		self.characters: List[str] = []
 		self.sync_characters()
+
+		self.keywords: Dict[str, Set[str]] = {}
 		self.sync_keywords()
+
+		self.series: Dict[str, structs.Series] = {}
 		self.sync_series()
+
+		self.content_rating: Dict[str, str] = {}
 		self.sync_content_rating()
+
+		self.database_ref: List[structs.DBRef] = []
 		self.sync_database_ref()
 
 	#region Sync
 	def sync_authors(self):
-		self.authors: List[structs.Author] = update_authors(self._info.findall(f"{self._ns}author"), self._ns)
+		self.authors.clear()
+		self.authors.extend(update_authors(self._info.findall(f"{self._ns}author"), self._ns))
 
 	def sync_book_titles(self):
-		self.book_title: Dict[str, str] = {}
-
+		self.book_title.clear()
 		book_items = self._info.findall(f"{self._ns}book-title")
 		for title in book_items:
 			if "lang" in title.keys():
@@ -290,7 +312,7 @@ class BookInfo:
 				self.book_title['_'] = title.text
 
 	def sync_genres(self):
-		self.genres: Dict[str, structs.Genre] = {}
+		self.genres = {}
 
 		genre_items = self._info.findall(f"{self._ns}genre")
 		for genre in genre_items:
@@ -302,7 +324,7 @@ class BookInfo:
 			self.genres[new_genre.genre.name] = new_genre
 
 	def sync_annotations(self):
-		self.annotations: Dict[str, str] = {}
+		self.annotations.clear()
 
 		annotation_items = self._info.findall(f"{self._ns}annotation")
 		for an in annotation_items:
@@ -319,11 +341,11 @@ class BookInfo:
 
 	def sync_coverpage(self):
 		cpage = self._info.find(f"{self._ns}coverpage")
-		self.cover_page: Page = Page(cpage, self.book, True)
+		self.cover_page = Page(cpage, self.book, True)
 
 	# --- Optional ---
 	def sync_languages(self):
-		self.languages: List[structs.LanguageLayer] = []
+		self.languages.clear()
 
 		if self._info.find(f"{self._ns}languages") is not None:
 			text_layers = self._info.find(f"{self._ns}languages").findall(f"{self._ns}text-layer")
@@ -335,7 +357,7 @@ class BookInfo:
 				self.languages.append(new_lang)
 
 	def sync_characters(self):
-		self.characters: List[str] = []
+		self.characters.clear()
 
 		character_item = self._info.find(f"{self._ns}characters")
 		if character_item is not None:
@@ -343,7 +365,7 @@ class BookInfo:
 				self.characters.append(c.text)
 
 	def sync_keywords(self):
-		self.keywords: Dict[str, Set[str]] = {}
+		self.keywords.clear()
 
 		keyword_items = self._info.findall(f"{self._ns}keywords")
 		for k in keyword_items:
@@ -356,7 +378,7 @@ class BookInfo:
 				self.keywords[lang] = {x.lower() for x in re.split(", |,", k.text)}
 
 	def sync_series(self):
-		self.series: Dict[str, structs.Series] = {}
+		self.series.clear()
 
 		series_items = self._info.findall(f"{self._ns}sequence")
 		for se in series_items:
@@ -368,7 +390,7 @@ class BookInfo:
 			self.series[se.attrib["title"]] = new_se
 
 	def sync_content_rating(self):
-		self.content_rating: Dict[str, str] = {}
+		self.content_rating.clear()
 
 		rating_items = self._info.findall(f"{self._ns}content-rating")
 		for rt in rating_items:
@@ -378,7 +400,7 @@ class BookInfo:
 				self.content_rating['_'] = rt.text
 
 	def sync_database_ref(self):
-		self.database_ref: List[structs.DBRef] = []
+		self.database_ref.clear()
 
 		db_items = self._info.findall(f"{self._ns}databaseref")
 		for db in db_items:
@@ -393,6 +415,7 @@ class BookInfo:
 	#endregion
 
 	#region Editing
+
 	# Author
 	@helpers.check_book
 	def add_author(self, author: structs.Author):
@@ -419,17 +442,17 @@ class BookInfo:
 					t_element = i
 					break
 		else:
-			key = langcodes.standardize_tag(lang)
+			lang = langcodes.standardize_tag(lang)
 			for i in title_elements:
-				if "lang" in i.keys() and langcodes.standardize_tag(i.attrib["lang"]) == key:
+				if "lang" in i.keys() and langcodes.standardize_tag(i.attrib["lang"]) == lang:
 					t_element = i
 					break
 
-		if t_element == None:
+		if t_element in None:
 			t_element = etree.Element(f"{self._ns}book-title")
 			self._info.insert(idx, t_element)
 
-		t_element.set("lang", key)
+		t_element.set("lang", lang)
 		t_element.text = title
 
 		self.sync_book_titles()
@@ -870,7 +893,6 @@ class BookInfo:
 		dbref._element.clear()
 		dbref._element.getparent().remove(dbref._element)
 		self.sync_database_ref()
-
 	#endregion
 
 class PublishInfo:
@@ -934,17 +956,16 @@ class PublishInfo:
 	def set_publisher(self, name: str):
 		pub_item = self._info.find(f"{self._ns}publisher")
 		pub_item.text = name
-		self._publisher = pub_item.text
+		self.publisher = pub_item.text
 
 	@helpers.check_book
 	def set_publish_date(self, dt: Union[str, date], include_date: bool = True):
 		edit_date("publish-date",
-						self,
-						"publish_date_string",
-						"publish_date",
-						dt,
-						include_date
-		)
+				self,
+				"publish_date_string",
+				"publish_date",
+				dt,
+				include_date)
 
 	# --- Optional ---
 	@helpers.check_book
@@ -998,6 +1019,7 @@ class DocumentInfo:
 		self._info = info
 		self._ns = book._namespace
 
+		self.authors: List[structs.Author] = []
 		self.sync_authors()
 
 		self.creation_date_string: str = info.find(f"{self._ns}creation-date").text
@@ -1022,13 +1044,14 @@ class DocumentInfo:
 		if info.find(f"{self._ns}version") is not None:
 			self.document_version = info.find(f"{self._ns}version").text
 
+		self.document_history: Optional[List[str]] = []
 		self.sync_history()
 
 	def sync_authors(self):
-		self.authors: List[structs.Author] = update_authors(self._info.findall(f"{self._ns}author"), self._ns)
+		self.authors.extend(update_authors(self._info.findall(f"{self._ns}author"), self._ns))
 
 	def sync_history(self):
-		self.document_history: Optional[List[str]] = []
+		self.document_history.clear()
 		for item in self._info.findall(f"{self._ns}history/{self._ns}p"):
 			self.document_history.append(item.text)
 
@@ -1049,12 +1072,11 @@ class DocumentInfo:
 	@helpers.check_book
 	def set_creation_date(self, dt: Union[str, date], include_date: bool = True):
 		edit_date("creation-date",
-						self,
-						"creation_date_string",
-						"creation_date",
-						dt,
-						include_date
-		)
+				self,
+				"creation_date_string",
+				"creation_date",
+				dt,
+				include_date)
 
 	# --- Optional ---
 	@helpers.check_book

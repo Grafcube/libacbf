@@ -7,7 +7,7 @@ def test_book_props(read_books: Tuple[Path, ACBFBook]):
 	dir, book = read_books
 	op = {
 		"book_path": str(book.book_path),
-		"savable": book.mode,
+		"mode": book.mode,
 		"savable": book.savable,
 		"archive_name": book.archive.filename if book.archive is not None else None,
 		"archive_type": book.archive.type.name if book.archive is not None else None,

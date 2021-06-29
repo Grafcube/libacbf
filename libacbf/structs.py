@@ -22,8 +22,7 @@ class Styles:
 
 	def sync_styles(self):
 		self.styles.clear()
-		style_refs = re.findall(r'<\?xml-stylesheet type="text/css" href="(.+)"\?>', self._contents,
-								re.IGNORECASE)
+		style_refs = re.findall(r'<\?xml-stylesheet type="text/css" href="(.+)"\?>', self._contents, re.IGNORECASE)
 		for i in style_refs:
 			self.styles[i] = None
 
@@ -31,11 +30,11 @@ class Styles:
 			self.styles['_'] = None
 
 	@helpers.check_book
-	def edit_styles(self, stylesheet: str, style_name: str = '_'): # TODO
+	def edit_styles(self, stylesheet: str, style_name: str = '_'):  # TODO
 		self.sync_styles()
 
 	@helpers.check_book
-	def remove_styles(self, style_name: str = '_'): # TODO
+	def remove_styles(self, style_name: str = '_'):  # TODO
 		self.sync_styles()
 
 	def __len__(self):
@@ -49,7 +48,7 @@ class Styles:
 				self.styles['_'] = self.book._root.find(f"{self.book._namespace}style").text.strip()
 			else:
 				if self.book.archive is None:
-					st_path = self.book.book_path.parent/Path(key)
+					st_path = self.book.book_path.parent / Path(key)
 					with open(str(st_path), 'r', encoding="utf-8") as st:
 						self.styles[key] = st.read()
 				else:
@@ -107,7 +106,7 @@ class Author:
 	email : str, optional
 		Author's email address.
 	"""
-	def __init__(self, *names: str, first_name = None, last_name = None, nickname = None):
+	def __init__(self, *names: str, first_name=None, last_name=None, nickname=None):
 		self._element = None
 
 		self._first_name: Optional[str] = None
@@ -296,6 +295,7 @@ class LanguageLayer:
 	show : bool
 		Whether layer is drawn.
 	"""
+
 	def __init__(self, val: str, show: bool):
 		self._element = None
 
@@ -320,6 +320,7 @@ class Series:
 	volume : str, optional
 		The volume that the book belongs to.
 	"""
+
 	def __init__(self, title: str, sequence: str, volume: Optional[str] = None):
 		self.title: str = title
 		self.sequence: str = sequence
@@ -343,6 +344,7 @@ class DBRef:
 	type : str, optional
 		Type of the given reference such as URL, ID etc.
 	"""
+
 	def __init__(self, dbname: str, ref: str):
 		self._element = None
 
@@ -370,6 +372,7 @@ class Frame:
 		Defines the background colour for the page. Inherits from :attr:`Page.bgcolor <libacbf.body.Page.bgcolor>`
 		if ``None``.
 	"""
+
 	def __init__(self, points: List[helpers.Vec2]):
 		self._element = None
 
@@ -413,6 +416,7 @@ class Jump:
 		Target page to go to when clicked. Pages start from 1 so first page is ``1``, second page is
 		``2`` and so on.
 	"""
+
 	def __init__(self, points: List[helpers.Vec2], page: int):
 		self._element = None
 
