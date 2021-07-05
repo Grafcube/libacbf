@@ -6,4 +6,4 @@ samples = {"acbf": "tests/samples/Doctorow, Cory - Craphound-1.0.acbf",
 
 other = {"cbr": "tests/samples/Doctorow, Cory - Craphound.cbr"}
 
-fails = {"no-acbf": "tests/samples/Doctorow, Cory - Craphound - Copy.cbz"}
+fails = {"no-acbf": "tests/samples/Doctorow, Cory - Craphound - NoACBF.cbz"}
