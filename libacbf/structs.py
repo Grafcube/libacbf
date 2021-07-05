@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, Dict, List, Optional, Union
 from pathlib import Path
-import re
+from lxml import etree
 import langcodes
 
 if TYPE_CHECKING:
@@ -22,15 +22,17 @@ class Styles:
 
 	def sync_styles(self):
 		self.styles.clear()
-		style_refs = re.findall(r'<\?xml-stylesheet type="text/css" href="(.+)"\?>', self._contents, re.IGNORECASE)
+		style_refs = [x for x in self.book._root.xpath("//processing-instruction()")
+					if x.target == "xml-stylesheet"]
 		for i in style_refs:
-			self.styles[i] = None
-
+			self.styles[i.attrib["href"]] = None
 		if self.book._root.find(f"{self.book._namespace}style") is not None:
 			self.styles['_'] = None
 
 	@helpers.check_book
-	def edit_style(self, stylesheet_ref: Union[str, Path], style_name: Optional[str] = None, embed: bool = False):
+	def edit_style(self, stylesheet_ref: Union[str, Path], style_name: Optional[str] = None,
+					embed: bool = False):
+
 		if isinstance(stylesheet_ref, str):
 			stylesheet_ref = Path(stylesheet_ref)
 
@@ -38,14 +40,35 @@ class Styles:
 			style_name = stylesheet_ref.name
 
 		if embed:
-			pass
+			style_element = self.book._root.find(f"{self.book._namespace}style")
+			if style_element is None:
+				style_element = etree.SubElement(self.book._root,
+												f"{self.book._namespace}style",
+												{"type": "text/css"})
+			with open(stylesheet_ref, 'r') as css:
+				style_element.text = css.read().strip()
+			self.styles['_'] = style_element.text
 		else:
-			self.book.archive.write(stylesheet_ref, style_name)
-
+			style_refs = [x.attrib["href"] for x in self.book._root.xpath("//processing-instruction()")
+						if x.target == "xml-stylesheet"]
+			if style_name not in style_refs:
+				style_element = etree.ProcessingInstruction("xml-stylesheet",
+															f'type="text/css" href="{style_name}"')
+				self.book._root.addprevious(style_element)
+			if self.book.archive is not None:
+				self.book.archive.write(stylesheet_ref, style_name)
 
 	@helpers.check_book
-	def remove_style(self, style_name: str = '_'): # TODO
-		self.sync_styles()
+	def remove_style(self, style_name: str = '_'):
+		style_refs = [x for x in self.book._root.xpath("//processing-instruction()")
+					if x.target == "xml-stylesheet"]
+		for i in style_refs:
+			if i.target == "xml-stylesheet" and i.attrib["href"] == style_name:
+				self.book._root.append(i)
+				self.book._root.remove(i)
+				break
+		if self.book.archive is not None:
+			self.book.archive.remove(style_name)
 
 	def __len__(self):
 		len(self.styles.keys())
