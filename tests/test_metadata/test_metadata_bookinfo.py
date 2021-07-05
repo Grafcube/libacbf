@@ -147,7 +147,7 @@ def test_coverpage(read_books: Tuple[Path, ACBFBook]):
 		textlayer_output[pg.image_ref] = new_tl
 
 	dir = make_bookinfo_dir(path)
-	with open(dir/"test_cover_pages.json", "w", encoding="utf-8", newline="\n") as result:
+	with open(dir/"test_cover_page.json", "w", encoding="utf-8", newline="\n") as result:
 		result.write(json.dumps(page_output, ensure_ascii=False))
 	with open(dir/"test_cover_textlayers.json", "w", encoding="utf-8", newline="\n") as result:
 		result.write(json.dumps(textlayer_output, ensure_ascii=False))
