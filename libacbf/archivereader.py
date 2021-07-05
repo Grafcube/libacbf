@@ -220,7 +220,9 @@ class ArchiveReader:
 			self.archive.extractall(str(td))
 
 			for source, action in self.changes.items():
-				if action != "" and '.' not in action:
+				action = Path(action)
+				action.resolve()
+				if action != '' and td in action.parents:
 					shutil.copy(source, str(td/action))
 				else:
 					if source in self.list_files():

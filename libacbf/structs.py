@@ -59,10 +59,10 @@ class Styles:
 			else:
 				if self.book.archive is None:
 					st_path = self.book.book_path.parent / Path(key)
-					with open(str(st_path), 'r', encoding="utf-8") as st:
+					with open(str(st_path), 'r') as st:
 						self.styles[key] = st.read()
 				else:
-					self.styles[key] = str(self.book.archive.read(key), "utf-8")
+					self.styles[key] = self.book.archive.read(key).decode("utf-8")
 			return self.styles[key]
 		else:
 			raise FileNotFoundError

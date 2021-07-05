@@ -176,6 +176,7 @@ class ACBFBook:
 
 		def create_file():
 			if not is_text:
+				nonlocal direct
 				if direct:
 					self.archive = ArchiveReader(file, arc_mode, True)
 				else:
@@ -265,7 +266,10 @@ class ACBFBook:
 		[type]
 			[description]
 		"""
-		return str(etree.tostring(self._root, pretty_print=True), encoding="utf-8")
+		return etree.tostring(self._root.getroottree(),
+							encoding="utf-8",
+							xml_declaration=True,
+							pretty_print=True).decode("utf-8")
 
 	def save(self, file: Union[str, Path, IO, None] = None, overwrite: bool = False):
 		"""Save as file.
