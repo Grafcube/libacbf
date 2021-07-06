@@ -55,6 +55,7 @@ def add_author(section: Union[BookInfo, DocumentInfo], author: structs.Author):
 	idx = info_section.index(info_section.findall(f"{section._ns}author")[-1]) + 1
 	info_section.insert(idx, au_element)
 	author._element = au_element
+	section.authors.append(author)
 
 	attributes = author.__dict__.copy()
 	attributes.pop("_element")
@@ -74,13 +75,11 @@ def edit_author(section: Union[BookInfo, DocumentInfo], author: Union[int, struc
 
 	au_element = None
 	if isinstance(author, int):
-		au_element = section.authors[author]._element
 		author = section.authors[author]
+		au_element = author._element
 	elif isinstance(author, structs.Author):
-		if author._element is None:
+		if author._element is None or author._element not in au_list:
 			raise ValueError("Author is not part of a book.")
-		elif author._element not in au_list:
-			raise ValueError("Author is not part of this book.")
 		else:
 			au_element = author._element
 
@@ -98,15 +97,19 @@ def edit_author(section: Union[BookInfo, DocumentInfo], author: Union[int, struc
 
 	attrs = {x: attributes.pop(x) for x in ["activity", "lang"] if x in attributes}
 
+	if "activity" in attrs:
+		if isinstance(attrs["activity"], constants.AuthorActivities):
+			attrs["activity"] = attrs["activity"].name
+		elif isinstance(attrs["activity"], str):
+			_ = constants.AuthorActivities[attrs["activity"]]
+
 	for k, v in attrs.items():
-		if (k == "activity" and (type(v) is constants.AuthorActivities or v is None)) or (k == "lang" and (isinstance(v, str) or v is None)):
-			if v is not None:
-				au_element.set(k, v.name if k == "activity" else v)
-			else:
-				if k in au_element.attrib:
-					au_element.attrib.pop(k)
-		else:
-			raise TypeError(f"`{k}` is not of an accepted type.")
+		if isinstance(v, str):
+			au_element.set(k, v)
+		elif v is None:
+			if k in au_element.attrib:
+				au_element.attrib.pop(k)
+		setattr(author, k, v)
 
 	for k, v in attributes.items():
 		if isinstance(v, str) or v is None:
@@ -120,10 +123,7 @@ def edit_author(section: Union[BookInfo, DocumentInfo], author: Union[int, struc
 			elif v is None and element is not None:
 				element.clear()
 				au_element.remove(element)
-		else:
-			raise TypeError(f"`{k}` is not of an accepted type.")
-
-	section.sync_authors()
+		setattr(author, k, v)
 
 def remove_author(section: Union[BookInfo, DocumentInfo], author: Union[int, structs.Author]):
 	info_section = section._info
@@ -132,7 +132,8 @@ def remove_author(section: Union[BookInfo, DocumentInfo], author: Union[int, str
 
 	author_element = None
 	if isinstance(author, int):
-		author_element = section.authors[author]._element
+		author = section.authors[author]
+		author_element = author._element
 	elif isinstance(author, structs.Author):
 		if author._element is None:
 			raise ValueError("Author is not part of a book.")
@@ -140,10 +141,14 @@ def remove_author(section: Union[BookInfo, DocumentInfo], author: Union[int, str
 			raise ValueError("Author is not part of this book.")
 		author_element = author._element
 
+	if len(au_list) <= 1:
+		raise ValueError("Book must have at least one author.")
+
 	author_element.clear()
 	info_section.remove(author_element)
 
-	section.sync_authors()
+	author._element = None
+	section.authors.remove(author)
 
 def edit_optional(tag: str, section: Union[BookInfo, PublishInfo, DocumentInfo], attr: str, text: Optional[str]):
 	item = section._info.find(section._ns + tag)
@@ -448,39 +453,46 @@ class BookInfo:
 					t_element = i
 					break
 
-		if t_element in None:
+		if t_element is None:
 			t_element = etree.Element(f"{self._ns}book-title")
 			self._info.insert(idx, t_element)
 
 		t_element.set("lang", lang)
 		t_element.text = title
 
-		self.sync_book_titles()
+		self.book_title[lang] = title
 
 	@helpers.check_book
 	def remove_title(self, lang: str = '_'):
 		title_elements = self._info.findall(f"{self._ns}book-title")
 
+		t_item = None
 		if lang == '_':
 			for i in title_elements:
 				if "lang" not in i.keys():
-					i.clear()
-					self._info.remove(i)
-					self.sync_book_titles()
+					t_item = i
 					break
 		else:
 			lang = langcodes.standardize_tag(lang)
 			for i in title_elements:
 				if "lang" in i.keys() and langcodes.standardize_tag(i.attrib["lang"]) == lang:
-					i.clear()
-					self._info.remove(i)
-					self.sync_book_titles()
+					t_item = i
 					break
+
+		if len(title_elements) <= 1:
+			raise ValueError("Book must have a title.")
+
+		t_item.clear()
+		self._info.remove(t_item)
+		self.book_title.pop(lang)
 
 	# Genres
 	@helpers.check_book
-	def edit_genre(self, genre: constants.Genres, match: Optional[int] = '_'):
+	def edit_genre(self, genre: Union[str, constants.Genres], match: Optional[int] = '_'):
 		gn_elements = self._info.findall(f"{self._ns}genre")
+
+		if isinstance(genre, str):
+			genre = constants.Genres[genre]
 		name = genre.name
 
 		gn_element = None
@@ -495,23 +507,32 @@ class BookInfo:
 			gn_element.text = name
 			self._info.insert(idx, gn_element)
 
-		if match is not None and match != '_':
-			gn_element.set("match", str(match))
-		elif match is None:
-			gn_element.attrib.pop("match")
+		if name not in self.genres or self.genres[name] is None:
+			self.genres[name] = structs.Genre(genre)
+		else:
+			self.genres[name].genre = genre
 
-		self.sync_genres()
+		if match is None:
+			gn_element.attrib.pop("match")
+		elif match == '_':
+			match = None
+		else:
+			gn_element.set("match", str(match))
+
+		self.genres[name].match = match
 
 	@helpers.check_book
-	def remove_genre(self, genre: constants.Genres):
+	def remove_genre(self, genre: Union[str, constants.Genres]):
 		gn_elements = self._info.findall(f"{self}genre")
-		name = genre.name
+
+		if isinstance(genre, str):
+			genre = constants.Genres[genre]
 
 		for i in gn_elements:
-			if i.text == name:
+			if i.text == genre.name:
 				i.clear()
 				self._info.remove(i)
-				self.sync_genres()
+				self.genres.pop(genre.name)
 				break
 
 	# Annotations

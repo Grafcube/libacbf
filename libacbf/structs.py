@@ -144,7 +144,7 @@ class Author:
 
 		self._first_name: Optional[str] = None
 		self._last_name: Optional[str] = None
-		self.nickname: Optional[str] = None
+		self._nickname: Optional[str] = None
 
 		if len(names) == 1:
 			nickname = names[0]
@@ -159,7 +159,7 @@ class Author:
 		if (first_name is not None and last_name is not None) or nickname is not None:
 			self._first_name: Optional[str] = first_name
 			self._last_name: Optional[str] = last_name
-			self.nickname: Optional[str] = nickname
+			self._nickname: Optional[str] = nickname
 		else:
 			raise ValueError("Author must have either First Name and Last Name or Nickname.")
 
@@ -170,26 +170,38 @@ class Author:
 		self.email: Optional[str] = None
 
 	@property
-	def first_name(self) -> str:
+	def first_name(self) -> Optional[str]:
 		return self._first_name
 
 	@first_name.setter
-	def first_name(self, val: str):
+	def first_name(self, val: Optional[str]):
 		if self.last_name is not None or self.nickname is not None:
 			self._first_name = val
 		else:
 			raise ValueError("Author must have either First Name and Last Name or Nickname.")
 
 	@property
-	def last_name(self) -> str:
+	def last_name(self) -> Optional[str]:
 		return self._last_name
 
 	@last_name.setter
-	def last_name(self, val: str):
+	def last_name(self, val: Optional[str]):
 		if self.first_name is not None or self.nickname is not None:
 			self._last_name = val
 		else:
 			raise ValueError("Author must have either First Name and Last Name or Nickname.")
+
+	@property
+	def nickname(self) -> Optional[str]:
+		return self._nickname
+
+	@nickname.setter
+	def nickname(self, val: Optional[str]):
+		if val is None:
+			if self.first_name is not None:
+				self._nickname = None
+		else:
+			self._nickname = val
 
 	@property
 	def activity(self) -> Optional[AuthorActivities]:
