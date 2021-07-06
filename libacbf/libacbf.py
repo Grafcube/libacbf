@@ -145,7 +145,7 @@ class ACBFBook:
 	def __init__(self, file: Union[str, Path, IO], mode: Literal['r', 'w', 'a', 'x'] = 'r',
 				direct: bool = False):
 
-		self.book_path = None
+		self.book_path: Path = None
 
 		self.archive: Optional[ArchiveReader] = None
 
@@ -258,7 +258,7 @@ class ACBFBook:
 		self.References: Dict[str, Dict[str, str]] = {}
 		self.sync_references()
 
-	def get_acbf_xml(self):
+	def get_acbf_xml(self) -> str:
 		"""[summary]
 
 		Returns
@@ -289,16 +289,13 @@ class ACBFBook:
 		if isinstance(file, str):
 			file = Path(file)
 
-		if isinstance(file, Path) and file.is_file() and not overwrite:
-			raise FileExistsError
-
 		if file is None:
 			if self.book_path is not None:
 				file = self.book_path
 			else:
 				raise FileNotFoundError
 		elif isinstance(file, Path):
-			if not overwrite:
+			if file.is_file() and not overwrite:
 				raise FileExistsError
 			self.book_path = file.absolute()
 
@@ -321,10 +318,11 @@ class ACBFBook:
 		Saves the book and closes open archives if file is ``.cbz``, ``.cbt`` or ``.cbr``
 		or ``.cb7`` files.
 		"""
-		if self.mode == 'x':
-			self.save()
-		elif self.mode in ['w', 'a']:
-			self.save(overwrite=True)
+		if self.savable:
+			if self.mode == 'x':
+				self.save()
+			elif self.mode in ['w', 'a']:
+				self.save(overwrite=True)
 
 		if self.archive is not None:
 			self.archive.close()

@@ -30,6 +30,15 @@ def get_archive_type(file: Union[str, Path, BinaryIO]) -> ArchiveTypes:
 	ValueError
 		[description]
 	"""
+	if isinstance(file, ZipFile):
+		return ArchiveTypes.Zip
+	elif isinstance(file, SevenZipFile):
+		return ArchiveTypes.SevenZip
+	elif isinstance(file, tar.TarFile):
+		return ArchiveTypes.Tar
+	elif isinstance(file, RarFile):
+		return ArchiveTypes.Rar
+
 	if is_7zfile(file):
 		return ArchiveTypes.SevenZip
 	elif is_zipfile(file):
@@ -61,16 +70,20 @@ class ArchiveReader:
 		if direct:
 			arc = archive
 
+		self.mode: Literal['r', 'w'] = mode
+		self.type: ArchiveTypes = get_archive_type(archive)
+
+		if isinstance(archive, (ZipFile, SevenZipFile, tar.TarFile, RarFile)):
+			arc = archive
+			self.mode = 'r'
+
 		if isinstance(archive, str):
 			archive = Path(archive).resolve(True)
 
-		if not isinstance(archive, Path) and not direct:
+		if hasattr(archive, "seek") and not direct:
 			archive.seek(0)
 
 		self.changes: Dict[str, str] = {}
-
-		self.mode: Literal['r', 'w'] = mode
-		self.type: ArchiveTypes = get_archive_type(archive)
 
 		if mode == 'w' and self.type == ArchiveTypes.Rar:
 			raise EditRARArchiveError
@@ -214,6 +227,9 @@ class ArchiveReader:
 			self.changes[str(target)] = ""
 
 	def save(self, file: Union[str, BinaryIO]):
+		if self.mode == 'r':
+			UnsupportedOperation("File is not writeable.")
+
 		with TemporaryDirectory() as td:
 			td = Path(td)
 
