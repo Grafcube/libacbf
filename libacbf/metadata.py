@@ -49,11 +49,8 @@ def update_authors(author_items, ns) -> List[structs.Author]:
 	return authors
 
 def add_author(section: Union[BookInfo, DocumentInfo], author: structs.Author):
-	info_section = section._info
-
 	au_element = etree.Element(f"{section._ns}author")
-	idx = info_section.index(info_section.findall(f"{section._ns}author")[-1]) + 1
-	info_section.insert(idx, au_element)
+	section._info.findall(f"{section._ns}author")[-1].addnext(au_element)
 	author._element = au_element
 	section.authors.append(author)
 
@@ -70,7 +67,8 @@ def add_author(section: Union[BookInfo, DocumentInfo], author: structs.Author):
 
 	edit_author(section, author, **attributes)
 
-def edit_author(section: Union[BookInfo, DocumentInfo], author: Union[int, structs.Author], **attributes):
+def edit_author(section: Union[BookInfo, DocumentInfo], author: Union[int, structs.Author],
+				**attributes: str):
 	au_list = section._info.findall(f"{section._ns}author")
 
 	au_element = None
@@ -98,10 +96,7 @@ def edit_author(section: Union[BookInfo, DocumentInfo], author: Union[int, struc
 	attrs = {x: attributes.pop(x) for x in ["activity", "lang"] if x in attributes}
 
 	if "activity" in attrs:
-		if isinstance(attrs["activity"], constants.AuthorActivities):
-			attrs["activity"] = attrs["activity"].name
-		elif isinstance(attrs["activity"], str):
-			_ = constants.AuthorActivities[attrs["activity"]]
+		_ = constants.AuthorActivities[attrs["activity"]]
 
 	for k, v in attrs.items():
 		if isinstance(v, str):
@@ -142,7 +137,7 @@ def remove_author(section: Union[BookInfo, DocumentInfo], author: Union[int, str
 		author_element = author._element
 
 	if len(au_list) <= 1:
-		raise ValueError("Book must have at least one author.")
+		raise AttributeError("Book must have at least one author.")
 
 	author_element.clear()
 	info_section.remove(author_element)
@@ -419,8 +414,7 @@ class BookInfo:
 
 	#endregion
 
-	#region Editing
-
+	#region Editor
 	# Author
 	@helpers.check_book
 	def add_author(self, author: structs.Author):
@@ -438,7 +432,6 @@ class BookInfo:
 	@helpers.check_book
 	def edit_title(self, title: str, lang: str = '_'):
 		title_elements = self._info.findall(f"{self._ns}book-title")
-		idx = self._info.index(title_elements[-1]) + 1
 
 		t_element = None
 		if lang == '_':
@@ -455,7 +448,7 @@ class BookInfo:
 
 		if t_element is None:
 			t_element = etree.Element(f"{self._ns}book-title")
-			self._info.insert(idx, t_element)
+			title_elements[-1].addnext(t_element)
 
 		t_element.set("lang", lang)
 		t_element.text = title
@@ -480,7 +473,7 @@ class BookInfo:
 					break
 
 		if len(title_elements) <= 1:
-			raise ValueError("Book must have a title.")
+			raise AttributeError("Book must have a title.")
 
 		t_item.clear()
 		self._info.remove(t_item)
@@ -488,29 +481,26 @@ class BookInfo:
 
 	# Genres
 	@helpers.check_book
-	def edit_genre(self, genre: Union[str, constants.Genres], match: Optional[int] = '_'):
+	def edit_genre(self, genre: str, match: Optional[int] = '_'):
 		gn_elements = self._info.findall(f"{self._ns}genre")
 
-		if isinstance(genre, str):
-			genre = constants.Genres[genre]
-		name = genre.name
+		genre = constants.Genres[genre]
 
 		gn_element = None
 		for i in gn_elements:
-			if i.text == name:
+			if i.text == genre.name:
 				gn_element = i
 				break
 
 		if gn_element is None:
-			idx = self._info.index(gn_elements[-1]) + 1
 			gn_element = etree.Element(f"{self._ns}genre")
-			gn_element.text = name
-			self._info.insert(idx, gn_element)
+			gn_elements[-1].addnext(gn_element)
+			gn_element.text = genre.name
 
-		if name not in self.genres or self.genres[name] is None:
-			self.genres[name] = structs.Genre(genre)
+		if genre.name not in self.genres or self.genres[genre.name] is None:
+			self.genres[genre.name] = structs.Genre(genre)
 		else:
-			self.genres[name].genre = genre
+			self.genres[genre.name].genre = genre
 
 		if match is None:
 			gn_element.attrib.pop("match")
@@ -519,14 +509,16 @@ class BookInfo:
 		else:
 			gn_element.set("match", str(match))
 
-		self.genres[name].match = match
+		self.genres[genre.name].match = match
 
 	@helpers.check_book
-	def remove_genre(self, genre: Union[str, constants.Genres]):
+	def remove_genre(self, genre: str):
 		gn_elements = self._info.findall(f"{self}genre")
 
-		if isinstance(genre, str):
-			genre = constants.Genres[genre]
+		genre = constants.Genres[genre]
+
+		if len(gn_elements) <= 1:
+			raise AttributeError("Book must have at least one genre.")
 
 		for i in gn_elements:
 			if i.text == genre.name:
@@ -554,19 +546,17 @@ class BookInfo:
 					break
 
 		if an_element is None:
-			idx = self._info.index(annotation_elements[-1]) + 1
 			an_element = etree.Element(f"{self._ns}annotation")
-			self._info.insert(idx, an_element)
+			annotation_elements[-1].addnext(an_element)
 
 		an_element.clear()
 		an_element.set("lang", lang)
 
 		for pt in text.split(r'\n'):
-			p = etree.Element(f"{self._ns}p")
+			p = etree.SubElement(an_element, f"{self._ns}p")
 			p.text = pt
-			an_element.append(p)
 
-		self.sync_annotations()
+		self.annotations[lang] = text
 
 	@helpers.check_book
 	def remove_annotation(self, lang: str = '_'):
@@ -585,33 +575,39 @@ class BookInfo:
 					an_element = i
 					break
 
+		if len(annotation_elements) <= 1:
+			raise AttributeError("Book must have at least one annotation.")
+
 		if an_element is not None:
 			an_element.clear()
 			self._info.remove(an_element)
-			self.sync_annotations()
+			self.annotations.pop(lang)
 
 	# --- Optional ---
 	# Languages
 	@helpers.check_book
 	def add_language(self, lang: str, show: bool):
-		ln_section = self._info.find(f"{self._ns}languages")
-		if ln_section is None:
-			ln_section = etree.Element(f"{self._ns}languages")
-			self._info.append(ln_section)
-
 		lang = langcodes.standardize_tag(lang)
 
-		ln_item = etree.Element(f"{self._ns}text-layer")
+		ln_section = self._info.find(f"{self._ns}languages")
+		if ln_section is None:
+			ln_section = etree.SubElement(self._info, f"{self._ns}languages")
+
+		ln_item = etree.SubElement(ln_section, f"{self._ns}text-layer")
 		ln_item.set("lang", lang)
 		ln_item.set("show", str(show).lower())
-		ln_section.append(ln_item)
 
-		self.sync_languages()
+		self.languages.append(structs.LanguageLayer(lang, show))
 
 	@helpers.check_book
-	def edit_language(self, layer: Union[int, structs.LanguageLayer], lang: Optional[str] = None, show: Optional[bool] = None):
+	def edit_language(self, layer: Union[int, structs.LanguageLayer], lang: Optional[str] = None,
+					show: Optional[bool] = None):
+
 		if lang is None and show is None:
 			return
+
+		if lang is not None:
+			lang = langcodes.standardize_tag(lang)
 
 		if isinstance(layer, int):
 			layer = self.languages[layer]
@@ -621,9 +617,10 @@ class BookInfo:
 
 		if lang is not None:
 			layer._element.set("lang", lang)
+			layer.lang = lang
 		if show is not None:
 			layer._element.set("show", str(show).lower())
-		self.sync_languages()
+			layer.show = show
 
 	@helpers.check_book
 	def remove_language(self, layer: Union[int, structs.LanguageLayer]):
@@ -634,12 +631,11 @@ class BookInfo:
 
 		layer._element.clear()
 		ln_section.remove(layer._element)
+		self.languages.remove(layer)
 
 		if len(ln_section.findall(f"{self._ns}text-layer")) == 0:
 			ln_section.clear()
 			ln_section.getparent().remove(ln_section)
-
-		self.sync_languages()
 
 	# Characters
 	@helpers.check_book
@@ -647,12 +643,11 @@ class BookInfo:
 		char_section = self._info.find(f"{self._ns}characters")
 
 		if char_section is None:
-			char_section = etree.Element(f"{self._ns}characters")
+			char_section = etree.SubElement(self._info, f"{self._ns}characters")
 
-		char = etree.Element(f"{self._ns}name")
+		char = etree.SubElement(char_section, f"{self._ns}name")
 		char.text = name
-		char_section.append(char)
-		self.sync_characters()
+		self.characters.append(name)
 
 	@helpers.check_book
 	def remove_character(self, item: Union[str, int]):
@@ -664,27 +659,25 @@ class BookInfo:
 			if isinstance(item, int):
 				char_elements[item].clear()
 				char_section.remove(char_elements[item])
+				self.characters.pop(item)
 			elif isinstance(item, str):
-				for i in char_elements:
-					if i.text == item:
-						i.clear()
-						char_section.remove(i)
-						break
+				try:
+					idx = self.characters.index(item)
+				except ValueError:
+					pass
+				else:
+					char_elements[idx].clear()
+					char_section.remove(char_elements[idx])
+					self.characters.pop(idx)
 
 			if len(char_section.findall(f"{self._ns}name")) == 0:
 				char_section.clear()
-				char_section.getparent().remove(char_section)
-
-			self.sync_characters()
+				self._info.remove(char_section)
 
 	# Keywords
 	@helpers.check_book
-	def add_keyword(self, *kwords: str, lang: str = '_'):
+	def add_keywords(self, *kwords: str, lang: str = '_'):
 		key_elements = self._info.findall(f"{self._ns}keywords")
-		idx = None
-
-		if len(key_elements) > 0:
-			idx = self._info.index(key_elements[-1]) + 1
 
 		key_element = None
 		if lang == '_':
@@ -701,8 +694,8 @@ class BookInfo:
 
 		if key_element is None:
 			key_element = etree.Element(f"{self._ns}keywords")
-			if idx is not None:
-				self._info.insert(idx, key_element)
+			if len(key_elements) > 0:
+				key_elements[-1].addnext(key_element)
 			else:
 				self._info.append(key_element)
 
@@ -710,13 +703,10 @@ class BookInfo:
 			key_element.set("lang", lang)
 
 		kwords = {x.lower() for x in kwords}
-		keywords = set([])
-		if lang in self.keywords:
-			keywords = self.keywords[lang].copy()
-		keywords.update(kwords)
-		key_element.text = ", ".join(keywords)
-
-		self.sync_keywords()
+		if lang not in self.keywords:
+			self.keywords[lang] = set()
+		self.keywords[lang].update(kwords)
+		key_element.text = ", ".join(self.keywords[lang])
 
 	@helpers.check_book
 	def remove_keyword(self, *kwords: str, lang: str = '_'):
@@ -736,13 +726,13 @@ class BookInfo:
 					break
 
 		kwords = {x.lower() for x in kwords}
-		keywords = set([])
 		if lang in self.keywords:
-			keywords = self.keywords[lang].copy()
-		keywords.difference_update(kwords)
-		key_element.text = ", ".join(keywords)
+			self.keywords[lang].difference_update(kwords)
+			key_element.text = ", ".join(self.keywords[lang])
 
-		self.sync_keywords()
+		if len(self.keywords[lang]) == 0:
+			key_element.clear()
+			self._info.remove(key_element)
 
 	@helpers.check_book
 	def clear_keywords(self, lang: str = '_'):
@@ -761,35 +751,32 @@ class BookInfo:
 					break
 		if key_element is not None:
 			key_element.clear()
-			key_element.getparent().remove(key_element)
-			self.sync_keywords()
+			self._info.remove(key_element)
+			self.keywords.pop(lang)
 
 	# Series
 	@helpers.check_book
 	def edit_series(self, title: str, sequence: Optional[str] = None, volume: Optional[str] = '_'):
 		ser_items = self._info.findall(f"{self._ns}sequence")
-		idx = None
 
 		if sequence is not None:
 			sequence = str(sequence)
 		if volume is not None:
 			volume = str(volume)
 
-		if len(ser_items) > 0:
-			idx = self._info.index(ser_items[-1]) + 1
-
 		ser_element = None
 		for i in ser_items:
 			if i.attrib["title"] == title:
 				ser_element = i
 				break
+
 		if ser_element is None:
 			if sequence is None:
 				raise AttributeError(f"`sequence` cannot be blank for new series entry `{title}`.")
 			ser_element = etree.Element(f"{self._ns}sequence")
 			ser_element.set("title", title)
-			if idx is not None:
-				self._info.insert(idx, ser_element)
+			if len(ser_items) > 0:
+				ser_items[-1].addnext(ser_element)
 			else:
 				self._info.append(ser_element)
 
@@ -803,7 +790,14 @@ class BookInfo:
 				if "volume" in ser_element.keys():
 					ser_element.attrib.pop("volume")
 
-		self.sync_series()
+		if title not in self.series:
+			volume = None if volume == '_' else volume
+			self.series[title] = structs.Series(title, sequence, volume)
+		else:
+			if sequence is not None:
+				self.series[title].sequence = sequence
+			if volume is not None:
+				self.series[title].volume = volume
 
 	@helpers.check_book
 	def remove_series(self, title: str):
@@ -812,18 +806,14 @@ class BookInfo:
 		for i in seq_items:
 			if i.attrib["title"] == title:
 				i.clear()
-				i.getparent().remove(i)
-				self.sync_series()
+				self._info.remove(i)
+				self.series.pop(title)
 				break
 
 	# Content Rating
 	@helpers.check_book
 	def edit_content_rating(self, rating: str, type: str = '_'):
 		rt_items = self._info.findall(f"{self._ns}content-rating")
-		idx = None
-
-		if len(rt_items) > 0:
-			idx = self._info.index(rt_items[-1]) + 1
 
 		rt_element = None
 		if type != '_':
@@ -839,15 +829,15 @@ class BookInfo:
 
 		if rt_element is None:
 			rt_element = etree.Element(f"{self._ns}content-rating")
-			if idx is not None:
-				self._info.insert(idx, rt_element)
+			if len(rt_items) > 0:
+				rt_items[-1].addnext(rt_element)
 			else:
 				self._info.append(rt_element)
-			if type != '_':
-				rt_element.set("type", type)
 
+		if type != '_':
+			rt_element.set("type", type)
 		rt_element.text = rating
-		self.sync_content_rating()
+		self.content_rating[type] = rating
 
 	@helpers.check_book
 	def remove_content_rating(self, type: str = '_'):
@@ -855,23 +845,20 @@ class BookInfo:
 
 		rt_element = None
 		for i in rt_items:
-			if (type == '_' and "type" not in i.keys()) or (type != '_' and "type" in i.keys() and i.attrib["type"] == type):
+			if (type == '_' and "type" not in i.keys()) or\
+				(type != '_' and "type" in i.keys() and i.attrib["type"] == type):
 				rt_element = i
 				break
 
 		if rt_element is not None:
 			rt_element.clear()
-			rt_element.getparent().remove(rt_element)
-			self.sync_content_rating()
+			self._info.remove(rt_element)
+			self.content_rating.pop(type)
 
 	# Database Ref
 	@helpers.check_book
 	def add_database_ref(self, dbname: str, ref: str, type: Optional[str] = None):
 		db_items = self._info.findall(f"{self._ns}databaseref")
-		idx = None
-
-		if len(db_items) > 0:
-			idx = self._info.index(db_items[-1]) + 1
 
 		db_element = etree.Element(f"{self._ns}databaseref")
 		db_element.set("dbname", dbname)
@@ -879,32 +866,39 @@ class BookInfo:
 		if type is not None:
 			db_element.set("type", type)
 
-		if idx is not None:
-			self._info.insert(idx, db_element)
+		if len(db_items) > 0:
+			db_items[-1].addnext(db_element)
 		else:
 			self._info.append(db_element)
 
-		self.sync_database_ref()
+		db = structs.DBRef(dbname, ref)
+		db.type = type
+		db._element = db_element
+		self.database_ref.append(db)
+		#endregion
 
 	@helpers.check_book
-	def edit_database_ref(self, dbref: Union[int, structs.DBRef], dbname: Optional[str] = None, ref: Optional[str] = None, type: Optional[str] = '_'):
+	def edit_database_ref(self, dbref: Union[int, structs.DBRef], dbname: Optional[str] = None,
+						ref: Optional[str] = None, type: Optional[str] = '_'):
 		if isinstance(dbref, int):
 			dbref = self.database_ref[dbref]
 
 		if dbname is not None:
 			dbref._element.set("dbname", dbname)
+			dbref.dbname = dbname
+
 		if ref is not None:
 			dbref._element.text = ref
+			dbref.reference = ref
 
 		if type != '_':
 			if type is not None:
 				dbref._element.set("type", type)
+				dbref.type = type
 			else:
 				if "type" in dbref._element.keys():
 					dbref._element.attrib.pop("type")
-
-		if dbname is not None or ref is not None or type != '_':
-			self.sync_database_ref()
+				dbref.type = None
 
 	@helpers.check_book
 	def remove_database_ref(self, dbref: Union[int, structs.DBRef]):
@@ -912,9 +906,8 @@ class BookInfo:
 			dbref = self.database_ref[dbref]
 
 		dbref._element.clear()
-		dbref._element.getparent().remove(dbref._element)
-		self.sync_database_ref()
-	#endregion
+		self._info.remove(dbref._element)
+		self.database_ref.remove(dbref)
 
 class PublishInfo:
 	"""Metadata about the book's publisher.
