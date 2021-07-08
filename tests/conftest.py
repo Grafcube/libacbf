@@ -30,12 +30,11 @@ def read_books(book_path):
 	yield book
 	book[1].close()
 
-# @pytest.fixture(scope="session")
-# def edit_books(book_path):
-# 	path = dir/f"editor/test_book{Path(book_path).suffix}"
-# 	book = ACBFBook(path, 'w')
-# 	yield (path, book)
-# 	book.close()
+@pytest.fixture(scope="session")
+def edit_dir(book_path):
+	edit_dir = dir/Path(book_path).name/"editor"
+	os.makedirs(edit_dir, exist_ok=True)
+	return edit_dir
 
 def get_au_op(i):
 	new_op = i.__dict__.copy()
