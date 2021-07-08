@@ -1062,6 +1062,7 @@ class DocumentInfo:
 		self.sync_history()
 
 	def sync_authors(self):
+		self.authors.clear()
 		self.authors.extend(update_authors(self._info.findall(f"{self._ns}author"), self._ns))
 
 	def sync_history(self):
@@ -1129,7 +1130,7 @@ class DocumentInfo:
 		p = etree.Element(f"{self._ns}p")
 		history_section.insert(index, p)
 		p.text = entry
-		self.sync_history()
+		self.document_history.insert(index, entry)
 
 	@helpers.check_book
 	def append_history(self, entry: str):
@@ -1140,7 +1141,7 @@ class DocumentInfo:
 	def edit_history(self, index: int, text: str):
 		item = self._info.findall(f"{self._ns}history/{self._ns}p")[index]
 		item.text = text
-		self.sync_history()
+		self.document_history[index] = text
 
 	@helpers.check_book
 	def remove_history(self, index: int):
@@ -1152,4 +1153,4 @@ class DocumentInfo:
 		if len(history_section.findall(f"{self._ns}p")) == 0:
 			history_section.clear()
 			self._info.remove(history_section)
-		self.sync_history()
+		self.document_history.pop(index)

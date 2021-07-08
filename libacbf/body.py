@@ -58,10 +58,17 @@ class Page:
 		self._ns = book._namespace
 		self._page = page
 
+		self._arch_path = None
+		self._file_path = None
+		self._file_id = None
+
+		self._image = None
 		self._text_layers = None
 		self._frames = None
 		self._jumps = None
 
+		self.image_ref: str = ''
+		self.ref_type: ImageRefType = None
 		self.is_coverpage: bool = coverpage
 
 		# Sub
@@ -198,11 +205,11 @@ class Page:
 		self.image_ref: str = self._page.find(f"{self._ns}image").attrib["href"]
 
 		if self.image_ref.startswith("#"):
-			ref_t = ImageRefType.Embedded
+			self.ref_type = ImageRefType.Embedded
 			self._file_id = re.sub("#", "", self.image_ref)
 
 		elif self.image_ref.startswith("zip:"):
-			ref_t = ImageRefType.Archived
+			self.ref_type = ImageRefType.Archived
 			ref_path = re.sub("zip:", "", self.image_ref)
 			self._arch_path = Path(re.split("!", ref_path)[0])
 			self._file_path = Path(re.split("!", ref_path)[1])
@@ -211,7 +218,7 @@ class Page:
 				self._arch_path = Path(os.path.abspath(str(self._arch_path)))
 
 		elif re.fullmatch(url_pattern, self.image_ref, re.IGNORECASE):
-			ref_t = ImageRefType.URL
+			self.ref_type = ImageRefType.URL
 			self._file_id = re.split("/", self.image_ref)[-1]
 
 		else:
@@ -221,21 +228,25 @@ class Page:
 				self._file_path = Path(self.image_ref)
 
 			if os.path.isabs(self.image_ref):
-				ref_t = ImageRefType.Local
+				self.ref_type = ImageRefType.Local
 			else:
 				if self.book.archive is not None:
-					ref_t = ImageRefType.SelfArchived
+					self.ref_type = ImageRefType.SelfArchived
 				else:
-					ref_t = ImageRefType.Local
+					self.ref_type = ImageRefType.Local
 					self._file_path = self.book.book_path.parent/self._file_path
 
 			self._file_id = self._file_path.name
 
-		self.ref_type: ImageRefType = ref_t
-
 	# Editor
 	@helpers.check_book
 	def set_image_ref(self, img_ref: str):
+		"""Remember to use ACBFData to write image if contained in file.
+
+		Parameters
+		----------
+		img_ref
+		"""
 		self._page.find(f"{self._ns}image").set("href", img_ref)
 		self.sync_image_ref()
 
@@ -297,11 +308,10 @@ class Page:
 
 	# Text Layers
 	@helpers.check_book
-	def add_textlayer(self, lang: str) -> TextLayer:
+	def add_textlayer(self, lang: str):
 		lang = langcodes.standardize_tag(lang)
 		t_layer = etree.SubElement(self._page, f"{self._ns}text-layer", {"lang": lang})
 		self.text_layers[lang] = TextLayer(t_layer, self._ns)
-		return self.text_layers[lang]
 
 	@helpers.check_book
 	def remove_textlayer(self, lang: str):
@@ -319,7 +329,7 @@ class Page:
 
 	# Frames
 	@helpers.check_book
-	def insert_new_frame(self, index: int, points: List[Tuple[int, int]]) -> structs.Frame:
+	def insert_new_frame(self, index: int, points: List[Tuple[int, int]]):
 		fr_element = etree.Element(f"{self._ns}frame", {"points": structs.helpers.vec_to_pts(points)})
 		fr = structs.Frame([structs.helpers.Vec2(x, y) for x, y in points])
 		fr._element = fr_element
@@ -330,7 +340,6 @@ class Page:
 		else:
 			self.frames[index]._element.addprevious(fr_element)
 			self.frames.insert(index, fr)
-		return fr
 
 	@helpers.check_book
 	def remove_frame(self, index: int):
@@ -352,14 +361,13 @@ class Page:
 
 	# Jumps
 	@helpers.check_book
-	def add_jump(self, target_page: int, points: List[Tuple[int, int]]) -> structs.Jump:
+	def add_jump(self, target_page: int, points: List[Tuple[int, int]]):
 		jp_element = etree.SubElement(self._page, f"{self._ns}jump")
 		jp_element.set("page", str(target_page))
 		jp_element.set("points", structs.helpers.vec_to_pts(points))
 		jp = structs.Jump([structs.helpers.Vec2(x, y) for x, y in points], target_page)
 		jp._element = jp_element
 		self.jumps.append(jp)
-		return jp
 
 	@helpers.check_book
 	def remove_jump(self, index: int):
@@ -410,13 +418,12 @@ class TextLayer:
 		self.bgcolor = bg
 
 	@helpers.check_book
-	def insert_new_textarea(self, idx: int, points: List[Tuple[int, int]], paragraph: str) -> TextArea:
+	def insert_new_textarea(self, idx: int, points: List[Tuple[int, int]], paragraph: str):
 		ta = etree.Element(f"{self._ns}text-area")
 		ta.set("points", structs.helpers.vec_to_pts(points))
 		ta.extend(structs.helpers.para_to_tree(paragraph, self._ns))
 		self._layer.insert(idx, ta)
 		self.text_areas.insert(idx, TextArea(ta, self._ns))
-		return self.text_areas[idx]
 
 	@helpers.check_book
 	def remove_textarea(self, idx: int):
