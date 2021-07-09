@@ -577,19 +577,26 @@ class ACBFData:
 			if base is None:
 				base = etree.SubElement(self.book._root, f"{self._ns}data")
 
+			bin_element = None
+			for i in base.findall(f"{self._ns}binary"):
+				if i.attrib["id"] == name:
+					bin_element = i
+					break
+
+			if bin_element is None:
+				bin_element = etree.SubElement(base, f"{self._ns}binary", {"id": name})
+
 			with open(target, 'rb') as file:
 				contents = file.read()
 			type = magic.from_buffer(contents, True)
 			data = b64encode(contents).decode("utf-8")
 
-			bin_element = etree.SubElement(base, f"{self._ns}binary", {"id": name, "content-type": type})
+			bin_element.set("content-type", type)
 			bin_element.text = data
 
 			self.files[name] = BookData(name, type, data)
 		else:
 			self.book.archive.write(target, name)
-
-		self.sync_data()
 
 	@helpers.check_book
 	def remove_data(self, target: Union[str, Path], embedded: bool = False):
@@ -607,7 +614,9 @@ class ACBFData:
 					i.getparent().remove(i)
 			self.files.pop(target)
 		else:
-			if not target.is_absolute() and target in [Path(x) for x in self.book.archive.list_files()]:
+			if not target.is_absolute() and target in [Path(x)
+													for x in self.book.archive.list_files() +
+															self.book.archive.list_dirs()]:
 				self.book.archive.remove(target)
 			else:
 				raise FileNotFoundError("File not in archive.")
