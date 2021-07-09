@@ -9,6 +9,8 @@ import langcodes
 from pathlib import Path
 from lxml import etree
 
+import constants
+
 if TYPE_CHECKING:
 	from libacbf import ACBFBook
 import libacbf.structs as structs
@@ -263,11 +265,12 @@ class Page:
 		self.bgcolor = bg
 
 	@helpers.check_book
-	def set_transition(self, tr: Optional[PageTransitions]):
+	def set_transition(self, tr: Optional[str]):
 		if self.is_coverpage:
 			raise AttributeError("`coverpage` has no attribute `transition`.")
 
 		if tr is not None:
+			tr = constants.PageTransitions[tr]
 			self._page.set("transition", tr.name)
 			self.transition = tr
 		elif "transition" in self._page.attrib:
@@ -567,13 +570,15 @@ class TextArea:
 		self.rotation = rot
 
 	@helpers.check_book
-	def set_type(self, ty: Optional[TextAreas]):
+	def set_type(self, ty: Optional[str]):
 		if ty is None:
 			if "type" in self._area.keys():
 				self._area.attrib.pop("type")
+			self.type = None
 		else:
+			ty = constants.TextAreas[ty]
 			self._area.set("type", ty.name)
-		self.type = ty
+			self.type = ty
 
 	@helpers.check_book
 	def set_inverted(self, inv: Optional[bool]):
