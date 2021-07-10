@@ -9,8 +9,6 @@ import langcodes
 from pathlib import Path
 from lxml import etree
 
-import constants
-
 if TYPE_CHECKING:
 	from libacbf import ACBFBook
 import libacbf.structs as structs

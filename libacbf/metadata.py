@@ -552,7 +552,7 @@ class BookInfo:
 		an_element.clear()
 		an_element.set("lang", lang)
 
-		for pt in text.split(r'\n'):
+		for pt in text.split('\n'):
 			p = etree.SubElement(an_element, f"{self._ns}p")
 			p.text = pt
 

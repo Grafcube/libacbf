@@ -65,22 +65,18 @@ class ArchiveReader:
 	type : ArchiveTypes(Enum)
 		The type of archive.
 	"""
-	def __init__(self, archive: Union[str, Path, BinaryIO], mode: Literal['r', 'w'] = 'r', direct: bool = False):
-		arc = None
-		if direct:
-			arc = archive
-
+	def __init__(self, archive: Union[str, Path, BinaryIO], mode: Literal['r', 'w'] = 'r'):
 		self.mode: Literal['r', 'w'] = mode
 		self.type: ArchiveTypes = get_archive_type(archive)
 
+		arc = None
 		if isinstance(archive, (ZipFile, SevenZipFile, tar.TarFile, RarFile)):
 			arc = archive
-			self.mode = 'r'
 
 		if isinstance(archive, str):
 			archive = Path(archive).resolve(True)
 
-		if hasattr(archive, "seek") and not direct:
+		if hasattr(archive, "seek"):
 			archive.seek(0)
 
 		self.changes: Dict[str, str] = {}
@@ -233,12 +229,13 @@ class ArchiveReader:
 		with TemporaryDirectory() as td:
 			td = Path(td)
 
-			self.archive.extractall(str(td))
+			if len(self.list_files() + self.list_dirs()) > 0:
+				self.archive.extractall(td)
 
 			for source, action in self.changes.items():
 				action = Path(action)
 				action.resolve()
-				if action != '' and td in action.parents:
+				if action != '' and (td in action.parents or len(action.parents) == 1):
 					shutil.copy(source, str(td/action))
 				else:
 					if source in self.list_files():
@@ -252,19 +249,21 @@ class ArchiveReader:
 			files = [x.relative_to(td) for x in td.rglob('*') if x.is_file()]
 			self.archive.close()
 
-			for i in files:
-				if self.type == ArchiveTypes.Zip:
-					with ZipFile(file, 'w') as arc:
+			if self.type == ArchiveTypes.Zip:
+				with ZipFile(file, 'w') as arc:
+					for i in files:
 						arc.write(str(td/i), str(i))
-					self.archive = ZipFile(file, 'r')
-				elif self.type == ArchiveTypes.SevenZip:
-					with SevenZipFile(file, 'w') as arc:
-						arc.write(str(td/i), str(i))
-					self.archive = SevenZipFile(file, 'r')
-				elif self.type == ArchiveTypes.Tar:
-					with tar.open(file, 'w') as arc:
+				self.archive = ZipFile(file, 'r')
+			elif self.type == ArchiveTypes.SevenZip:
+				with SevenZipFile(file, 'w') as arc:
+					for i in files:
+						arc.write(td/i, str(i))
+				self.archive = SevenZipFile(file, 'r')
+			elif self.type == ArchiveTypes.Tar:
+				with tar.open(file, 'w') as arc:
+					for i in files:
 						arc.add(str(td/i), str(i))
-					self.archive = tar.open(file, 'r')
+				self.archive = tar.open(file, 'r')
 
 	def close(self):
 		"""Close archive file object or remove temporary directory.

@@ -12,13 +12,14 @@ from zipfile import ZipFile
 from py7zr import SevenZipFile
 import tarfile as tar
 
+import libacbf.helpers as helpers
 from libacbf.structs import Styles
+from libacbf.constants import ArchiveTypes
 from libacbf.metadata import BookInfo, PublishInfo, DocumentInfo
 from libacbf.body import Page
 from libacbf.bookdata import BookData
 from libacbf.archivereader import ArchiveReader
-import libacbf.helpers as helpers
-from libacbf.exceptions import InvalidBook
+from libacbf.exceptions import InvalidBook, EditRARArchiveError
 
 def get_book_template() -> str:
 	"""[summary]
@@ -143,8 +144,7 @@ class ACBFBook:
 		``zipfile.ZipFile``, ``py7zr.SevenZipFile``, ``tarfile.TarFile`` or ``rarfile.RarFile``.
 	"""
 	def __init__(self, file: Union[str, Path, IO], mode: Literal['r', 'w', 'a', 'x'] = 'r',
-				direct: bool = False):
-
+				archive_type: Optional[str] = "Zip"):
 		self.book_path: Path = None
 
 		self.archive: Optional[ArchiveReader] = None
@@ -155,35 +155,43 @@ class ACBFBook:
 
 		self.is_open: bool = True
 
+		self._source = file
+
 		if isinstance(file, str):
 			self.book_path = Path(file).resolve()
 		if isinstance(file, Path):
 			self.book_path = file.resolve()
 
-		arc_mode = mode
-
-		if isinstance(file, (ZipFile, SevenZipFile, tar.TarFile)):
-			direct = False if mode == 'r' else direct
-			if not direct:
-				arc_mode = 'r'
-				self.savable = False
-		else:
-			direct = False
-
-		is_text = False
-		if (self.book_path is not None and self.book_path.suffix == ".acbf") or isinstance(file, TextIOBase):
+		archive_type = ArchiveTypes[archive_type] if archive_type is not None else None
+		is_text = archive_type is None
+		if isinstance(file, TextIOBase):
+			archive_type = None
 			is_text = True
+
+		if archive_type == ArchiveTypes.Rar and mode != 'r':
+			raise EditRARArchiveError
+
+		arc_mode = mode
 
 		def create_file():
 			if not is_text:
-				nonlocal direct
-				if direct:
-					self.archive = ArchiveReader(file, arc_mode, True)
-				else:
+				arc = None
+				if archive_type == ArchiveTypes.Zip:
 					arc = ZipFile(file, 'w')
-					name = self.book_path.stem + ".acbf" if self.book_path is not None else "book.acbf"
-					arc.writestr(name, get_book_template())
-					self.archive = ArchiveReader(arc, arc_mode, True)
+				elif archive_type == ArchiveTypes.SevenZip:
+					arc = SevenZipFile(file, 'w')
+				elif archive_type == ArchiveTypes.Tar:
+					arc = tar.open(file, 'w')
+
+				nonlocal arc_mode
+				name = self.book_path.stem + ".acbf" if self.book_path is not None else "book.acbf"
+				self.archive = ArchiveReader(arc, arc_mode)
+				acbf_path = Path(tempfile.gettempdir())/name
+				with open(acbf_path, 'w') as xml:
+					xml.write(get_book_template())
+				self.archive.write(acbf_path)
+				self.archive.save(file)
+				os.remove(acbf_path)
 			else:
 				if self.book_path is not None:
 					with open(str(self.book_path), 'w') as book:
@@ -194,9 +202,9 @@ class ACBFBook:
 		if mode in ['r', 'a']:
 			if self.book_path is not None and not self.book_path.is_file():
 				raise FileNotFoundError
-			arc_mode = 'r'
-			if mode == 'a' and direct:
-				self.archive = ArchiveReader(file, arc_mode, True)
+			arc_mode = 'w'
+			if mode == 'a':
+				self.archive = ArchiveReader(file, arc_mode)
 				if self.archive._get_acbf_file() is None:
 					name = "book.acbf"
 					if self.archive.filename is not None:
@@ -204,11 +212,11 @@ class ACBFBook:
 					acbf_path = Path(tempfile.gettempdir()) / name
 
 					with open(acbf_path, 'w') as xml:
-						xml.write(self.get_acbf_xml())
+						xml.write(get_book_template())
 
 					self.archive.write(acbf_path)
 					self.archive.save(file)
-					os.remove(str(acbf_path))
+					os.remove(acbf_path)
 
 		elif mode == 'x':
 			if self.book_path is not None:
@@ -222,7 +230,6 @@ class ACBFBook:
 
 		elif mode == 'w':
 			create_file()
-			arc_mode = 'w'
 
 		if not is_text:
 			if self.archive is None:
@@ -293,7 +300,7 @@ class ACBFBook:
 			if self.book_path is not None:
 				file = self.book_path
 			else:
-				raise FileNotFoundError
+				file = self._source
 		elif isinstance(file, Path):
 			if file.is_file() and not overwrite:
 				raise FileExistsError
@@ -306,12 +313,12 @@ class ACBFBook:
 			else:
 				file.write(self.get_acbf_xml())
 		else:
-			acbf_path = Path(tempfile.gettempdir()) / self.archive._get_acbf_file()
+			acbf_path = Path(tempfile.gettempdir())/self.archive._get_acbf_file()
 			with open(acbf_path, 'w') as xml:
 				xml.write(self.get_acbf_xml())
 			self.archive.write(acbf_path)
 			self.archive.save(file)
-			os.remove(str(acbf_path))
+			os.remove(acbf_path)
 
 	def close(self):
 		"""
