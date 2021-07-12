@@ -882,8 +882,6 @@ class BookInfo:
         db._element = db_element
         self.database_ref.append(db)
 
-    # endregion
-
     @helpers.check_book
     def edit_database_ref(self, dbref: Union[int, structs.DBRef], dbname: Optional[str] = None,
                           ref: Optional[str] = None, type: Optional[str] = '_'):
@@ -915,6 +913,8 @@ class BookInfo:
         dbref._element.clear()
         self._info.remove(dbref._element)
         self.database_ref.remove(dbref)
+
+    # endregion
 
 class PublishInfo:
     """Metadata about the book's publisher.

@@ -202,7 +202,7 @@ class ArchiveReader:
         if arcname is None:
             arcname = target.name
 
-        self.changes[str(target)] = arcname
+        self.changes[arcname] = str(target)
 
     def remove(self, target: Union[str, Path]):
         """Call ``ACBFBook.save()`` or ``ACBFBook.close()`` to apply changes. Always recursive for
@@ -219,9 +219,11 @@ class ArchiveReader:
         if isinstance(target, str):
             target = Path(target)
 
-        files = [Path(x) for x in self.list_files() + self.list_dirs()]
+        files = [Path(x) for x in self.list_files() + self.list_dirs() + list(self.changes.keys())]
         if not target.is_absolute() and target in files:
             self.changes[str(target)] = ''
+        else:
+            raise FileNotFoundError("File not in archive.")
 
     def save(self, file: Union[str, BinaryIO]):
         if self.mode == 'r':
@@ -233,11 +235,12 @@ class ArchiveReader:
             if len(self.list_files() + self.list_dirs()) > 0:
                 self.archive.extractall(td)
 
-            for source, action in self.changes.items():
+            for action, source in self.changes.items():
                 action = Path(action)
                 action.resolve()
-                if action != '' and (td in action.parents or len(action.parents) == 1):
-                    shutil.copy(source, str(td / action))
+                os.makedirs(td/action.parent, exist_ok=True)
+                if source != '':
+                    shutil.copy(source, td / action)
                 else:
                     if source in self.list_files():
                         try:
@@ -247,6 +250,7 @@ class ArchiveReader:
                     elif source in self.list_dirs():
                         shutil.rmtree(td / source)
 
+            self.changes.clear()
             files = [x.relative_to(td) for x in td.rglob('*') if x.is_file()]
             self.archive.close()
 

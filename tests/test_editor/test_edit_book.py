@@ -1,39 +1,40 @@
-import os
-import json
-from pathlib import Path
-from typing import Tuple
 from libacbf import ACBFBook
 
-# def make_editor_dir(path):
-# 	os.makedirs(path/"editor", exist_ok=True)
-# 	return path/"editor"
+def test_references(edit_dir):
+    with ACBFBook(edit_dir/"test_references.acbf", 'w', archive_type=None) as book:
+        book.edit_reference("test_ref", "This is a new test reference.")
+        book.edit_reference("electric_boogaloo",
+                            "This is another test reference.\nWith another line.")
+        book.edit_reference("tb_deleted", "This one will be deleted.")
+        book.edit_reference("test_ref", "This is an edited test reference.")
+        book.remove_reference("tb_deleted")
 
-# def test_references(edit_books: Tuple[Path, ACBFBook]):
-# 	path, book = edit_books
+def test_data(edit_dir):
+    with ACBFBook(edit_dir / "test_data.cbz", 'w') as book:
+        book.Data.add_data("tests/samples/assets/cover.jpg")
+        book.Metadata.book_info.cover_page.set_image_ref("cover.jpg")
 
-# 	op = {"original": book.References}
+        book.Data.add_data("tests/samples/assets/page1.jpg")
+        book.Body.pages[0].set_image_ref("page1")
 
-# 	book.edit_reference("test_ref", "This is a new test reference.")
-# 	op["added"] = book.References
+        book.Data.add_data("tests/samples/assets/page2.jpg", embed=True)
+        book.Body.insert_new_page(1, "#page2.jpg")
 
-# 	book.edit_reference("electric_boogaloo", "This is another test reference.\nWith another line.")
-# 	op["added"] = book.References
+        book.Data.add_data("tests/samples/assets/page3.jpg", "003.jpg")
+        book.Body.insert_new_page(2, "003.jpg")
 
-# 	book.edit_reference("tb_deleted", "This one will be deleted.")
-# 	op["added"] = book.References
+        book.Data.add_data("tests/samples/assets/page4.jpg", "to_be_removed.jpg")
+        book.Data.add_data("tests/samples/assets/page4.jpg", "to_be_removed2.jpg", True)
+        book.Data.remove_data("to_be_removed.jpg")
+        book.Data.remove_data("to_be_removed2.jpg", embedded=True)
 
-# 	book.edit_reference("test_ref", "This is an edited test reference.")
-# 	op["edited"] = book.References
-
-# 	book.remove_reference("tb_deleted")
-# 	op["removed"] = book.References
-
-# 	dir = make_editor_dir(path)
-# 	with open(dir + "test_references.json", 'w', encoding="utf-8", newline='\n') as result:
-# 		result.write(json.dumps(op, ensure_ascii=False))
-
-# def test_data():
-# 	pass
-
-# def test_styles():
-# 	pass
+def test_styles(edit_dir):
+    with ACBFBook(edit_dir / "test_styles.cbz", 'w') as book:
+        book.Styles.edit_style("tests/samples/assets/styles/default.css", embed=True)
+        book.Styles.edit_style("tests/samples/assets/styles/styles.css",
+                               "styles/to_be_removed.css")
+        book.Styles.edit_style("tests/samples/assets/styles/sample.scss", type="text/x-scss")
+        book.Styles.edit_style("tests/samples/assets/styles/test.scss",
+                               "styles/style.scss",
+                               "text/x-scss")
+        book.Styles.remove_style("styles/to_be_removed.css")
