@@ -13,7 +13,6 @@ from py7zr import SevenZipFile
 import tarfile as tar
 
 import libacbf.helpers as helpers
-from libacbf.structs import Styles
 from libacbf.constants import ArchiveTypes
 from libacbf.metadata import BookInfo, PublishInfo, DocumentInfo
 from libacbf.body import Page
@@ -628,12 +627,7 @@ class ACBFData:
                     i.getparent().remove(i)
             self.files.pop(target)
         else:
-            if not target.is_absolute() and target in [Path(x)
-                                                       for x in self.book.archive.list_files()
-                                                       + self.book.archive.list_dirs()]:
-                self.book.archive.remove(target)
-            else:
-                raise FileNotFoundError("File not in archive.")
+            self.book.archive.remove(target)
 
     def __len__(self):
         return len(self.files.keys())
@@ -649,5 +643,87 @@ class ACBFData:
                         new_data = BookData(key, i.attrib["content-type"], i.text)
                         self.files[key] = new_data
                         return new_data
+        else:
+            raise FileNotFoundError
+
+class Styles:
+    def __init__(self, book: ACBFBook, contents: str):
+        self.book = book
+        self._contents = contents
+
+        self.styles: Dict[str, Optional[str]] = {}
+        self.sync_styles()
+
+    def list_styles(self) -> List[str]:
+        return [str(x) for x in self.styles.keys()]
+
+    def sync_styles(self):
+        self.styles.clear()
+        style_refs = [x for x in self.book._root.xpath("//processing-instruction()")
+                      if x.target == "xml-stylesheet"]
+        for i in style_refs:
+            self.styles[i.attrib["href"]] = None
+        if self.book._root.find(f"{self.book._namespace}style") is not None:
+            self.styles['_'] = None
+
+    @helpers.check_book
+    def edit_style(self, stylesheet_ref: Union[str, Path], style_name: Optional[str] = None,
+                   type: str = "text/css", embed: bool = False):
+
+        if isinstance(stylesheet_ref, str):
+            stylesheet_ref = Path(stylesheet_ref)
+
+        if style_name is None and not embed:
+            style_name = stylesheet_ref.name
+
+        if embed:
+            style_element = self.book._root.find(f"{self.book._namespace}style")
+            if style_element is None:
+                style_element = etree.SubElement(self.book._root,
+                                                 f"{self.book._namespace}style",
+                                                 {"type": type})
+            with open(stylesheet_ref, 'r') as css:
+                style_element.text = css.read().strip()
+            self.styles['_'] = style_element.text
+        else:
+            style_refs = [x.attrib["href"]
+                          for x in self.book._root.xpath("//processing-instruction()")
+                          if x.target == "xml-stylesheet"]
+            if style_name not in style_refs:
+                style_element = etree.ProcessingInstruction("xml-stylesheet",
+                                                            f'type="{type}" href="{style_name}"')
+                self.book._root.addprevious(style_element)
+            if self.book.archive is not None:
+                self.book.archive.write(stylesheet_ref, style_name)
+
+    @helpers.check_book
+    def remove_style(self, style_name: str):
+        style_refs = [x for x in self.book._root.xpath("//processing-instruction()")
+                      if x.target == "xml-stylesheet"]
+        for i in style_refs:
+            if i.target == "xml-stylesheet" and i.attrib["href"] == style_name:
+                self.book._root.append(i)
+                self.book._root.remove(i)
+                break
+        if self.book.archive is not None:
+            self.book.archive.remove(style_name)
+
+    def __len__(self):
+        len(self.styles.keys())
+
+    def __getitem__(self, key: str):
+        if key in self.styles.keys():
+            if self.styles[key] is not None:
+                return self.styles[key]
+            elif key == '_':
+                self.styles['_'] = self.book._root.find(f"{self.book._namespace}style").text.strip()
+            else:
+                if self.book.archive is None:
+                    st_path = self.book.book_path.parent / Path(key)
+                    with open(str(st_path), 'r') as st:
+                        self.styles[key] = st.read()
+                else:
+                    self.styles[key] = self.book.archive.read(key).decode("utf-8")
+            return self.styles[key]
         else:
             raise FileNotFoundError
