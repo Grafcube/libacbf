@@ -22,625 +22,632 @@ from libacbf.archivereader import ArchiveReader
 from libacbf.exceptions import InvalidBook, EditRARArchiveError
 
 def get_book_template() -> str:
-	"""[summary]
+    """[summary]
 
-	Returns
-	-------
-	str
-		[description]
-	"""
-	with open("libacbf/templates/base_template_1.1.acbf", 'r') as template:
-		contents = template.read()
-	return contents
+    Returns
+    -------
+    str
+        [description]
+    """
+    with open("libacbf/templates/base_template_1.1.acbf", 'r') as template:
+        contents = template.read()
+    return contents
 
 def _validate_acbf(root, ns: str):
-	tree = root.getroottree()
-	version = re.split(r'/', re.sub(r'[{}]', "", ns))[-1]
-	xsd_path = f"libacbf/schema/acbf-{version}.xsd"
+    tree = root.getroottree()
+    version = re.split(r'/', re.sub(r'[{}]', '', ns))[-1]
+    xsd_path = f"libacbf/schema/acbf-{version}.xsd"
 
-	with open(xsd_path, encoding="utf-8") as file:
-		acbf_root = etree.fromstring(bytes(file.read(), encoding="utf-8"))
+    with open(xsd_path, encoding="utf-8") as file:
+        acbf_root = etree.fromstring(bytes(file.read(), encoding="utf-8"))
 
-	acbf_tree = acbf_root.getroottree()
-	acbf_schema = etree.XMLSchema(acbf_tree)
+    acbf_tree = acbf_root.getroottree()
+    acbf_schema = etree.XMLSchema(acbf_tree)
 
-	if version == "1.0":
-		try:
-			acbf_schema.assertValid(tree)
-		except etree.DocumentInvalid as err:
-			warnings.warn("Validation failed. Books with 1.0 schema are not fully supported.",
-						UserWarning)
-			warnings.warn('Change the ACBF tag at the top of the `.acbf` XML file to \
-						`<ACBF xmlns="http://www.acbf.info/xml/acbf/1.1">` to use the 1.1 schema.',
-						UserWarning)
-			print(err)
-	else:
-		acbf_schema.assertValid(tree)
+    if version == "1.0":
+        try:
+            acbf_schema.assertValid(tree)
+        except etree.DocumentInvalid as err:
+            warnings.warn("Validation failed. Books with 1.0 schema are not fully supported.",
+                          UserWarning)
+            warnings.warn('Change the ACBF tag at the top of the `.acbf` XML file to \
+                         `<ACBF xmlns="http://www.acbf.info/xml/acbf/1.1">` to use the 1.1 schema.',
+                          UserWarning)
+            print(err)
+    else:
+        acbf_schema.assertValid(tree)
 
 class ACBFBook:
-	"""Base class for reading ACBF ebooks.
+    """Base class for reading ACBF ebooks.
 
-	Parameters
-	----------
-	file : str, default=Empty book template
-		Path to ACBF book. May be absolute or relative.
+    Parameters
+    ----------
+    file : str, default=Empty book template
+        Path to ACBF book. May be absolute or relative.
 
-	Raises
-	------
-	ValueError (File is not an ACBF Ebook.)
-		Raised if the XML does not match ACBF schema or if archive does not contain ACBF file.
+    Raises
+    ------
+    ValueError (File is not an ACBF Ebook.)
+        Raised if the XML does not match ACBF schema or if archive does not contain ACBF file.
 
-	See Also
-	--------
-	`ACBF Specifications <https://acbf.fandom.com/wiki/Advanced_Comic_Book_Format_Wiki>`_.
+    See Also
+    --------
+    `ACBF Specifications <https://acbf.fandom.com/wiki/Advanced_Comic_Book_Format_Wiki>`_.
 
-	Examples
-	--------
-	A book object can be opened, read and then closed. It can read files with the extensions
-	``.acbf``, ``.cbz``, ``.cb7``, ``.cbt``, ``.cbr``. ::
+    Examples
+    --------
+    A book object can be opened, read and then closed. It can read files with the extensions
+    ``.acbf``, ``.cbz``, ``.cb7``, ``.cbt``, ``.cbr``. ::
 
-		from libacbf import ACBFBook
+        from libacbf import ACBFBook
 
-		book = ACBFBook("path/to/file.cbz")
-		# Read data from book
-		book.close()
+        book = ACBFBook("path/to/file.cbz")
+        # Read data from book
+        book.close()
 
-	``ACBFBook`` is also a context manager and can be used in with statements. ::
+    ``ACBFBook`` is also a context manager and can be used in with statements. ::
 
-		from libacbf import ACBFBook
+        from libacbf import ACBFBook
 
-		with ACBFBook("path/to/file.cbz") as book:
-			# Read data from book
+        with ACBFBook("path/to/file.cbz") as book:
+            # Read data from book
 
-	Attributes
-	----------
-	Metadata : ACBFMetadata
-		See :class:`ACBFMetadata <libacbf.libacbf.ACBFMetadata>` for more information.
-
-	Body : ACBFBody
-		See :class:`ACBFBody <libacbf.libacbf.ACBFBody>` for more information.
-
-	Data : ACBFData
-		See :class:`ACBFData <libacbf.libacbf.ACBFData>` for more information.
-
-	References : dict
-		A dictionary that contains a list of particular references that occur inside the
-		main document body. Keys are unique reference ids and values are dictionaries that contain
-		a ``paragraph`` key with text. ::
-
-			{
-				"ref_id_001": {
-					"paragraph": "This is a reference."
-				}
-				"ref_id_002": {
-					"paragraph": "This is another reference."
-				}
-			}
-
-		``paragraph`` can contain special tags for formatting. For more information and a full list,
-		see :attr:`TextArea.paragraph <libacbf.body.TextArea.paragraph>`.
-
-	Styles : dict-like object
-		Get styles linked in the ACBF file.
-
-		An object that behaves like a dictionary. Use ``Styles[file name]`` to get the contents of
-		the stylesheet as a string. Use ``list_styles()`` to get list of all available styles. All
-		paths are relative. ::
-
-			style = book.Styles["style_name.css"]
-
-		If a style is embedded in the ACBF file, use ``Styles['_']`` to get its contents. ::
-
-			embedded_stylesheet = book.Styles['_']
-
-	book_path : Path
-		Absolute path to source file.
-
-	archive : ArchiveReader, optional
-		Can be used to read archive directly if file is not ``.acbf``. There probably wont be any
-		reason to use this.
-
-		:attr:`ArchiveReader.archive <libacbf.archivereader.ArchiveReader.archive>` may be
-		``zipfile.ZipFile``, ``py7zr.SevenZipFile``, ``tarfile.TarFile`` or ``rarfile.RarFile``.
-	"""
-	def __init__(self, file: Union[str, Path, IO], mode: Literal['r', 'w', 'a', 'x'] = 'r',
-				archive_type: Optional[str] = "Zip"):
-		self.book_path: Path = None
-
-		self.archive: Optional[ArchiveReader] = None
-
-		self.savable: bool = mode != 'r'
-
-		self.mode: Literal['r', 'w', 'a', 'x'] = mode
-
-		self.is_open: bool = True
-
-		self._source = file
-
-		if isinstance(file, str):
-			self.book_path = Path(file).resolve()
-		if isinstance(file, Path):
-			self.book_path = file.resolve()
-
-		archive_type = ArchiveTypes[archive_type] if archive_type is not None else None
-		is_text = archive_type is None
-		if isinstance(file, TextIOBase):
-			archive_type = None
-			is_text = True
-
-		if archive_type == ArchiveTypes.Rar and mode != 'r':
-			raise EditRARArchiveError
-
-		arc_mode = mode
-
-		def create_file():
-			if not is_text:
-				arc = None
-				if archive_type == ArchiveTypes.Zip:
-					arc = ZipFile(file, 'w')
-				elif archive_type == ArchiveTypes.SevenZip:
-					arc = SevenZipFile(file, 'w')
-				elif archive_type == ArchiveTypes.Tar:
-					arc = tar.open(file, 'w')
-
-				nonlocal arc_mode
-				name = self.book_path.stem + ".acbf" if self.book_path is not None else "book.acbf"
-				self.archive = ArchiveReader(arc, arc_mode)
-				acbf_path = Path(tempfile.gettempdir())/name
-				with open(acbf_path, 'w') as xml:
-					xml.write(get_book_template())
-				self.archive.write(acbf_path)
-				self.archive.save(file)
-				os.remove(acbf_path)
-			else:
-				if self.book_path is not None:
-					with open(str(self.book_path), 'w') as book:
-						book.write(get_book_template())
-				else:
-					file.write(get_book_template())
-
-		if mode in ['r', 'a']:
-			if self.book_path is not None and not self.book_path.is_file():
-				raise FileNotFoundError
-			arc_mode = 'w'
-			if mode == 'a':
-				self.archive = ArchiveReader(file, arc_mode)
-				if self.archive._get_acbf_file() is None:
-					name = "book.acbf"
-					if self.archive.filename is not None:
-						name = Path(self.archive.filename).with_suffix(".acbf")
-					acbf_path = Path(tempfile.gettempdir()) / name
-
-					with open(acbf_path, 'w') as xml:
-						xml.write(get_book_template())
-
-					self.archive.write(acbf_path)
-					self.archive.save(file)
-					os.remove(acbf_path)
-
-		elif mode == 'x':
-			if self.book_path is not None:
-				if self.book_path.is_file():
-					raise FileExistsError
-				else:
-					create_file()
-			else:
-				raise FileExistsError
-			arc_mode = 'w'
-
-		elif mode == 'w':
-			create_file()
-
-		if not is_text:
-			if self.archive is None:
-				self.archive = ArchiveReader(file, arc_mode)
-			acbf_file = self.archive._get_acbf_file()
-			if acbf_file is None:
-				raise InvalidBook
-			contents = self.archive.read(acbf_file)
-		else:
-			if self.book_path is None:
-				contents = file.read()
-			else:
-				with open(str(file), 'r') as book:
-					contents = book.read()
-
-		if isinstance(contents, bytes):
-			contents = contents.decode("utf-8")
-
-		self._root = etree.fromstring(bytes(contents, "utf-8"))
-
-		self._namespace: str = r"{" + self._root.nsmap[None] + r"}"
-
-		_validate_acbf(self._root, self._namespace)
-
-		self.Styles: Styles = Styles(self, str(contents))
-
-		self.Metadata: ACBFMetadata = ACBFMetadata(self)
-
-		self.Body: ACBFBody = ACBFBody(self)
-
-		self.Data: ACBFData = ACBFData(self)
-
-		self.References: Dict[str, Dict[str, str]] = {}
-		self.sync_references()
-
-	def get_acbf_xml(self) -> str:
-		"""[summary]
-
-		Returns
-		-------
-		[type]
-			[description]
-		"""
-		return etree.tostring(self._root.getroottree(),
-							encoding="utf-8",
-							xml_declaration=True,
-							pretty_print=True).decode("utf-8")
-
-	def save(self, file: Union[str, Path, IO, None] = None, overwrite: bool = False):
-		"""Save as file.
-
-		Parameters
-		----------
-		file : str, optional
-			Path to save to.
-		overwrite : bool, optional
-			Whether to overwrite if file already exists at path. ``False`` by default.
-		"""
-		if self.mode == 'r' or not self.savable:
-			raise UnsupportedOperation("File is not writeable.")
-
-		_validate_acbf(self._root, self._namespace)
-
-		if isinstance(file, str):
-			file = Path(file)
-
-		if file is None:
-			if self.book_path is not None:
-				file = self.book_path
-			else:
-				file = self._source
-		elif isinstance(file, Path):
-			if file.is_file() and not overwrite:
-				raise FileExistsError
-			self.book_path = file.absolute()
-
-		if self.archive is None:
-			if isinstance(file, Path):
-				with open(str(file), 'w') as book:
-					book.write(self.get_acbf_xml())
-			else:
-				file.write(self.get_acbf_xml())
-		else:
-			acbf_path = Path(tempfile.gettempdir())/self.archive._get_acbf_file()
-			with open(acbf_path, 'w') as xml:
-				xml.write(self.get_acbf_xml())
-			self.archive.write(acbf_path)
-			self.archive.save(file)
-			os.remove(acbf_path)
-
-	def close(self):
-		"""
-		Saves the book and closes open archives if file is ``.cbz``, ``.cbt`` or ``.cbr``
-		or ``.cb7`` files.
-		"""
-		if self.savable:
-			if self.mode == 'x':
-				self.save()
-			elif self.mode in ['w', 'a']:
-				self.save(overwrite=True)
-
-		if self.archive is not None:
-			self.archive.close()
-			self.mode = 'r'
-			self.is_open = False
-
-	def sync_references(self):
-		ns = self._namespace
-		ref_root = self._root.find(f"{ns}references")
-		self.References.clear()
-		if ref_root is not None:
-			reference_items = ref_root.findall(f"{ns}reference")
-			for ref in reference_items:
-				pa = []
-				for p in ref.findall(f"{ns}p"):
-					text = re.sub(r'</?p[^>]*>', "", str(etree.tostring(p, encoding="utf-8"), encoding="utf-8").strip())
-					pa.append(text)
-				self.References[ref.attrib["id"]] = {"paragraph": "\n".join(pa)}
-
-	def edit_reference(self, id: str, paragraph: str):
-		"""[summary]
-
-		Parameters
-		----------
-		id : str
-			[description]
-		paragraph : str
-			[description]
-		"""
-		helpers.check_write(self)
-
-		ref_section = self._root.find(f"{self._namespace}references")
-		if ref_section is None:
-			ref_section = etree.Element(f"{self._namespace}references")
-			self._root.append(ref_section)
-
-		ref_items = ref_section.findall(f"{self._namespace}reference")
-
-		ref_element = None
-		for i in ref_items:
-			if i.attrib["id"] == id:
-				ref_element = i
-				break
-
-		if ref_element is None:
-			ref_element = etree.Element(f"{self._namespace}reference")
-			ref_section.append(ref_element)
-
-		ref_element.clear()
-		ref_element.set("id", id)
-
-		p_list = re.split(r"\n", paragraph)
-		for ref in p_list:
-			p = f"<p>{ref}</p>"
-			p_element = etree.fromstring(bytes(p, encoding="utf-8"))
-			for i in list(p_element.iter()):
-				i.tag = self._namespace + i.tag
-			ref_element.append(p_element)
-
-		self.sync_references()
-
-	def remove_reference(self, id: str):
-		"""[summary]
-
-		Parameters
-		----------
-		id : str
-			[description]
-		"""
-		helpers.check_write(self)
-
-		ref_section = self._root.find(f"{self._namespace}references")
-
-		if ref_section is not None:
-			for i in ref_section.findall(f"{self._namespace}reference"):
-				if i.attrib["id"] == id:
-					i.clear()
-					ref_section.remove(i)
-					break
-
-			if len(ref_section.findall(f"{self._namespace}reference")) == 0:
-				ref_section.getparent().remove(ref_section)
-
-			self.sync_references()
-
-	def __enter__(self):
-		return self
-
-	def __exit__(self, exception_type, exception_value, traceback):
-		self.close()
+    Attributes
+    ----------
+    Metadata : ACBFMetadata
+        See :class:`ACBFMetadata <libacbf.libacbf.ACBFMetadata>` for more information.
+
+    Body : ACBFBody
+        See :class:`ACBFBody <libacbf.libacbf.ACBFBody>` for more information.
+
+    Data : ACBFData
+        See :class:`ACBFData <libacbf.libacbf.ACBFData>` for more information.
+
+    References : dict
+        A dictionary that contains a list of particular references that occur inside the
+        main document body. Keys are unique reference ids and values are dictionaries that contain
+        a ``paragraph`` key with text. ::
+
+            {
+                "ref_id_001": {
+                    "paragraph": "This is a reference."
+                }
+                "ref_id_002": {
+                    "paragraph": "This is another reference."
+                }
+            }
+
+        ``paragraph`` can contain special tags for formatting. For more information and a full list,
+        see :attr:`TextArea.paragraph <libacbf.body.TextArea.paragraph>`.
+
+    Styles : dict-like object
+        Get styles linked in the ACBF file.
+
+        An object that behaves like a dictionary. Use ``Styles[file name]`` to get the contents of
+        the stylesheet as a string. Use ``list_styles()`` to get list of all available styles. All
+        paths are relative. ::
+
+            style = book.Styles["style_name.css"]
+
+        If a style is embedded in the ACBF file, use ``Styles['_']`` to get its contents. ::
+
+            embedded_stylesheet = book.Styles['_']
+
+    book_path : Path
+        Absolute path to source file.
+
+    archive : ArchiveReader, optional
+        Can be used to read archive directly if file is not ``.acbf``. There probably wont be any
+        reason to use this.
+
+        :attr:`ArchiveReader.archive <libacbf.archivereader.ArchiveReader.archive>` may be
+        ``zipfile.ZipFile``, ``py7zr.SevenZipFile``, ``tarfile.TarFile`` or ``rarfile.RarFile``.
+    """
+
+    def __init__(self, file: Union[str, Path, IO], mode: Literal['r', 'w', 'a', 'x'] = 'r',
+                 archive_type: Optional[str] = "Zip"):
+        self.book_path: Path = None
+
+        self.archive: Optional[ArchiveReader] = None
+
+        self.savable: bool = mode != 'r'
+
+        self.mode: Literal['r', 'w', 'a', 'x'] = mode
+
+        self.is_open: bool = True
+
+        self._source = file
+
+        if isinstance(file, str):
+            self.book_path = Path(file).resolve()
+        if isinstance(file, Path):
+            self.book_path = file.resolve()
+
+        archive_type = ArchiveTypes[archive_type] if archive_type is not None else None
+        is_text = archive_type is None
+        if isinstance(file, TextIOBase):
+            archive_type = None
+            is_text = True
+
+        if archive_type == ArchiveTypes.Rar and mode != 'r':
+            raise EditRARArchiveError
+
+        arc_mode = mode
+
+        def create_file():
+            if not is_text:
+                arc = None
+                if archive_type == ArchiveTypes.Zip:
+                    arc = ZipFile(file, 'w')
+                elif archive_type == ArchiveTypes.SevenZip:
+                    arc = SevenZipFile(file, 'w')
+                elif archive_type == ArchiveTypes.Tar:
+                    arc = tar.open(file, 'w')
+
+                nonlocal arc_mode
+                name = self.book_path.stem + ".acbf" if self.book_path is not None else "book.acbf"
+                self.archive = ArchiveReader(arc, arc_mode)
+                acbf_path = Path(tempfile.gettempdir()) / name
+                with open(acbf_path, 'w') as xml:
+                    xml.write(get_book_template())
+                self.archive.write(acbf_path)
+                self.archive.save(file)
+                os.remove(acbf_path)
+            else:
+                if self.book_path is not None:
+                    with open(str(self.book_path), 'w') as book:
+                        book.write(get_book_template())
+                else:
+                    file.write(get_book_template())
+
+        if mode in ['r', 'a']:
+            if self.book_path is not None and not self.book_path.is_file():
+                raise FileNotFoundError
+            arc_mode = 'w'
+            if mode == 'a':
+                self.archive = ArchiveReader(file, arc_mode)
+                if self.archive._get_acbf_file() is None:
+                    name = "book.acbf"
+                    if self.archive.filename is not None:
+                        name = Path(self.archive.filename).with_suffix(".acbf")
+                    acbf_path = Path(tempfile.gettempdir()) / name
+
+                    with open(acbf_path, 'w') as xml:
+                        xml.write(get_book_template())
+
+                    self.archive.write(acbf_path)
+                    self.archive.save(file)
+                    os.remove(acbf_path)
+
+        elif mode == 'x':
+            if self.book_path is not None:
+                if self.book_path.is_file():
+                    raise FileExistsError
+                else:
+                    create_file()
+            else:
+                raise FileExistsError
+            arc_mode = 'w'
+
+        elif mode == 'w':
+            create_file()
+
+        if not is_text:
+            if self.archive is None:
+                self.archive = ArchiveReader(file, arc_mode)
+            acbf_file = self.archive._get_acbf_file()
+            if acbf_file is None:
+                raise InvalidBook
+            contents = self.archive.read(acbf_file)
+        else:
+            if self.book_path is None:
+                contents = file.read()
+            else:
+                with open(str(file), 'r') as book:
+                    contents = book.read()
+
+        if isinstance(contents, bytes):
+            contents = contents.decode("utf-8")
+
+        self._root = etree.fromstring(bytes(contents, "utf-8"))
+
+        self._namespace: str = r"{" + self._root.nsmap[None] + r"}"
+
+        _validate_acbf(self._root, self._namespace)
+
+        self.Styles: Styles = Styles(self, str(contents))
+
+        self.Metadata: ACBFMetadata = ACBFMetadata(self)
+
+        self.Body: ACBFBody = ACBFBody(self)
+
+        self.Data: ACBFData = ACBFData(self)
+
+        self.References: Dict[str, Dict[str, str]] = {}
+        self.sync_references()
+
+    def get_acbf_xml(self) -> str:
+        """[summary]
+
+        Returns
+        -------
+        [type]
+            [description]
+        """
+        return etree.tostring(self._root.getroottree(),
+                              encoding="utf-8",
+                              xml_declaration=True,
+                              pretty_print=True).decode("utf-8")
+
+    def save(self, file: Union[str, Path, IO, None] = None, overwrite: bool = False):
+        """Save as file.
+
+        Parameters
+        ----------
+        file : str, optional
+            Path to save to.
+        overwrite : bool, optional
+            Whether to overwrite if file already exists at path. ``False`` by default.
+        """
+        if self.mode == 'r' or not self.savable:
+            raise UnsupportedOperation("File is not writeable.")
+
+        _validate_acbf(self._root, self._namespace)
+
+        if isinstance(file, str):
+            file = Path(file)
+
+        if file is None:
+            if self.book_path is not None:
+                file = self.book_path
+            else:
+                file = self._source
+        elif isinstance(file, Path):
+            if file.is_file() and not overwrite:
+                raise FileExistsError
+            self.book_path = file.absolute()
+
+        if self.archive is None:
+            if isinstance(file, Path):
+                with open(str(file), 'w') as book:
+                    book.write(self.get_acbf_xml())
+            else:
+                file.write(self.get_acbf_xml())
+        else:
+            acbf_path = Path(tempfile.gettempdir()) / self.archive._get_acbf_file()
+            with open(acbf_path, 'w') as xml:
+                xml.write(self.get_acbf_xml())
+            self.archive.write(acbf_path)
+            self.archive.save(file)
+            os.remove(acbf_path)
+
+    def close(self):
+        """
+        Saves the book and closes open archives if file is ``.cbz``, ``.cbt`` or ``.cbr``
+        or ``.cb7`` files.
+        """
+        if self.savable:
+            if self.mode == 'x':
+                self.save()
+            elif self.mode in ['w', 'a']:
+                self.save(overwrite=True)
+
+        if self.archive is not None:
+            self.archive.close()
+            self.mode = 'r'
+            self.is_open = False
+
+    def sync_references(self):
+        ns = self._namespace
+        ref_root = self._root.find(f"{ns}references")
+        self.References.clear()
+        if ref_root is not None:
+            reference_items = ref_root.findall(f"{ns}reference")
+            for ref in reference_items:
+                pa = []
+                for p in ref.findall(f"{ns}p"):
+                    text = re.sub(r'</?p[^>]*>', '',
+                                  etree.tostring(p, encoding="utf-8").decode("utf-8").strip())
+                    pa.append(text)
+                self.References[ref.attrib["id"]] = {"paragraph": '\n'.join(pa)}
+
+    def edit_reference(self, id: str, text: str):
+        """[summary]
+
+        Parameters
+        ----------
+        id : str
+            [description]
+        text : str
+            [description]
+        """
+        helpers.check_write(self)
+
+        ref_section = self._root.find(f"{self._namespace}references")
+        if ref_section is None:
+            ref_section = etree.Element(f"{self._namespace}references")
+            self._root.append(ref_section)
+
+        ref_items = ref_section.findall(f"{self._namespace}reference")
+
+        ref_element = None
+        for i in ref_items:
+            if i.attrib["id"] == id:
+                ref_element = i
+                break
+
+        if ref_element is None:
+            ref_element = etree.Element(f"{self._namespace}reference")
+            ref_section.append(ref_element)
+
+        ref_element.clear()
+        ref_element.set("id", id)
+
+        p_list = re.split(r'\n', text)
+        for ref in p_list:
+            p = f"<p>{ref}</p>"
+            p_element = etree.fromstring(bytes(p, encoding="utf-8"))
+            for i in list(p_element.iter()):
+                i.tag = self._namespace + i.tag
+            ref_element.append(p_element)
+
+        if id not in self.References:
+            self.References[id] = {"paragraph": ''}
+        self.References[id]["paragraph"] = text
+
+    def remove_reference(self, id: str):
+        """[summary]
+
+        Parameters
+        ----------
+        id : str
+            [description]
+        """
+        helpers.check_write(self)
+
+        ref_section = self._root.find(f"{self._namespace}references")
+
+        if ref_section is not None:
+            for i in ref_section.findall(f"{self._namespace}reference"):
+                if i.attrib["id"] == id:
+                    i.clear()
+                    ref_section.remove(i)
+                    break
+
+            if len(ref_section.findall(f"{self._namespace}reference")) == 0:
+                ref_section.getparent().remove(ref_section)
+
+            self.References.pop(id)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exception_type, exception_value, traceback):
+        self.close()
 
 class ACBFMetadata:
-	"""Class to read metadata of the book.
+    """Class to read metadata of the book.
 
-	See Also
-	--------
-	`Meta-data Section Definition <https://acbf.fandom.com/wiki/Meta-data_Section_Definition>`_.
+    See Also
+    --------
+    `Meta-data Section Definition <https://acbf.fandom.com/wiki/Meta-data_Section_Definition>`_.
 
-	Attributes
-	----------
-	book : ACBFBook
-		Book that this metadata belongs to.
+    Attributes
+    ----------
+    book : ACBFBook
+        Book that this metadata belongs to.
 
-	book_info : BookInfo
-		See :class:`BookInfo <libacbf.metadata.BookInfo>`.
+    book_info : BookInfo
+        See :class:`BookInfo <libacbf.metadata.BookInfo>`.
 
-	publisher_info : PublishInfo
-		See :class:`PublishInfo <libacbf.metadata.PublishInfo>`.
+    publisher_info : PublishInfo
+        See :class:`PublishInfo <libacbf.metadata.PublishInfo>`.
 
-	document_info : DocumentInfo
-		See :class:`DocumentInfo <libacbf.metadata.DocumentInfo>`.
-	"""
-	def __init__(self, book: ACBFBook):
-		self.book = book
-		ns = book._namespace
-		meta_root = book._root.find(f"{ns}meta-data")
+    document_info : DocumentInfo
+        See :class:`DocumentInfo <libacbf.metadata.DocumentInfo>`.
+    """
 
-		self.book_info: BookInfo = BookInfo(meta_root.find(f"{ns}book-info"), book)
-		self.publisher_info: PublishInfo = PublishInfo(meta_root.find(f"{ns}publish-info"), book)
-		self.document_info: DocumentInfo = DocumentInfo(meta_root.find(f"{ns}document-info"), book)
+    def __init__(self, book: ACBFBook):
+        self.book = book
+        ns = book._namespace
+        meta_root = book._root.find(f"{ns}meta-data")
+
+        self.book_info: BookInfo = BookInfo(meta_root.find(f"{ns}book-info"), book)
+        self.publisher_info: PublishInfo = PublishInfo(meta_root.find(f"{ns}publish-info"), book)
+        self.document_info: DocumentInfo = DocumentInfo(meta_root.find(f"{ns}document-info"), book)
 
 class ACBFBody:
-	"""Body section contains the definition of individual book pages, text layers, frames and jumps
-	inside those pages.
+    """Body section contains the definition of individual book pages, text layers, frames and jumps
+    inside those pages.
 
-	See Also
-	--------
-	`Body Section Definition <https://acbf.fandom.com/wiki/Body_Section_Definition>`_.
+    See Also
+    --------
+    `Body Section Definition <https://acbf.fandom.com/wiki/Body_Section_Definition>`_.
 
-	Attributes
-	----------
-	book : ACBFBook
-		Book that this body section belongs to.
+    Attributes
+    ----------
+    book : ACBFBook
+        Book that this body section belongs to.
 
-	pages : List[Page]
-		A list of :class:`Page <libacbf.body.Page>` objects in order.
+    pages : List[Page]
+        A list of :class:`Page <libacbf.body.Page>` objects in order.
 
-	bgcolor : str, optional
-		Defines a background colour for the whole book. Can be overridden by ``bgcolor`` in pages,
-		text layers and text areas.
-	"""
-	def __init__(self, book: ACBFBook):
-		self.book = book
+    bgcolor : str, optional
+        Defines a background colour for the whole book. Can be overridden by ``bgcolor`` in pages,
+        text layers and text areas.
+    """
 
-		self._ns = book._namespace
-		self._body = book._root.find(f"{self._ns}body")
+    def __init__(self, book: ACBFBook):
+        self.book = book
 
-		self.pages: List[Page] = []
-		self.sync_pages()
+        self._ns = book._namespace
+        self._body = book._root.find(f"{self._ns}body")
 
-		# Optional
-		self.bgcolor: Optional[str] = None
-		if "bgcolor" in self._body.keys():
-			self.bgcolor = self._body.attrib["bgcolor"]
+        self.pages: List[Page] = []
+        self.sync_pages()
 
-	def sync_pages(self):
-		self.pages.clear()
-		for pg in self._body.findall(f"{self._ns}page"):
-			self.pages.append(Page(pg, self.book))
+        # Optional
+        self.bgcolor: Optional[str] = None
+        if "bgcolor" in self._body.keys():
+            self.bgcolor = self._body.attrib["bgcolor"]
 
-	@helpers.check_book
-	def insert_new_page(self, index: int, image_ref: str) -> Page:
-		pg = etree.SubElement(self._body, f"{self._ns}page")
-		pg.insert(index, etree.Element(f"{self._ns}image", {"href": image_ref}))
-		self.pages.insert(index, Page(pg, self.book))
-		return self.pages[index]
+    def sync_pages(self):
+        self.pages.clear()
+        for pg in self._body.findall(f"{self._ns}page"):
+            self.pages.append(Page(pg, self.book))
 
-	@helpers.check_book
-	def remove_page(self, index: int):
-		pg = self.pages.pop(index)
-		pg._page.clear()
-		self._body.remove(pg._page)
+    @helpers.check_book
+    def insert_new_page(self, index: int, image_ref: str) -> Page:
+        pg = etree.SubElement(self._body, f"{self._ns}page")
+        pg.insert(index, etree.Element(f"{self._ns}image", {"href": image_ref}))
+        self.pages.insert(index, Page(pg, self.book))
+        return self.pages[index]
 
-	@helpers.check_book
-	def change_page_index(self, src_index: int, dest_index: int):
-		pg = self.pages.pop(src_index)
-		self._body.remove(pg._page)
-		self._body.insert(dest_index, pg._page)
-		self.pages.insert(dest_index, pg)
+    @helpers.check_book
+    def remove_page(self, index: int):
+        pg = self.pages.pop(index)
+        pg._page.clear()
+        self._body.remove(pg._page)
 
-	# --- Optional ---
-	@helpers.check_book
-	def set_bgcolor(self, bg: Optional[str]):
-		if bg is not None:
-			self._body.set("bgcolor", bg)
-		elif "bgcolor" in self._body.attrib:
-			self._body.attrib.pop("bgcolor")
-		self.bgcolor = bg
+    @helpers.check_book
+    def change_page_index(self, src_index: int, dest_index: int):
+        pg = self.pages.pop(src_index)
+        self._body.remove(pg._page)
+        self._body.insert(dest_index, pg._page)
+        self.pages.insert(dest_index, pg)
+
+    # --- Optional ---
+    @helpers.check_book
+    def set_bgcolor(self, bg: Optional[str]):
+        if bg is not None:
+            self._body.set("bgcolor", bg)
+        elif "bgcolor" in self._body.attrib:
+            self._body.attrib.pop("bgcolor")
+        self.bgcolor = bg
 
 class ACBFData:
-	"""Get any binary data embedded in the ACBF file.
+    """Get any binary data embedded in the ACBF file.
 
-	See Also
-	--------
-	`Data Section Definition <https://acbf.fandom.com/wiki/Data_Section_Definition>`_.
+    See Also
+    --------
+    `Data Section Definition <https://acbf.fandom.com/wiki/Data_Section_Definition>`_.
 
-	Returns
-	-------
-	BookData
-		A file as a :class:`BookData <libacbf.bookdata.BookData>` object.
+    Returns
+    -------
+    BookData
+        A file as a :class:`BookData <libacbf.bookdata.BookData>` object.
 
-	Raises
-	------
-	FileNotFoundError
-		Raised if file is not found embedded in the ACBF file.
+    Raises
+    ------
+    FileNotFoundError
+        Raised if file is not found embedded in the ACBF file.
 
-	Examples
-	--------
-	To get a file embedded in the ACBF file::
+    Examples
+    --------
+    To get a file embedded in the ACBF file::
 
-		from libacbf import ACBFBook
+        from libacbf import ACBFBook
 
-		with ACBFBook("path/to/book.cbz") as book:
-			image = book.Data["image.png"]
-			font = book.Data["font.ttf"]
-	"""
-	def __init__(self, book: ACBFBook):
-		self._ns = book._namespace
-		self.book: ACBFBook = book
-		self.files: Dict[str, Optional[BookData]] = {}
-		self.sync_data()
+        with ACBFBook("path/to/book.cbz") as book:
+            image = book.Data["image.png"]
+            font = book.Data["font.ttf"]
+    """
 
-	def list_files(self) -> Set[str]:
-		"""Returns a list of all the names of the files embedded in the ACBF file. May be images,
-		fonts etc.
+    def __init__(self, book: ACBFBook):
+        self._ns = book._namespace
+        self.book: ACBFBook = book
+        self.files: Dict[str, Optional[BookData]] = {}
+        self.sync_data()
 
-		Returns
-		-------
-		Set[str]
-			A set of file names.
-		"""
-		return set(self.files.keys())
+    def list_files(self) -> Set[str]:
+        """Returns a list of all the names of the files embedded in the ACBF file. May be images,
+        fonts etc.
 
-	def sync_data(self):
-		self.files.clear()
-		data_elements = self.book._root.findall(f"{self._ns}data/{self._ns}binary")
-		for i in data_elements:
-			self.files[i.attrib["id"]] = None
+        Returns
+        -------
+        Set[str]
+            A set of file names.
+        """
+        return set(self.files.keys())
 
-	@helpers.check_book
-	def add_data(self, target: Union[str, Path], name: str = '', embed: bool = False):
-		if not self.book.savable and not embed:
-			raise ValueError("Archive was created externally. Add files to it directly.")
+    def sync_data(self):
+        self.files.clear()
+        data_elements = self.book._root.findall(f"{self._ns}data/{self._ns}binary")
+        for i in data_elements:
+            self.files[i.attrib["id"]] = None
 
-		if isinstance(target, str):
-			target = Path(target).resolve(True)
+    @helpers.check_book
+    def add_data(self, target: Union[str, Path], name: str = '', embed: bool = False):
+        if not self.book.savable and not embed:
+            raise ValueError("Archive was created externally. Add files to it directly.")
 
-		name = target.name if name == '' else name
+        if isinstance(target, str):
+            target = Path(target).resolve(True)
 
-		if embed:
-			base = self.book._root.find(f"{self._ns}data")
-			if base is None:
-				base = etree.SubElement(self.book._root, f"{self._ns}data")
+        name = target.name if name == '' else name
 
-			bin_element = None
-			for i in base.findall(f"{self._ns}binary"):
-				if i.attrib["id"] == name:
-					bin_element = i
-					break
+        if embed:
+            base = self.book._root.find(f"{self._ns}data")
+            if base is None:
+                base = etree.SubElement(self.book._root, f"{self._ns}data")
 
-			if bin_element is None:
-				bin_element = etree.SubElement(base, f"{self._ns}binary", {"id": name})
+            bin_element = None
+            for i in base.findall(f"{self._ns}binary"):
+                if i.attrib["id"] == name:
+                    bin_element = i
+                    break
 
-			with open(target, 'rb') as file:
-				contents = file.read()
-			type = magic.from_buffer(contents, True)
-			data = b64encode(contents).decode("utf-8")
+            if bin_element is None:
+                bin_element = etree.SubElement(base, f"{self._ns}binary", {"id": name})
 
-			bin_element.set("content-type", type)
-			bin_element.text = data
+            with open(target, 'rb') as file:
+                contents = file.read()
+            type = magic.from_buffer(contents, True)
+            data = b64encode(contents).decode("utf-8")
 
-			self.files[name] = BookData(name, type, data)
-		else:
-			self.book.archive.write(target, name)
+            bin_element.set("content-type", type)
+            bin_element.text = data
 
-	@helpers.check_book
-	def remove_data(self, target: Union[str, Path], embedded: bool = False):
-		if not self.book.savable and not embedded:
-			raise ValueError("Archive was created externally. Remove files directly.")
+            self.files[name] = BookData(name, type, data)
+        else:
+            self.book.archive.write(target, name)
 
-		if isinstance(target, str) and not embedded:
-			target = Path(target)
+    @helpers.check_book
+    def remove_data(self, target: Union[str, Path], embedded: bool = False):
+        if not self.book.savable and not embedded:
+            raise ValueError("Archive was created externally. Remove files directly.")
 
-		if embedded:
-			data_elements = self.book._root.findall(f"{self._ns}data/{self._ns}binary")
-			for i in data_elements:
-				if i.attrib["id"] == target:
-					i.clear()
-					i.getparent().remove(i)
-			self.files.pop(target)
-		else:
-			if not target.is_absolute() and target in [Path(x)
-													for x in self.book.archive.list_files() +
-															self.book.archive.list_dirs()]:
-				self.book.archive.remove(target)
-			else:
-				raise FileNotFoundError("File not in archive.")
+        if isinstance(target, str) and not embedded:
+            target = Path(target)
 
-	def __len__(self):
-		return len(self.files.keys())
+        if embedded:
+            data_elements = self.book._root.findall(f"{self._ns}data/{self._ns}binary")
+            for i in data_elements:
+                if i.attrib["id"] == target:
+                    i.clear()
+                    i.getparent().remove(i)
+            self.files.pop(target)
+        else:
+            if not target.is_absolute() and target in [Path(x)
+                                                       for x in self.book.archive.list_files()
+                                                       + self.book.archive.list_dirs()]:
+                self.book.archive.remove(target)
+            else:
+                raise FileNotFoundError("File not in archive.")
 
-	def __getitem__(self, key: str):
-		if key in self.files.keys():
-			if self.files[key] is not None:
-				return self.files[key]
-			else:
-				data_elements = self.book._root.findall(f"{self._ns}data/{self._ns}binary")
-				for i in data_elements:
-					if i.attrib["id"] == key:
-						new_data = BookData(key, i.attrib["content-type"], i.text)
-						self.files[key] = new_data
-						return new_data
-		else:
-			raise FileNotFoundError
+    def __len__(self):
+        return len(self.files.keys())
+
+    def __getitem__(self, key: str):
+        if key in self.files.keys():
+            if self.files[key] is not None:
+                return self.files[key]
+            else:
+                data_elements = self.book._root.findall(f"{self._ns}data/{self._ns}binary")
+                for i in data_elements:
+                    if i.attrib["id"] == key:
+                        new_data = BookData(key, i.attrib["content-type"], i.text)
+                        self.files[key] = new_data
+                        return new_data
+        else:
+            raise FileNotFoundError

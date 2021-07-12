@@ -3,9 +3,9 @@
 from setuptools import setup, find_packages
 
 setup(name="libacbf",
-	version="",
-	description="",
+	version='',
+	description='',
 	author="Grafcube",
 	license="BSD-3-Clause License",
-	url="",
+	url='',
 	packages=find_packages())

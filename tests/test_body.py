@@ -11,7 +11,7 @@ def make_body_dir(path):
 def test_body_info(read_books: Tuple[Path, ACBFBook]):
 	path, book = read_books
 	dir = make_body_dir(path)
-	with open(dir/"test_body_info.json", "w", encoding="utf-8", newline="\n") as result:
+	with open(dir/"test_body_info.json", "w", encoding="utf-8", newline='\n') as result:
 		result.write(json.dumps({"bgcolour": book.Body.bgcolor, "pages": len(book.Body.pages)}, ensure_ascii=False))
 
 def test_body_pages(read_books: Tuple[Path, ACBFBook]):
@@ -80,11 +80,11 @@ def test_body_pages(read_books: Tuple[Path, ACBFBook]):
 			textlayer_output[pg.image_ref] = new_tl
 
 	dir = make_body_dir(path)
-	with open(dir/"test_body_pages.json", "w", encoding="utf-8", newline="\n") as result:
+	with open(dir/"test_body_pages.json", "w", encoding="utf-8", newline='\n') as result:
 		result.write(json.dumps(page_output, ensure_ascii=False))
-	with open(dir/"test_body_textlayers.json", "w", encoding="utf-8", newline="\n") as result:
+	with open(dir/"test_body_textlayers.json", "w", encoding="utf-8", newline='\n') as result:
 		result.write(json.dumps(textlayer_output, ensure_ascii=False))
-	with open(dir/"test_body_frames_jumps.json", "w", encoding="utf-8", newline="\n") as result:
+	with open(dir/"test_body_frames_jumps.json", "w", encoding="utf-8", newline='\n') as result:
 		result.write(json.dumps(fr_jm_output, ensure_ascii=False))
 
 def test_body_images(read_books: Tuple[Path, ACBFBook]):
@@ -100,5 +100,5 @@ def test_body_images(read_books: Tuple[Path, ACBFBook]):
 			"filesize": len(img.data)
 		}
 	dir = make_body_dir(path)
-	with open(dir/"test_body_images.json", "w", encoding="utf-8", newline="\n") as result:
+	with open(dir/"test_body_images.json", "w", encoding="utf-8", newline='\n') as result:
 		result.write(json.dumps(op, ensure_ascii=False))

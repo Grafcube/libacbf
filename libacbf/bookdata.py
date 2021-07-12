@@ -2,37 +2,38 @@ from typing import Optional, Union
 from base64 import b64decode
 
 class BookData:
-	"""Binary data referenced or stored in the book.
+    """Binary data referenced or stored in the book.
 
-	See Also
-	--------
-	`Binary data <https://acbf.fandom.com/wiki/Data_Section_Definition#Binary>`_.
+    See Also
+    --------
+    `Binary data <https://acbf.fandom.com/wiki/Data_Section_Definition#Binary>`_.
 
-	Attributes
-	----------
-	id : str
-		Name of the file with extension.
+    Attributes
+    ----------
+    id : str
+        Name of the file with extension.
 
-	type : str
-		Mime type of the file.
+    type : str
+        Mime type of the file.
 
-	is_embedded : bool
-		Whether the file is embedded in the ACBD file.
+    is_embedded : bool
+        Whether the file is embedded in the ACBD file.
 
-	data : bytes
-		The actual file's data.
-	"""
-	def __init__(self, id: str, file_type: str, data: Union[str, bytes]):
-		self._base64data: Optional[str] = None
+    data : bytes
+        The actual file's data.
+    """
 
-		self.id: str = id
+    def __init__(self, id: str, file_type: str, data: Union[str, bytes]):
+        self._base64data: Optional[str] = None
 
-		self.type: str = file_type
+        self.id: str = id
 
-		if isinstance(data, str):
-			self._base64data = data
-			data = b64decode(self._base64data)
+        self.type: str = file_type
 
-		self.is_embedded: bool = self._base64data is not None
+        if isinstance(data, str):
+            self._base64data = data
+            data = b64decode(self._base64data)
 
-		self.data: bytes = data
+        self.is_embedded: bool = self._base64data is not None
+
+        self.data: bytes = data
