@@ -149,8 +149,6 @@ class ACBFBook:
 
         self.archive: Optional[ArchiveReader] = None
 
-        self.savable: bool = mode != 'r'
-
         self.mode: Literal['r', 'w', 'a', 'x'] = mode
 
         self.is_open: bool = True
@@ -288,7 +286,7 @@ class ACBFBook:
         overwrite : bool, optional
             Whether to overwrite if file already exists at path. ``False`` by default.
         """
-        if self.mode == 'r' or not self.savable:
+        if self.mode == 'r':
             raise UnsupportedOperation("File is not writeable.")
 
         _validate_acbf(self._root, self._namespace)
@@ -325,11 +323,10 @@ class ACBFBook:
         Saves the book and closes open archives if file is ``.cbz``, ``.cbt`` or ``.cbr``
         or ``.cb7`` files.
         """
-        if self.savable:
-            if self.mode == 'x':
-                self.save()
-            elif self.mode in ['w', 'a']:
-                self.save(overwrite=True)
+        if self.mode == 'x':
+            self.save()
+        elif self.mode in ['w', 'a']:
+            self.save(overwrite=True)
 
         if self.archive is not None:
             self.archive.close()
@@ -577,8 +574,8 @@ class ACBFData:
 
     @helpers.check_book
     def add_data(self, target: Union[str, Path], name: str = '', embed: bool = False):
-        if not self.book.savable and not embed:
-            raise ValueError("Archive was created externally. Add files to it directly.")
+        if self.book.archive is None and not embed:
+            raise AttributeError("Book is not an archive type. Write data with `embed = True`.")
 
         if isinstance(target, str):
             target = Path(target).resolve(True)
@@ -612,14 +609,14 @@ class ACBFData:
             self.book.archive.write(target, name)
 
     @helpers.check_book
-    def remove_data(self, target: Union[str, Path], embedded: bool = False):
-        if not self.book.savable and not embedded:
-            raise ValueError("Archive was created externally. Remove files directly.")
+    def remove_data(self, target: Union[str, Path], embed: bool = False):
+        if self.book.archive is None and not embed:
+            raise AttributeError("Book is not an archive type. Write data with `embed = True`.")
 
-        if isinstance(target, str) and not embedded:
+        if isinstance(target, str) and not embed:
             target = Path(target)
 
-        if embedded:
+        if embed:
             data_elements = self.book._root.findall(f"{self._ns}data/{self._ns}binary")
             for i in data_elements:
                 if i.attrib["id"] == target:
