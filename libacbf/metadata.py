@@ -48,8 +48,14 @@ def update_authors(author_items, ns) -> List[structs.Author]:
 
     return authors
 
-def add_author(section: Union[BookInfo, DocumentInfo], *names: str, **knames: str):
-    author = structs.Author(*names, **knames)
+def add_author(section: Union[BookInfo, DocumentInfo], *names: str,
+               **knames: Union[str, structs.Author]):
+    if len(names) > 0 and isinstance(names[0], structs.Author):
+        author = names[0]
+    elif "author" in knames and isinstance(knames["author"], structs.Author):
+        author = knames.pop("author")
+    else:
+        author = structs.Author(*names, **knames)
     au_element = etree.Element(f"{section._ns}author")
     section._info.findall(f"{section._ns}author")[-1].addnext(au_element)
     author._element = au_element
@@ -65,6 +71,8 @@ def add_author(section: Union[BookInfo, DocumentInfo], *names: str, **knames: st
     attributes.pop("_first_name")
     attributes["last_name"] = attributes["_last_name"]
     attributes.pop("_last_name")
+    attributes["nickname"] = attributes["_nickname"]
+    attributes.pop("_nickname")
 
     edit_author(section, author, **attributes)
 
@@ -94,7 +102,9 @@ def edit_author(section: Union[BookInfo, DocumentInfo], author: Union[int, struc
                 names[i] = getattr(author, i)
         _ = structs.Author(**names)
 
-    attrs = {x: attributes.pop(x) for x in ["activity", "lang"] if x in attributes}
+    attrs = {x: attributes.pop(x)
+             for x in ["activity", "lang"]
+             if x in attributes and attributes[x] is not None}
 
     if "activity" in attrs:
         _ = constants.AuthorActivities[attrs["activity"]]
@@ -423,11 +433,11 @@ class BookInfo:
     # region Editor
     # Author
     @helpers.check_book
-    def add_author(self, author: structs.Author):
-        add_author(self, author)
+    def add_author(self, *names: str, **knames: Union[str, structs.Author]):
+        add_author(self, *names, **knames)
 
     @helpers.check_book
-    def edit_author(self, author: Union[structs.Author, int], **attributes):
+    def edit_author(self, author: Union[int, structs.Author], **attributes):
         edit_author(self, author, **attributes)
 
     @helpers.check_book
@@ -456,7 +466,8 @@ class BookInfo:
             t_element = etree.Element(f"{self._ns}book-title")
             title_elements[-1].addnext(t_element)
 
-        t_element.set("lang", lang)
+        if lang != '_':
+            t_element.set("lang", lang)
         t_element.text = title
 
         self.book_title[lang] = title
@@ -1085,8 +1096,8 @@ class DocumentInfo:
 
     # Author
     @helpers.check_book
-    def add_author(self, author: structs.Author):
-        add_author(self, author)
+    def add_author(self, *names: str, **knames: Union[str, structs.Author]):
+        add_author(self, *names, **knames)
 
     @helpers.check_book
     def edit_author(self, author: Union[structs.Author, int], **attributes):

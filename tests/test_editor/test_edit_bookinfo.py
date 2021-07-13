@@ -1,41 +1,50 @@
-from libacbf.structs import Author
-from libacbf.constants import Genres
 import os
-import json
 from pathlib import Path
+from libacbf import ACBFBook
+from libacbf.structs import Author
 
-# dir = f"tests/results/{Path(sample_path).name}/editor/metadata/book_info/"
-# os.makedirs(dir, exist_ok=True)
+edit_dir = Path("tests/results/edit_meta/book_info/")
+os.makedirs(edit_dir, exist_ok=True)
 
-# def test_authors():
-# 	op = {}
-# 	op["original"] = [get_au_op(x) for x in book.Metadata.book_info.authors]
+def test_authors():
+    with ACBFBook(edit_dir / "edit_authors.acbf", 'w', archive_type=None) as book:
+        book.Metadata.book_info.edit_title("Test Edit Authors")
 
-# 	book.Metadata.book_info.add_author(book, Author("Test"))
-# 	op["added"] = [get_au_op(x) for x in book.Metadata.book_info.authors]
+        book.Metadata.book_info.add_author("Test")
+        book.Metadata.book_info.add_author("Hugh", "Mann")
+        au = book.Metadata.book_info.authors[-1]
+        book.Metadata.book_info.add_author(Author("Grafcube"))
+        book.Metadata.book_info.add_author(author=Author("Another", "Grafcube"))
+        book.Metadata.book_info.add_author("Remove", "This")
+        rem = book.Metadata.book_info.authors[-1]
+        book.Metadata.book_info.add_author("NotGrafcube")
 
-# 	au = book.Metadata.book_info.authors[-1]
-# 	book.Metadata.book_info.edit_author(book, -1, first_name="TheFirst", last_name="TheLast", middle_name="TheMid", lang="kn", nickname=None, home_page="https://example.com/testing")
-# 	op["edited"] = [get_au_op(x) for x in book.Metadata.book_info.authors]
+        book.Metadata.book_info.edit_author(0,
+                                            first_name="TheFirst",
+                                            last_name="TheLast",
+                                            middle_name="TheMid",
+                                            lang="kn",
+                                            nickname=None,
+                                            home_page="https://example.com/testing")
 
-# 	book.Metadata.book_info.edit_author(book, au, middle_name=None, lang=None)
-# 	op["modified"] = [get_au_op(x) for x in book.Metadata.book_info.authors]
+        book.Metadata.book_info.edit_author(au, middle_name=None, lang=None)
 
-# 	try:
-# 		book.Metadata.book_info.edit_author(book, au, first_name=None)
-# 	except ValueError as e:
-# 		op["author-attr-fail"] = {str(e): [get_au_op(x) for x in book.Metadata.book_info.authors]}
+        book.Metadata.book_info.edit_author(0, activity="Translator")
 
-# 	try:
-# 		book.Metadata.book_info.edit_author(book, au, something="Non existant")
-# 	except AttributeError as e:
-# 		op["non-existant"] = {str(e): [get_au_op(x) for x in book.Metadata.book_info.authors]}
+        try:
+            book.Metadata.book_info.edit_author(au, first_name=None)
+        except ValueError as e:
+            with open(edit_dir / "author_error.txt", 'w') as op:
+                op.write(str(e))
 
-# 	book.Metadata.book_info.remove_author(book, -1)
-# 	op["removed"] = [get_au_op(x) for x in book.Metadata.book_info.authors]
+        try:
+            book.Metadata.book_info.edit_author(au, something="Non existant")
+        except AttributeError as e:
+            with open(edit_dir / "no_attribute.txt", 'w') as op:
+                op.write(str(e))
 
-# 	with open(dir + "test_authors.json", 'w', encoding="utf-8", newline='\n') as result:
-# 			result.write(json.dumps(op, ensure_ascii=False))
+        book.Metadata.book_info.remove_author(-1)
+        book.Metadata.book_info.remove_author(rem)
 
 # def test_titles():
 # 	op = {}

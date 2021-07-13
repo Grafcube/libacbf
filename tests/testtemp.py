@@ -1,7 +1,6 @@
 from pprint import pprint
 from libacbf import ACBFBook
+from tests.testres import samples
 
-with ACBFBook("temp/test_create.cbz", 'w') as book:
-    book.Metadata.book_info.edit_title("Test Create", "en")
-    book.save(overwrite=True)
-    book.Metadata.book_info.edit_annotation("This was created by a test.\nZip Archive.", "en")
+with ACBFBook(samples["cbz"]) as book:
+    pprint(book.Metadata.book_info.book_title)
