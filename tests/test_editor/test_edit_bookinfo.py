@@ -30,14 +30,18 @@ def test_authors():
         try:
             book.Metadata.book_info.edit_author(au, first_name=None)
         except ValueError as e:
-            with open(edit_dir / "author_error.txt", 'w') as op:
-                op.write(str(e))
+            if str(e) == "Author must have either First Name and Last Name or Nickname.":
+                pass
+            else:
+                raise e
 
         try:
             book.Metadata.book_info.edit_author(au, something="Non existant")
         except AttributeError as e:
-            with open(edit_dir / "no_attribute.txt", 'w') as op:
-                op.write(str(e))
+            if str(e) == "`Author` has no attribute `something`.":
+                pass
+            else:
+                raise e
 
         book.Metadata.book_info.remove_author(-1)
         book.Metadata.book_info.remove_author(rem)
@@ -107,84 +111,64 @@ def test_characters():
         book.Metadata.book_info.remove_character("Testing")
         book.Metadata.book_info.remove_character(-1)
 
-# def test_keywords():
-# 	op = {}
-# 	op["original"] = book.Metadata.book_info.keywords
+def test_keywords():
+    with ACBFBook(edit_dir / "edit_keywords.acbf", 'w', archive_type=None) as book:
+        book.Metadata.book_info.edit_title("Test Edit Keywords")
 
-# 	new_kws = book.Metadata.book_info.keywords["_"].copy()
-# 	book.Metadata.book_info.add_keyword(book, *new_kws, lang="en")
-# 	op["added"] = book.Metadata.book_info.keywords
+        book.Metadata.book_info.add_keywords("ebook", "tag", "comic book", "Tag", "TAG")
+        book.Metadata.book_info.add_keywords("ebook", "tag", "comic book", "Tag", "TAG", lang="en")
+        book.Metadata.book_info.remove_keyword("science fiction", "TaG", lang="en")
+        book.Metadata.book_info.clear_keywords()
 
-# 	book.Metadata.book_info.add_keyword(book, "ebook", "tag", "comic book", "Tag", "TAG", lang="en")
-# 	op["updated"] = book.Metadata.book_info.keywords
+def test_series():
+    with ACBFBook(edit_dir / "edit_series.acbf", 'w', archive_type=None) as book:
+        book.Metadata.book_info.edit_title("Test Edit Series")
 
-# 	book.Metadata.book_info.remove_keyword(book, "comic book", "science fiction", "TaG", lang="en")
-# 	op["removed"] = book.Metadata.book_info.keywords
+        try:
+            book.Metadata.book_info.edit_series("Some Comics")
+        except AttributeError as e:
+            if str(e) == "`sequence` cannot be blank for new series entry `Some Comics`.":
+                pass
+            else:
+                raise e
 
-# 	book.Metadata.book_info.clear_keywords(book, "en")
-# 	op["cleared"] = book.Metadata.book_info.keywords
+        book.Metadata.book_info.edit_series("Some Comics", 2)
+        book.Metadata.book_info.edit_series("More Comics", 5)
+        book.Metadata.book_info.edit_series("No Comics", 0)
+        book.Metadata.book_info.edit_series("Some Comics", volume=1)
+        book.Metadata.book_info.edit_series("More Comics", volume=2)
+        book.Metadata.book_info.edit_series("Some Comics", volume=None)
+        book.Metadata.book_info.remove_series("No Comics")
 
-# 	with open(dir + "test_keywords.json", 'w', encoding="utf-8", newline='\n') as result:
-# 		result.write(json.dumps(op, default=list, ensure_ascii=False))
+def test_rating():
+    with ACBFBook(edit_dir / "edit_rating.acbf", 'w', archive_type=None) as book:
+        book.Metadata.book_info.edit_title("Test Edit Content Rating")
 
-# def test_series():
-# 	op = {}
-# 	op["original"] = [x.__dict__ for x in book.Metadata.book_info.series.values()]
+        book.Metadata.book_info.edit_content_rating("16+")
+        book.Metadata.book_info.edit_content_rating("16+", "Age Rating")
+        book.Metadata.book_info.edit_content_rating("16+", "Another Age Rating")
+        book.Metadata.book_info.edit_content_rating("16+", "No Age Rating")
+        book.Metadata.book_info.edit_content_rating("17+", "Another Age Rating")
+        book.Metadata.book_info.remove_content_rating()
+        book.Metadata.book_info.remove_content_rating("No Age Rating")
 
-# 	try:
-# 		book.Metadata.book_info.edit_series(book, "Some Comics")
-# 	except AttributeError as e:
-# 		op["empty-sequence"] = {str(e): [x.__dict__ for x in book.Metadata.book_info.series.values()]}
+def test_dbref():
+    with ACBFBook(edit_dir / "edit_dbref.acbf", 'w', archive_type=None) as book:
+        book.Metadata.book_info.edit_title("Test Edit Database Reference")
 
-# 	book.Metadata.book_info.edit_series(book, "Some Comics", 2)
-# 	op["added"] = [x.__dict__ for x in book.Metadata.book_info.series.values()]
-
-# 	book.Metadata.book_info.edit_series(book, "Some Comics", volume=1)
-# 	op["edited"] = [x.__dict__ for x in book.Metadata.book_info.series.values()]
-
-# 	book.Metadata.book_info.edit_series(book, "Some Comics", volume=None)
-# 	op["modified"] = [x.__dict__ for x in book.Metadata.book_info.series.values()]
-
-# 	book.Metadata.book_info.remove_series(book, "Some Comics")
-# 	op["removed"] = [x.__dict__ for x in book.Metadata.book_info.series.values()]
-
-# 	with open(dir + "test_series.json", 'w', encoding="utf-8", newline='\n') as result:
-# 		result.write(json.dumps(op, ensure_ascii=False))
-
-# def test_rating():
-# 	op = {}
-# 	op["original"] = book.Metadata.book_info.content_rating
-
-# 	book.Metadata.book_info.edit_content_rating(book, "16+", "Age Rating")
-# 	op["added"] = book.Metadata.book_info.content_rating
-
-# 	book.Metadata.book_info.edit_content_rating(book, "17+", "Age Rating")
-# 	op["edited"] = book.Metadata.book_info.content_rating
-
-# 	book.Metadata.book_info.remove_content_rating(book, "Age Rating")
-# 	op["removed"] = book.Metadata.book_info.content_rating
-
-# 	with open(dir + "test_rating.json", 'w', encoding="utf-8", newline='\n') as result:
-# 		result.write(json.dumps(op, ensure_ascii=False))
-
-# def test_dbref():
-# 	op = {}
-# 	op["original"] = [x.__dict__ for x in book.Metadata.book_info.database_ref]
-
-# 	book.Metadata.book_info.add_database_ref(book, "ComicSite", "123456")
-# 	op["added"] = [x.__dict__ for x in book.Metadata.book_info.database_ref]
-
-# 	book.Metadata.book_info.edit_database_ref(book, -1, type="id")
-# 	op["edited"] = [x.__dict__ for x in book.Metadata.book_info.database_ref]
-
-# 	book.Metadata.book_info.edit_database_ref(book, -1, ref="https://example.com/comicsite/id/123456", type="URL")
-# 	op["modified"] = [x.__dict__ for x in book.Metadata.book_info.database_ref]
-
-# 	book.Metadata.book_info.edit_database_ref(book, -1, type=None)
-# 	op["updated"] = [x.__dict__ for x in book.Metadata.book_info.database_ref]
-
-# 	book.Metadata.book_info.remove_database_ref(book, -1)
-# 	op["removed"] = [x.__dict__ for x in book.Metadata.book_info.database_ref]
-
-# 	with open(dir + "test_dbref.json", 'w', encoding="utf-8", newline='\n') as result:
-# 		result.write(json.dumps(op, default=lambda x : str(x), ensure_ascii=False))
+        book.Metadata.book_info.add_database_ref("ComicSite", "123456")
+        cs = book.Metadata.book_info.database_ref[-1]
+        book.Metadata.book_info.add_database_ref("ComicSite", "123456")
+        csu = book.Metadata.book_info.database_ref[-1]
+        book.Metadata.book_info.add_database_ref("AnotherSite", "654321", "id")
+        an = book.Metadata.book_info.database_ref[-1]
+        book.Metadata.book_info.add_database_ref("NoSite", "654321")
+        ns = book.Metadata.book_info.database_ref[-1]
+        book.Metadata.book_info.add_database_ref("NoSite", "id/654321")
+        book.Metadata.book_info.edit_database_ref(cs, type="id")
+        book.Metadata.book_info.edit_database_ref(csu,
+                                                  ref="https://example.com/comicsite/id/123456",
+                                                  type="URL")
+        book.Metadata.book_info.edit_database_ref(an, type=None)
+        book.Metadata.book_info.remove_database_ref(-1)
+        book.Metadata.book_info.remove_database_ref(ns)

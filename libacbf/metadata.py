@@ -774,7 +774,7 @@ class BookInfo:
 
     # Series
     @helpers.check_book
-    def edit_series(self, title: str, sequence: Optional[str] = None, volume: Optional[str] = '_'):
+    def edit_series(self, title: str, sequence=None, volume='_'):
         ser_items = self._info.findall(f"{self._ns}sequence")
 
         if sequence is not None:
