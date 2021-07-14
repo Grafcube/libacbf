@@ -375,7 +375,7 @@
 			<xs:enumeration value="religion"/>
 			<xs:enumeration value="romance"/>
 			<xs:enumeration value="children"/>
-			<xs:enumeration value="non-fiction"/>
+			<xs:enumeration value="non_fiction"/>
 			<xs:enumeration value="adult"/>
 			<xs:enumeration value="alternative"/>
 			<xs:enumeration value="other"/>

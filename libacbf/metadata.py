@@ -102,9 +102,8 @@ def edit_author(section: Union[BookInfo, DocumentInfo], author: Union[int, struc
                 names[i] = getattr(author, i)
         _ = structs.Author(**names)
 
-    attrs = {x: attributes.pop(x)
-             for x in ["activity", "lang"]
-             if x in attributes and attributes[x] is not None}
+    attrs = {x: attributes.pop(x) for x in ["activity", "lang"] if
+             x in attributes and attributes[x] is not None}
 
     if "activity" in attrs:
         _ = constants.AuthorActivities[attrs["activity"]]
@@ -530,7 +529,7 @@ class BookInfo:
 
     @helpers.check_book
     def remove_genre(self, genre: str):
-        gn_elements = self._info.findall(f"{self}genre")
+        gn_elements = self._info.findall(f"{self._ns}genre")
 
         genre = constants.Genres[genre]
 
@@ -567,7 +566,8 @@ class BookInfo:
             annotation_elements[-1].addnext(an_element)
 
         an_element.clear()
-        an_element.set("lang", lang)
+        if lang != '_':
+            an_element.set("lang", lang)
 
         for pt in text.split('\n'):
             p = etree.SubElement(an_element, f"{self._ns}p")
@@ -614,12 +614,13 @@ class BookInfo:
         ln_item.set("lang", lang)
         ln_item.set("show", str(show).lower())
 
-        self.languages.append(structs.LanguageLayer(lang, show))
+        ln = structs.LanguageLayer(lang, show)
+        ln._element = ln_item
+        self.languages.append(ln)
 
     @helpers.check_book
     def edit_language(self, layer: Union[int, structs.LanguageLayer], lang: Optional[str] = None,
                       show: Optional[bool] = None):
-
         if lang is None and show is None:
             return
 
@@ -862,8 +863,8 @@ class BookInfo:
 
         rt_element = None
         for i in rt_items:
-            if (type == '_' and "type" not in i.keys()) or \
-                    (type != '_' and "type" in i.keys() and i.attrib["type"] == type):
+            if (type == '_' and "type" not in i.keys()) or (
+                    type != '_' and "type" in i.keys() and i.attrib["type"] == type):
                 rt_element = i
                 break
 
@@ -995,12 +996,7 @@ class PublishInfo:
 
     @helpers.check_book
     def set_publish_date(self, dt: Union[str, date], include_date: bool = True):
-        edit_date("publish-date",
-                  self,
-                  "publish_date_string",
-                  "publish_date",
-                  dt,
-                  include_date)
+        edit_date("publish-date", self, "publish_date_string", "publish_date", dt, include_date)
 
     # --- Optional ---
     @helpers.check_book
@@ -1111,12 +1107,7 @@ class DocumentInfo:
 
     @helpers.check_book
     def set_creation_date(self, dt: Union[str, date], include_date: bool = True):
-        edit_date("creation-date",
-                  self,
-                  "creation_date_string",
-                  "creation_date",
-                  dt,
-                  include_date)
+        edit_date("creation-date", self, "creation_date_string", "creation_date", dt, include_date)
 
     # --- Optional ---
     @helpers.check_book

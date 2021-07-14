@@ -32,8 +32,7 @@ def get_book_template() -> str:
         contents = template.read()
     return contents
 
-def _validate_acbf(root, ns: str):
-    tree = root.getroottree()
+def _validate_acbf(tree, ns: str):
     version = re.split(r'/', re.sub(r'[{}]', '', ns))[-1]
     xsd_path = f"libacbf/schema/acbf-{version}.xsd"
 
@@ -250,7 +249,7 @@ class ACBFBook:
 
         self._namespace: str = r"{" + self._root.nsmap[None] + r"}"
 
-        _validate_acbf(self._root, self._namespace)
+        _validate_acbf(self._root.getroottree(), self._namespace)
 
         self.Styles: Styles = Styles(self, str(contents))
 
@@ -271,9 +270,7 @@ class ACBFBook:
         [type]
             [description]
         """
-        return etree.tostring(self._root.getroottree(),
-                              encoding="utf-8",
-                              xml_declaration=True,
+        return etree.tostring(self._root.getroottree(), encoding="utf-8", xml_declaration=True,
                               pretty_print=True).decode("utf-8")
 
     def save(self, file: Union[str, Path, IO, None] = None, overwrite: bool = False):
@@ -289,7 +286,7 @@ class ACBFBook:
         if self.mode == 'r':
             raise UnsupportedOperation("File is not writeable.")
 
-        _validate_acbf(self._root, self._namespace)
+        _validate_acbf(self._root.getroottree(), self._namespace)
 
         if isinstance(file, str):
             file = Path(file)
@@ -656,8 +653,8 @@ class Styles:
 
     def sync_styles(self):
         self.styles.clear()
-        style_refs = [x for x in self.book._root.xpath("//processing-instruction()")
-                      if x.target == "xml-stylesheet"]
+        style_refs = [x for x in self.book._root.xpath("//processing-instruction()") if
+                      x.target == "xml-stylesheet"]
         for i in style_refs:
             self.styles[i.attrib["href"]] = None
         if self.book._root.find(f"{self.book._namespace}style") is not None:
@@ -676,16 +673,15 @@ class Styles:
         if embed:
             style_element = self.book._root.find(f"{self.book._namespace}style")
             if style_element is None:
-                style_element = etree.SubElement(self.book._root,
-                                                 f"{self.book._namespace}style",
+                style_element = etree.SubElement(self.book._root, f"{self.book._namespace}style",
                                                  {"type": type})
             with open(stylesheet_ref, 'r') as css:
                 style_element.text = css.read().strip()
             self.styles['_'] = style_element.text
         else:
-            style_refs = [x.attrib["href"]
-                          for x in self.book._root.xpath("//processing-instruction()")
-                          if x.target == "xml-stylesheet"]
+            style_refs = [x.attrib["href"] for x in
+                          self.book._root.xpath("//processing-instruction()") if
+                          x.target == "xml-stylesheet"]
             if style_name not in style_refs:
                 style_element = etree.ProcessingInstruction("xml-stylesheet",
                                                             f'type="{type}" href="{style_name}"')
@@ -695,8 +691,8 @@ class Styles:
 
     @helpers.check_book
     def remove_style(self, style_name: str):
-        style_refs = [x for x in self.book._root.xpath("//processing-instruction()")
-                      if x.target == "xml-stylesheet"]
+        style_refs = [x for x in self.book._root.xpath("//processing-instruction()") if
+                      x.target == "xml-stylesheet"]
         for i in style_refs:
             if i.target == "xml-stylesheet" and i.attrib["href"] == style_name:
                 self.book._root.append(i)

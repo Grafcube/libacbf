@@ -19,12 +19,8 @@ def test_authors():
         rem = book.Metadata.book_info.authors[-1]
         book.Metadata.book_info.add_author("NotGrafcube")
 
-        book.Metadata.book_info.edit_author(0,
-                                            first_name="TheFirst",
-                                            last_name="TheLast",
-                                            middle_name="TheMid",
-                                            lang="kn",
-                                            nickname=None,
+        book.Metadata.book_info.edit_author(0, first_name="TheFirst", last_name="TheLast",
+                                            middle_name="TheMid", lang="kn", nickname=None,
                                             home_page="https://example.com/testing")
 
         book.Metadata.book_info.edit_author(au, middle_name=None, lang=None)
@@ -46,93 +42,70 @@ def test_authors():
         book.Metadata.book_info.remove_author(-1)
         book.Metadata.book_info.remove_author(rem)
 
-# def test_titles():
-# 	op = {}
-# 	op["original"] = book.Metadata.book_info.book_title
+def test_titles():
+    with ACBFBook(edit_dir / "edit_titles.acbf", 'w', archive_type=None) as book:
+        book.Metadata.book_info.edit_title("Test Edit Titles")
+        book.Metadata.book_info.edit_title("Test Edit Titles", "en")
+        book.Metadata.book_info.edit_title("ಹೆಸರು", "kn")
+        book.Metadata.book_info.edit_title("ಹೆಸರು ಪರೀಕ್ಷೆ", "kn")
+        book.Metadata.book_info.edit_title("タイトル テスト", "jp")
+        book.Metadata.book_info.remove_title("jp")
+        book.Metadata.book_info.remove_title()
 
-# 	book.Metadata.book_info.edit_title(book, "ಕ್ರ್ಯಾಪ್ಹೌಂಡ್", "kn")
-# 	op["added"] = book.Metadata.book_info.book_title
+def test_genres():
+    with ACBFBook(edit_dir / "edit_genres.acbf", 'w', archive_type=None) as book:
+        book.Metadata.book_info.edit_title("Test Edit Genres")
 
-# 	book.Metadata.book_info.edit_title(book, "ಹೆಸರು", "kn")
-# 	op["edited"] = book.Metadata.book_info.book_title
+        book.Metadata.book_info.edit_genre("other")
+        book.Metadata.book_info.edit_genre("non_fiction", 42)
+        book.Metadata.book_info.edit_genre("manga", 11)
+        book.Metadata.book_info.edit_genre("manga", None)
+        book.Metadata.book_info.remove_genre("manga")
 
-# 	book.Metadata.book_info.remove_title(book, "kn")
-# 	op["removed"] = book.Metadata.book_info.book_title
+def test_annotations():
+    with ACBFBook(edit_dir / "edit_annotations.acbf", 'w', archive_type=None) as book:
+        book.Metadata.book_info.edit_title("Test Edit Annotations")
 
-# 	with open(dir + "test_titles.json", 'w', encoding="utf-8", newline='\n') as result:
-# 		result.write(json.dumps(op, ensure_ascii=False))
+        book.Metadata.book_info.edit_annotation("This is an annotation.")
+        book.Metadata.book_info.edit_annotation("This is an annotation.\nThis is another line.")
+        book.Metadata.book_info.edit_annotation("This is an annotation.", "en")
+        book.Metadata.book_info.edit_annotation("This is an annotation.\nThis is another line.",
+                                                "en")
+        book.Metadata.book_info.edit_annotation("ಇದು ಈ ಪುಸ್ತಕದ ವಿವರಣೆ", "kn")
+        book.Metadata.book_info.edit_annotation("ಇದು ಈ ಪುಸ್ತಕದ ವಿವರಣೆ.\nಇದು ಎರಡನೇ ಸಾಲು.", "kn")
+        book.Metadata.book_info.remove_annotation()
+        book.Metadata.book_info.remove_annotation("kn")
 
-# def test_genres():
-# 	op = {}
-# 	op["original"] = {x.genre.name: x.match for x in book.Metadata.book_info.genres.values()}
-
-# 	book.Metadata.book_info.edit_genre(book, Genres.other)
-# 	op["added"] = {x.genre.name: x.match for x in book.Metadata.book_info.genres.values()}
-
-# 	book.Metadata.book_info.edit_genre(book, Genres.other, 42)
-# 	op["edited"] = {x.genre.name: x.match for x in book.Metadata.book_info.genres.values()}
-
-# 	book.Metadata.book_info.edit_genre(book, Genres.other, None)
-# 	op["modified"] = {x.genre.name: x.match for x in book.Metadata.book_info.genres.values()}
-
-# 	book.Metadata.book_info.remove_genre(book, Genres.other)
-# 	op["removed"] = {x.genre.name: x.match for x in book.Metadata.book_info.genres.values()}
-
-# 	with open(dir + "test_genres.json", 'w', encoding="utf-8", newline='\n') as result:
-# 		result.write(json.dumps(op, ensure_ascii=False))
-
-# def test_annotations():
-# 	op = {}
-# 	op["original"] = book.Metadata.book_info.annotations
-
-# 	book.Metadata.book_info.edit_annotation(book, "ಇದು ಈ ಪುಸ್ತಕದ ವಿವರಣೆ", "kn")
-# 	op["added"] = book.Metadata.book_info.annotations
-
-# 	book.Metadata.book_info.edit_annotation(book, "ಇದು ಈ ಪುಸ್ತಕದ ವಿವರಣೆ.\nಇದು ಎರಡನೇ ಸಾಲು.", "kn")
-# 	op["edited"] = book.Metadata.book_info.annotations
-
-# 	book.Metadata.book_info.remove_annotation(book, "kn")
-# 	op["removed"] = book.Metadata.book_info.annotations
-
-# 	with open(dir + "test_annotations.json", 'w', encoding="utf-8", newline='\n') as result:
-# 		result.write(json.dumps(op, ensure_ascii=False))
-
-# def test_coverpage():
+# def test_cover page():
 # 	pass
 
-# def test_languagelayers():
-# 	op = {}
-# 	op["original"] = [{"lang": x.lang, "show": x.show} for x in book.Metadata.book_info.languages]
+# --- Optional ---
 
-# 	book.Metadata.book_info.add_language(book, "kn", False)
-# 	op["added"] = [{"lang": x.lang, "show": x.show} for x in book.Metadata.book_info.languages]
+def test_languagelayers():
+    with ACBFBook(edit_dir / "edit_languages.acbf", 'w', archive_type=None) as book:
+        book.Metadata.book_info.edit_title("Test Edit Languages")
 
-# 	book.Metadata.book_info.edit_language(book, -1, show=True)
-# 	op["edited"] = [{"lang": x.lang, "show": x.show} for x in book.Metadata.book_info.languages]
+        book.Metadata.book_info.add_language("en", False)
+        book.Metadata.book_info.add_language("en", True)
+        en = book.Metadata.book_info.languages[-1]
+        book.Metadata.book_info.add_language("kn", False)
+        kn = book.Metadata.book_info.languages[-1]
+        book.Metadata.book_info.add_language("jp", True)
+        book.Metadata.book_info.edit_language(kn, show=True)
+        book.Metadata.book_info.edit_language(-1, lang="ta")
+        book.Metadata.book_info.remove_language(-1)
+        book.Metadata.book_info.remove_language(en)
 
-# 	book.Metadata.book_info.edit_language(book, -1, lang="ta")
-# 	op["edited_again"] = [{"lang": x.lang, "show": x.show} for x in book.Metadata.book_info.languages]
+def test_characters():
+    with ACBFBook(edit_dir / "edit_characters.acbf", 'w', archive_type=None) as book:
+        book.Metadata.book_info.edit_title("Test Edit Characters")
 
-# 	book.Metadata.book_info.remove_language(book, -1)
-# 	op["removed"] = [{"lang": x.lang, "show": x.show} for x in book.Metadata.book_info.languages]
-
-# 	with open(dir + "test_languages.json", 'w', encoding="utf-8", newline='\n') as result:
-# 		result.write(json.dumps(op, ensure_ascii=False))
-
-# def test_characters():
-# 	op = {}
-# 	op["original"] = ", ".join(book.Metadata.book_info.characters)
-
-# 	book.Metadata.book_info.add_character(book, "Test")
-# 	book.Metadata.book_info.add_character(book, "Another")
-# 	op["added"] = ", ".join(book.Metadata.book_info.characters)
-
-# 	book.Metadata.book_info.remove_character(book, "Test")
-# 	book.Metadata.book_info.remove_character(book, -1)
-# 	op["removed"] = ", ".join(book.Metadata.book_info.characters)
-
-# 	with open(dir + "test_characters.json", 'w', encoding="utf-8", newline='\n') as result:
-# 		result.write(json.dumps(op, ensure_ascii=False))
+        book.Metadata.book_info.add_character("Test")
+        book.Metadata.book_info.add_character("Testing")
+        book.Metadata.book_info.add_character("Another")
+        book.Metadata.book_info.add_character("And Another")
+        book.Metadata.book_info.remove_character("Testing")
+        book.Metadata.book_info.remove_character(-1)
 
 # def test_keywords():
 # 	op = {}
