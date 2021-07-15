@@ -1,38 +1,38 @@
 <?xml version='1.0' encoding='utf-8'?>
 <ACBF xmlns="http://www.acbf.info/xml/acbf/1.1">
-	<meta-data>
-		<book-info>
-			<author>
-				<first-name>First name</first-name>
-				<last-name>Last name</last-name>
-				<nickname>Nickname</nickname>
-			</author>
-			<book-title></book-title>
-			<genre>other</genre>
-			<annotation>
-				<p>Annotation</p>
-			</annotation>
-			<coverpage>
-				<image href="" />
-			</coverpage>
-		</book-info>
-		<publish-info>
-			<publisher></publisher>
-			<publish-date></publish-date>
-		</publish-info>
-		<document-info>
-			<author>
-				<first-name>First name</first-name>
-				<last-name>Last name</last-name>
-				<nickname>Nickname</nickname>
-			</author>
-			<creation-date></creation-date>
-		</document-info>
-	</meta-data>
+    <meta-data>
+        <book-info>
+            <author>
+                <first-name>First name</first-name>
+                <last-name>Last name</last-name>
+                <nickname>Nickname</nickname>
+            </author>
+            <book-title/>
+            <genre>other</genre>
+            <annotation>
+                <p>Annotation</p>
+            </annotation>
+            <coverpage>
+                <image href=""/>
+            </coverpage>
+        </book-info>
+        <publish-info>
+            <publisher/>
+            <publish-date/>
+        </publish-info>
+        <document-info>
+            <author>
+                <first-name>First name</first-name>
+                <last-name>Last name</last-name>
+                <nickname>Nickname</nickname>
+            </author>
+            <creation-date/>
+        </document-info>
+    </meta-data>
 
-	<body>
-		<page>
-			<image href="" />
-		</page>
-	</body>
+    <body>
+        <page>
+            <image href=""/>
+        </page>
+    </body>
 </ACBF>

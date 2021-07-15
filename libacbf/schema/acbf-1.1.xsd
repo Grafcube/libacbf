@@ -19,7 +19,8 @@
 						<xs:choice maxOccurs="unbounded">
 							<xs:element name="book-info">
 								<xs:annotation>
-									<xs:documentation>Information about this particular (xml) document</xs:documentation>
+									<xs:documentation>Information about this particular (xml) document
+									</xs:documentation>
 								</xs:annotation>
 								<xs:complexType>
 									<xs:choice maxOccurs="unbounded">
@@ -28,35 +29,40 @@
 												<xs:documentation>Author(s) of this comic book</xs:documentation>
 											</xs:annotation>
 										</xs:element>
-										<xs:element name="book-title" type="textFieldType" minOccurs="0" maxOccurs="unbounded">
+										<xs:element name="book-title" type="textFieldType" minOccurs="0"
+													maxOccurs="unbounded">
 											<xs:annotation>
 												<xs:documentation>Book title</xs:documentation>
 											</xs:annotation>
 										</xs:element>
 										<xs:element name="genre" maxOccurs="unbounded">
 											<xs:annotation>
-												<xs:documentation>Genre of this book, with the optional match percentage</xs:documentation>
+												<xs:documentation>Genre of this book, with the optional match
+													percentage
+												</xs:documentation>
 											</xs:annotation>
 											<xs:complexType>
 												<xs:simpleContent>
 													<xs:extension base="genreType">
-														<xs:attribute name="match" type="xs:integer" use="optional" default="100"/>
+														<xs:attribute name="match" type="xs:integer" use="optional"
+																	  default="100"/>
 													</xs:extension>
 												</xs:simpleContent>
 											</xs:complexType>
 										</xs:element>
 										<xs:element name="characters" minOccurs="0" maxOccurs="unbounded">
 											<xs:annotation>
-												<xs:documentation>Characters appearing in the comic book</xs:documentation>
+												<xs:documentation>Characters appearing in the comic book
+												</xs:documentation>
 											</xs:annotation>
 											<xs:complexType>
-											  <xs:sequence>
-												<xs:element name="name" type="textFieldType" maxOccurs="unbounded">
-												  <xs:annotation>
-													<xs:documentation>Character's name</xs:documentation>
-												  </xs:annotation>
-												</xs:element>
-											  </xs:sequence>
+												<xs:sequence>
+													<xs:element name="name" type="textFieldType" maxOccurs="unbounded">
+														<xs:annotation>
+															<xs:documentation>Character's name</xs:documentation>
+														</xs:annotation>
+													</xs:element>
+												</xs:sequence>
 											</xs:complexType>
 										</xs:element>
 										<xs:element name="annotation" minOccurs="0" maxOccurs="unbounded">
@@ -64,17 +70,18 @@
 												<xs:documentation>Annotation</xs:documentation>
 											</xs:annotation>
 											<xs:complexType>
-											  <xs:sequence>
-												<xs:element name="p" type="textFieldType" maxOccurs="unbounded">
-													<xs:annotation>
-													  <xs:documentation>Paragraph</xs:documentation>
-													</xs:annotation>
-												</xs:element>
-											  </xs:sequence>
-											  <xs:attribute name="lang" type="xs:language" use="optional"/>
+												<xs:sequence>
+													<xs:element name="p" type="textFieldType" maxOccurs="unbounded">
+														<xs:annotation>
+															<xs:documentation>Paragraph</xs:documentation>
+														</xs:annotation>
+													</xs:element>
+												</xs:sequence>
+												<xs:attribute name="lang" type="xs:language" use="optional"/>
 											</xs:complexType>
 										</xs:element>
-										<xs:element name="keywords" type="textFieldType" minOccurs="0" maxOccurs="unbounded">
+										<xs:element name="keywords" type="textFieldType" minOccurs="0"
+													maxOccurs="unbounded">
 											<xs:annotation>
 												<xs:documentation>Keywords</xs:documentation>
 											</xs:annotation>
@@ -84,49 +91,60 @@
 												<xs:documentation>Coverpage image</xs:documentation>
 											</xs:annotation>
 											<xs:complexType>
-											  <xs:choice maxOccurs="unbounded">
-												<xs:element name="image" type="imageType" maxOccurs="unbounded"/>
-												<xs:element name="text-layer" type="textLayerBodyType" minOccurs="0" maxOccurs="unbounded"/>
-												<xs:element name="frame" type="frameType" minOccurs="0" maxOccurs="unbounded"/>
-												<xs:element name="jump" type="jumpType" minOccurs="0" maxOccurs="unbounded"/>
-											  </xs:choice>
+												<xs:choice maxOccurs="unbounded">
+													<xs:element name="image" type="imageType" maxOccurs="unbounded"/>
+													<xs:element name="text-layer" type="textLayerBodyType" minOccurs="0"
+																maxOccurs="unbounded"/>
+													<xs:element name="frame" type="frameType" minOccurs="0"
+																maxOccurs="unbounded"/>
+													<xs:element name="jump" type="jumpType" minOccurs="0"
+																maxOccurs="unbounded"/>
+												</xs:choice>
 											</xs:complexType>
 										</xs:element>
 										<xs:element name="languages" minOccurs="0" maxOccurs="1">
 											<xs:annotation>
-												<xs:documentation>Language layers present in the document</xs:documentation>
+												<xs:documentation>Language layers present in the document
+												</xs:documentation>
 											</xs:annotation>
 											<xs:complexType>
-											  <xs:sequence>
-												<xs:element name="text-layer" type="textLayerType" maxOccurs="unbounded">
-												  <xs:annotation>
-													<xs:documentation>Text-layer definition</xs:documentation>
-												  </xs:annotation>
-												</xs:element>
-											  </xs:sequence>
+												<xs:sequence>
+													<xs:element name="text-layer" type="textLayerType"
+																maxOccurs="unbounded">
+														<xs:annotation>
+															<xs:documentation>Text-layer definition</xs:documentation>
+														</xs:annotation>
+													</xs:element>
+												</xs:sequence>
 											</xs:complexType>
 										</xs:element>
-										<xs:element name="sequence" type="sequenceType" minOccurs="0" maxOccurs="unbounded">
+										<xs:element name="sequence" type="sequenceType" minOccurs="0"
+													maxOccurs="unbounded">
 											<xs:annotation>
-												<xs:documentation>Any sequences this comic book might be part of</xs:documentation>
+												<xs:documentation>Any sequences this comic book might be part of
+												</xs:documentation>
 											</xs:annotation>
 										</xs:element>
 										<xs:element name="databaseref" minOccurs="0" maxOccurs="unbounded">
 											<xs:annotation>
-												<xs:documentation>Various references to comic book databases.</xs:documentation>
+												<xs:documentation>Various references to comic book databases.
+												</xs:documentation>
 											</xs:annotation>
 											<xs:complexType>
-											  <xs:simpleContent>
-												<xs:extension base="xs:string">
-												  <xs:attribute name="dbname" type="xs:string" use="optional"/>
-												  <xs:attribute name="type" type="xs:string" use="optional"/>
-												</xs:extension>
-											  </xs:simpleContent>
+												<xs:simpleContent>
+													<xs:extension base="xs:string">
+														<xs:attribute name="dbname" type="xs:string" use="optional"/>
+														<xs:attribute name="type" type="xs:string" use="optional"/>
+													</xs:extension>
+												</xs:simpleContent>
 											</xs:complexType>
 										</xs:element>
-										<xs:element name="content-rating" type="typeType" minOccurs="0" maxOccurs="unbounded">
+										<xs:element name="content-rating" type="typeType" minOccurs="0"
+													maxOccurs="unbounded">
 											<xs:annotation>
-												<xs:documentation>Rating of the content of comic book, with regard to appropriateness for different age groups.</xs:documentation>
+												<xs:documentation>Rating of the content of comic book, with regard to
+													appropriateness for different age groups.
+												</xs:documentation>
 											</xs:annotation>
 										</xs:element>
 									</xs:choice>
@@ -134,7 +152,8 @@
 							</xs:element>
 							<xs:element name="publish-info" minOccurs="0" maxOccurs="1">
 								<xs:annotation>
-									<xs:documentation>Information about publisher, publish date, license etc.</xs:documentation>
+									<xs:documentation>Information about publisher, publish date, license etc.
+									</xs:documentation>
 								</xs:annotation>
 								<xs:complexType>
 									<xs:choice maxOccurs="unbounded">
@@ -150,7 +169,8 @@
 										</xs:element>
 										<xs:element name="city" type="textFieldType" minOccurs="0" maxOccurs="1">
 											<xs:annotation>
-												<xs:documentation>City where the comic book was published</xs:documentation>
+												<xs:documentation>City where the comic book was published
+												</xs:documentation>
 											</xs:annotation>
 										</xs:element>
 										<xs:element name="isbn" type="textFieldType" minOccurs="0" maxOccurs="1"/>
@@ -166,36 +186,43 @@
 									<xs:choice maxOccurs="unbounded">
 										<xs:element name="author" type="authorType" maxOccurs="unbounded">
 											<xs:annotation>
-												<xs:documentation>Author(s) of this particular document</xs:documentation>
+												<xs:documentation>Author(s) of this particular document
+												</xs:documentation>
 											</xs:annotation>
 										</xs:element>
-										<xs:element name="creation-date" type="dateType"  minOccurs="0" maxOccurs="1">
+										<xs:element name="creation-date" type="dateType" minOccurs="0" maxOccurs="1">
 											<xs:annotation>
 												<xs:documentation>Date of document creation</xs:documentation>
 											</xs:annotation>
 										</xs:element>
 										<xs:element name="source" minOccurs="0" maxOccurs="1">
 											<xs:annotation>
-												<xs:documentation>Description of source upon which this ACBF document is based if it's a conversion</xs:documentation>
+												<xs:documentation>Description of source upon which this ACBF document is
+													based if it's a conversion
+												</xs:documentation>
 											</xs:annotation>
 											<xs:complexType>
-											  <xs:sequence>
-												<xs:element name="p" type="textFieldType" maxOccurs="unbounded">
-													<xs:annotation>
-													  <xs:documentation>Paragraph</xs:documentation>
-													</xs:annotation>
-												</xs:element>
-											  </xs:sequence>
+												<xs:sequence>
+													<xs:element name="p" type="textFieldType" maxOccurs="unbounded">
+														<xs:annotation>
+															<xs:documentation>Paragraph</xs:documentation>
+														</xs:annotation>
+													</xs:element>
+												</xs:sequence>
 											</xs:complexType>
 										</xs:element>
 										<xs:element name="id" type="xs:token" minOccurs="0" maxOccurs="1">
 											<xs:annotation>
-												<xs:documentation>this is a unique identifier for a document. this must not change unless you make substantial updates to the document</xs:documentation>
+												<xs:documentation>this is a unique identifier for a document. this must
+													not change unless you make substantial updates to the document
+												</xs:documentation>
 											</xs:annotation>
 										</xs:element>
 										<xs:element name="version" type="xs:float" minOccurs="0" maxOccurs="1">
 											<xs:annotation>
-												<xs:documentation>Document version, in free format, should be incremented if the document is changed and re-released to the public</xs:documentation>
+												<xs:documentation>Document version, in free format, should be
+													incremented if the document is changed and re-released to the public
+												</xs:documentation>
 											</xs:annotation>
 										</xs:element>
 										<xs:element name="history" minOccurs="0" maxOccurs="1">
@@ -203,13 +230,13 @@
 												<xs:documentation>Document history or versioning</xs:documentation>
 											</xs:annotation>
 											<xs:complexType>
-											  <xs:sequence>
-												<xs:element name="p" type="textFieldType" maxOccurs="unbounded">
-													<xs:annotation>
-													  <xs:documentation>Paragraph</xs:documentation>
-													</xs:annotation>
-												</xs:element>
-											  </xs:sequence>
+												<xs:sequence>
+													<xs:element name="p" type="textFieldType" maxOccurs="unbounded">
+														<xs:annotation>
+															<xs:documentation>Paragraph</xs:documentation>
+														</xs:annotation>
+													</xs:element>
+												</xs:sequence>
 											</xs:complexType>
 										</xs:element>
 									</xs:choice>
@@ -230,7 +257,8 @@
 								</xs:annotation>
 								<xs:complexType>
 									<xs:choice maxOccurs="unbounded">
-										<xs:element name="title" type="textFieldType" minOccurs="0" maxOccurs="unbounded">
+										<xs:element name="title" type="textFieldType" minOccurs="0"
+													maxOccurs="unbounded">
 											<xs:annotation>
 												<xs:documentation>Page title.</xs:documentation>
 											</xs:annotation>
@@ -240,19 +268,25 @@
 												<xs:documentation>Background image.</xs:documentation>
 											</xs:annotation>
 										</xs:element>
-										<xs:element name="text-layer" type="textLayerBodyType" minOccurs="0" maxOccurs="unbounded">
+										<xs:element name="text-layer" type="textLayerBodyType" minOccurs="0"
+													maxOccurs="unbounded">
 											<xs:annotation>
-												<xs:documentation>Text-layer drown over background image.</xs:documentation>
+												<xs:documentation>Text-layer drown over background image.
+												</xs:documentation>
 											</xs:annotation>
 										</xs:element>
 										<xs:element name="frame" type="frameType" minOccurs="0" maxOccurs="unbounded">
 											<xs:annotation>
-												<xs:documentation>Frame/panel definition on particular comic book page.</xs:documentation>
+												<xs:documentation>Frame/panel definition on particular comic book
+													page.
+												</xs:documentation>
 											</xs:annotation>
 										</xs:element>
 										<xs:element name="jump" type="jumpType" minOccurs="0" maxOccurs="unbounded">
 											<xs:annotation>
-												<xs:documentation>Clickable object (area) on a comic book page which navigates the reader to a certain page.</xs:documentation>
+												<xs:documentation>Clickable object (area) on a comic book page which
+													navigates the reader to a certain page.
+												</xs:documentation>
 											</xs:annotation>
 										</xs:element>
 									</xs:choice>
@@ -266,26 +300,27 @@
 				</xs:element>
 				<xs:element name="references" minOccurs="0" maxOccurs="unbounded">
 					<xs:annotation>
-						<xs:documentation>References section. Links here from body text-area elements.</xs:documentation>
+						<xs:documentation>References section. Links here from body text-area elements.
+						</xs:documentation>
 					</xs:annotation>
 					<xs:complexType>
-					  <xs:sequence>
-						<xs:element name="reference" minOccurs="1" maxOccurs="unbounded">
-							<xs:annotation>
-								<xs:documentation>Particular reference</xs:documentation>
-							</xs:annotation>
-							<xs:complexType>
-							  <xs:sequence>
-								<xs:element name="p" type="pType" minOccurs="1" maxOccurs="unbounded">
-									<xs:annotation>
-										<xs:documentation>Paragraph.</xs:documentation>
-									</xs:annotation>
-								</xs:element>
-							  </xs:sequence>
-							  <xs:attribute name="id" type="xs:string" use="required"/>
-							</xs:complexType>
-						</xs:element>
-					  </xs:sequence>
+						<xs:sequence>
+							<xs:element name="reference" minOccurs="1" maxOccurs="unbounded">
+								<xs:annotation>
+									<xs:documentation>Particular reference</xs:documentation>
+								</xs:annotation>
+								<xs:complexType>
+									<xs:sequence>
+										<xs:element name="p" type="pType" minOccurs="1" maxOccurs="unbounded">
+											<xs:annotation>
+												<xs:documentation>Paragraph.</xs:documentation>
+											</xs:annotation>
+										</xs:element>
+									</xs:sequence>
+									<xs:attribute name="id" type="xs:string" use="required"/>
+								</xs:complexType>
+							</xs:element>
+						</xs:sequence>
 					</xs:complexType>
 				</xs:element>
 				<xs:element name="data" minOccurs="0" maxOccurs="unbounded">
@@ -293,21 +328,23 @@
 						<xs:documentation>Data section.</xs:documentation>
 					</xs:annotation>
 					<xs:complexType>
-					  <xs:sequence>
-						<xs:element name="binary" minOccurs="0" maxOccurs="unbounded">
-							<xs:annotation>
-								<xs:documentation>Any binary data that is required for the presentation of the comic book in base64 format. Currently only images are used.</xs:documentation>
-							</xs:annotation>
-							<xs:complexType>
-								<xs:simpleContent>
-									<xs:extension base="xs:base64Binary">
-										<xs:attribute name="content-type" type="xs:string" use="required"/>
-										<xs:attribute name="id" type="xs:string" use="required"/>
-									</xs:extension>
-								</xs:simpleContent>
-							</xs:complexType>
-						</xs:element>
-					  </xs:sequence>
+						<xs:sequence>
+							<xs:element name="binary" minOccurs="0" maxOccurs="unbounded">
+								<xs:annotation>
+									<xs:documentation>Any binary data that is required for the presentation of the comic
+										book in base64 format. Currently only images are used.
+									</xs:documentation>
+								</xs:annotation>
+								<xs:complexType>
+									<xs:simpleContent>
+										<xs:extension base="xs:base64Binary">
+											<xs:attribute name="content-type" type="xs:string" use="required"/>
+											<xs:attribute name="id" type="xs:string" use="required"/>
+										</xs:extension>
+									</xs:simpleContent>
+								</xs:complexType>
+							</xs:element>
+						</xs:sequence>
 					</xs:complexType>
 				</xs:element>
 			</xs:choice>
@@ -328,23 +365,23 @@
 			</xs:choice>
 		</xs:sequence>
 		<xs:attribute name="activity" use="optional">
-		  <xs:simpleType>
-			<xs:restriction base="xs:string">
-				  <xs:enumeration value="Writer"/>
-				  <xs:enumeration value="Adapter"/>
-				  <xs:enumeration value="Artist"/>
-				  <xs:enumeration value="Penciller"/>
-				  <xs:enumeration value="Inker"/>
-				  <xs:enumeration value="Colorist"/>
-				  <xs:enumeration value="Letterer"/>
-				  <xs:enumeration value="CoverArtist"/>
-				  <xs:enumeration value="Photographer"/>
-				  <xs:enumeration value="Editor"/>
-				  <xs:enumeration value="AssistantEditor"/>
-				  <xs:enumeration value="Translator"/>
-				  <xs:enumeration value="Other"/>
-			</xs:restriction>
-		  </xs:simpleType>
+			<xs:simpleType>
+				<xs:restriction base="xs:string">
+					<xs:enumeration value="Writer"/>
+					<xs:enumeration value="Adapter"/>
+					<xs:enumeration value="Artist"/>
+					<xs:enumeration value="Penciller"/>
+					<xs:enumeration value="Inker"/>
+					<xs:enumeration value="Colorist"/>
+					<xs:enumeration value="Letterer"/>
+					<xs:enumeration value="CoverArtist"/>
+					<xs:enumeration value="Photographer"/>
+					<xs:enumeration value="Editor"/>
+					<xs:enumeration value="AssistantEditor"/>
+					<xs:enumeration value="Translator"/>
+					<xs:enumeration value="Other"/>
+				</xs:restriction>
+			</xs:simpleType>
 		</xs:attribute>
 		<xs:attribute name="lang" type="xs:language"/>
 	</xs:complexType>
@@ -397,7 +434,8 @@
 	</xs:complexType>
 	<xs:complexType name="dateType">
 		<xs:annotation>
-			<xs:documentation>A human readable date, maybe not exact, with an optional computer readable variant</xs:documentation>
+			<xs:documentation>A human readable date, maybe not exact, with an optional computer readable variant
+			</xs:documentation>
 		</xs:annotation>
 		<xs:simpleContent>
 			<xs:extension base="xs:string">
@@ -430,7 +468,9 @@
 	</xs:complexType>
 	<xs:complexType name="linkType" mixed="true">
 		<xs:annotation>
-			<xs:documentation>Generic hyperlinks. Cannot be nested. References should be implemented by links referring to references section</xs:documentation>
+			<xs:documentation>Generic hyperlinks. Cannot be nested. References should be implemented by links referring
+				to references section
+			</xs:documentation>
 		</xs:annotation>
 		<xs:attribute name="href" type="xs:string" use="required"/>
 	</xs:complexType>
@@ -518,7 +558,9 @@
 	</xs:complexType>
 	<xs:complexType name="jumpType">
 		<xs:annotation>
-			<xs:documentation>Clickable object (area) on a comic book page which navigates the reader to a certain page.</xs:documentation>
+			<xs:documentation>Clickable object (area) on a comic book page which navigates the reader to a certain
+				page.
+			</xs:documentation>
 		</xs:annotation>
 		<xs:attribute name="page" type="xs:integer" use="required"/>
 		<xs:attribute name="points" type="xs:string" use="required"/>
