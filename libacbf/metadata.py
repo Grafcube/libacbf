@@ -1,20 +1,20 @@
 from __future__ import annotations
-import re
+
 import distutils.util
-import langcodes
-from typing import TYPE_CHECKING, Dict, List, Set, Optional, Union
-from datetime import date
+import re
 import dateutil.parser
+import langcodes
+from datetime import date
+from typing import Dict, List, Optional, Set, TYPE_CHECKING, Union
 from lxml import etree
 
 if TYPE_CHECKING:
     from libacbf import ACBFBook
 from libacbf.body import Page
-import libacbf.structs as structs
 import libacbf.constants as constants
 import libacbf.helpers as helpers
 
-def update_authors(author_items, ns) -> List[structs.Author]:
+def update_authors(author_items, ns) -> List[Author]:
     authors = []
 
     for au in author_items:
@@ -28,7 +28,7 @@ def update_authors(author_items, ns) -> List[structs.Author]:
         if au.find(f"{ns}nickname") is not None:
             new_nickname = au.find(f"{ns}nickname").text
 
-        new_author: structs.Author = structs.Author(new_first_name, new_last_name, new_nickname)
+        new_author: Author = Author(new_first_name, new_last_name, new_nickname)
         new_author._element = au
 
         if "activity" in au.keys():
@@ -48,14 +48,13 @@ def update_authors(author_items, ns) -> List[structs.Author]:
 
     return authors
 
-def add_author(section: Union[BookInfo, DocumentInfo], *names: str,
-               **knames: Union[str, structs.Author]):
-    if len(names) > 0 and isinstance(names[0], structs.Author):
+def add_author(section: Union[BookInfo, DocumentInfo], *names: str, **knames: Union[str, Author]):
+    if len(names) > 0 and isinstance(names[0], Author):
         author = names[0]
-    elif "author" in knames and isinstance(knames["author"], structs.Author):
+    elif "author" in knames and isinstance(knames["author"], Author):
         author = knames.pop("author")
     else:
-        author = structs.Author(*names, **knames)
+        author = Author(*names, **knames)
     au_element = etree.Element(f"{section._ns}author")
     section._info.findall(f"{section._ns}author")[-1].addnext(au_element)
     author._element = au_element
@@ -76,7 +75,7 @@ def add_author(section: Union[BookInfo, DocumentInfo], *names: str,
 
     edit_author(section, author, **attributes)
 
-def edit_author(section: Union[BookInfo, DocumentInfo], author: Union[int, structs.Author],
+def edit_author(section: Union[BookInfo, DocumentInfo], author: Union[int, Author],
                 **attributes: str):
     au_list = section._info.findall(f"{section._ns}author")
 
@@ -84,7 +83,7 @@ def edit_author(section: Union[BookInfo, DocumentInfo], author: Union[int, struc
     if isinstance(author, int):
         author = section.authors[author]
         au_element = author._element
-    elif isinstance(author, structs.Author):
+    elif isinstance(author, Author):
         if author._element is None or author._element not in au_list:
             raise ValueError("Author is not part of a book.")
         else:
@@ -100,7 +99,7 @@ def edit_author(section: Union[BookInfo, DocumentInfo], author: Union[int, struc
         for i in ["first_name", "last_name", "nickname"]:
             if i not in names:
                 names[i] = getattr(author, i)
-        _ = structs.Author(**names)
+        _ = Author(**names)
 
     attrs = {x: attributes.pop(x) for x in ["activity", "lang"] if
              x in attributes and attributes[x] is not None}
@@ -130,7 +129,7 @@ def edit_author(section: Union[BookInfo, DocumentInfo], author: Union[int, struc
                 au_element.remove(element)
         setattr(author, k, v)
 
-def remove_author(section: Union[BookInfo, DocumentInfo], author: Union[int, structs.Author]):
+def remove_author(section: Union[BookInfo, DocumentInfo], author: Union[int, Author]):
     info_section = section._info
 
     au_list = section._info.findall(f"{section._ns}author")
@@ -139,7 +138,7 @@ def remove_author(section: Union[BookInfo, DocumentInfo], author: Union[int, str
     if isinstance(author, int):
         author = section.authors[author]
         author_element = author._element
-    elif isinstance(author, structs.Author):
+    elif isinstance(author, Author):
         if author._element is None:
             raise ValueError("Author is not part of a book.")
         elif author._element not in au_list:
@@ -205,7 +204,7 @@ class BookInfo:
         Book that the metadata belongs to.
 
     authors : List[Author]
-        A list of :class:`Author <libacbf.structs.Author>` objects.
+        A list of :class:`Author <libacbf.Author>` objects.
 
     book_title : Dict[str, str]
         A dictionary with standard language codes as keys and titles as values. Key is ``"_"`` if no
@@ -221,7 +220,7 @@ class BookInfo:
     genres : Dict[str, genre]
         A dictionary with keys being a string representation of
         :class:`Genres <libacbf.constants.Genres>` Enum and values being
-        :class:`genre <libacbf.structs.genre>` objects.
+        :class:`genre <libacbf.genre>` objects.
 
     annotations : Dict[str, str]
         A short summary describing the book.
@@ -238,7 +237,7 @@ class BookInfo:
         ``LanguageLayer`` represents all :class:`TextLayer <libacbf.body.TextLayer>` objects of a
         language.
 
-        A list of :class:`LanguageLayer <libacbf.structs.LanguageLayer>` objects.
+        A list of :class:`LanguageLayer <libacbf.LanguageLayer>` objects.
 
     characters : List[str], optional
         List of (main) characters that appear in the book.
@@ -253,7 +252,7 @@ class BookInfo:
         Contains the sequence and number if particular comic book is part of a series.
 
         A dictionary with keys as the title of the series and values as
-        :class:`Series <libacbf.structs.Series>` objects.
+        :class:`Series <libacbf.Series>` objects.
 
     content_rating: Dict[str, str], optional
         Content rating of the book based on age appropriateness and trigger warnings.
@@ -268,7 +267,7 @@ class BookInfo:
     database_ref : List[DBRef], optional
         Contains reference to a record in a comic book database (eg: GCD, MAL).
 
-        A list of :class:`DBRef <libacbf.structs.DBRef>` objects.
+        A list of :class:`DBRef <libacbf.DBRef>` objects.
     """
 
     def __init__(self, info, book: ACBFBook):
@@ -276,13 +275,13 @@ class BookInfo:
         self._info = info
         self._ns: str = book._namespace
 
-        self.authors: List[structs.Author] = []
+        self.authors: List[Author] = []
         self.sync_authors()
 
         self.book_title: Dict[str, str] = {}
         self.sync_book_titles()
 
-        self.genres: Dict[str, structs.Genre] = {}
+        self.genres: Dict[str, Genre] = {}
         self.sync_genres()
 
         self.annotations: Dict[str, str] = {}
@@ -292,7 +291,7 @@ class BookInfo:
         self.sync_coverpage()
 
         # Optional
-        self.languages: List[structs.LanguageLayer] = []
+        self.languages: List[LanguageLayer] = []
         self.sync_languages()
 
         self.characters: List[str] = []
@@ -301,13 +300,13 @@ class BookInfo:
         self.keywords: Dict[str, Set[str]] = {}
         self.sync_keywords()
 
-        self.series: Dict[str, structs.Series] = {}
+        self.series: Dict[str, Series] = {}
         self.sync_series()
 
         self.content_rating: Dict[str, str] = {}
         self.sync_content_rating()
 
-        self.database_ref: List[structs.DBRef] = []
+        self.database_ref: List[DBRef] = []
         self.sync_database_ref()
 
     # region Sync
@@ -330,7 +329,7 @@ class BookInfo:
 
         genre_items = self._info.findall(f"{self._ns}genre")
         for genre in genre_items:
-            new_genre = structs.Genre(genre.text)
+            new_genre = Genre(genre.text)
 
             if "match" in genre.keys():
                 new_genre.match = int(genre.attrib["match"])
@@ -365,8 +364,7 @@ class BookInfo:
             text_layers = self._info.find(f"{self._ns}languages").findall(f"{self._ns}text-layer")
             for layer in text_layers:
                 show = bool(distutils.util.strtobool(layer.attrib["show"]))
-                new_lang = structs.LanguageLayer(langcodes.standardize_tag(layer.attrib["lang"]),
-                                                 show)
+                new_lang = LanguageLayer(langcodes.standardize_tag(layer.attrib["lang"]), show)
                 new_lang._element = layer
 
                 self.languages.append(new_lang)
@@ -397,7 +395,7 @@ class BookInfo:
 
         series_items = self._info.findall(f"{self._ns}sequence")
         for se in series_items:
-            new_se = structs.Series(se.attrib["title"], se.text)
+            new_se = Series(se.attrib["title"], se.text)
 
             if "volume" in se.keys():
                 new_se.volume = se.attrib["volume"]
@@ -419,7 +417,7 @@ class BookInfo:
 
         db_items = self._info.findall(f"{self._ns}databaseref")
         for db in db_items:
-            new_db = structs.DBRef(db.attrib["dbname"], db.text)
+            new_db = DBRef(db.attrib["dbname"], db.text)
             new_db._element = db
 
             if "type" in db.keys():
@@ -432,15 +430,15 @@ class BookInfo:
     # region Editor
     # Author
     @helpers.check_book
-    def add_author(self, *names: str, **knames: Union[str, structs.Author]):
+    def add_author(self, *names: str, **knames: Union[str, Author]):
         add_author(self, *names, **knames)
 
     @helpers.check_book
-    def edit_author(self, author: Union[int, structs.Author], **attributes):
+    def edit_author(self, author: Union[int, Author], **attributes):
         edit_author(self, author, **attributes)
 
     @helpers.check_book
-    def remove_author(self, author: Union[int, structs.Author]):
+    def remove_author(self, author: Union[int, Author]):
         remove_author(self, author)
 
     # Titles
@@ -514,7 +512,7 @@ class BookInfo:
             gn_element.text = genre.name
 
         if genre.name not in self.genres or self.genres[genre.name] is None:
-            self.genres[genre.name] = structs.Genre(genre)
+            self.genres[genre.name] = Genre(genre)
         else:
             self.genres[genre.name].genre = genre
 
@@ -614,12 +612,12 @@ class BookInfo:
         ln_item.set("lang", lang)
         ln_item.set("show", str(show).lower())
 
-        ln = structs.LanguageLayer(lang, show)
+        ln = LanguageLayer(lang, show)
         ln._element = ln_item
         self.languages.append(ln)
 
     @helpers.check_book
-    def edit_language(self, layer: Union[int, structs.LanguageLayer], lang: Optional[str] = None,
+    def edit_language(self, layer: Union[int, LanguageLayer], lang: Optional[str] = None,
                       show: Optional[bool] = None):
         if lang is None and show is None:
             return
@@ -641,7 +639,7 @@ class BookInfo:
             layer.show = show
 
     @helpers.check_book
-    def remove_language(self, layer: Union[int, structs.LanguageLayer]):
+    def remove_language(self, layer: Union[int, LanguageLayer]):
         ln_section = self._info.find(f"{self._ns}languages")
 
         if isinstance(layer, int):
@@ -810,7 +808,7 @@ class BookInfo:
 
         if title not in self.series:
             volume = None if volume == '_' else volume
-            self.series[title] = structs.Series(title, sequence, volume)
+            self.series[title] = Series(title, sequence, volume)
         else:
             if sequence is not None:
                 self.series[title].sequence = sequence
@@ -889,13 +887,13 @@ class BookInfo:
         else:
             self._info.append(db_element)
 
-        db = structs.DBRef(dbname, ref)
+        db = DBRef(dbname, ref)
         db.type = type
         db._element = db_element
         self.database_ref.append(db)
 
     @helpers.check_book
-    def edit_database_ref(self, dbref: Union[int, structs.DBRef], dbname: Optional[str] = None,
+    def edit_database_ref(self, dbref: Union[int, DBRef], dbname: Optional[str] = None,
                           ref: Optional[str] = None, type: Optional[str] = '_'):
         if isinstance(dbref, int):
             dbref = self.database_ref[dbref]
@@ -918,7 +916,7 @@ class BookInfo:
                 dbref.type = None
 
     @helpers.check_book
-    def remove_database_ref(self, dbref: Union[int, structs.DBRef]):
+    def remove_database_ref(self, dbref: Union[int, DBRef]):
         if isinstance(dbref, int):
             dbref = self.database_ref[dbref]
 
@@ -1025,7 +1023,7 @@ class DocumentInfo:
         Book that the metadata belongs to.
 
     authors : List[Author]
-        List of authors of the ACBF file as :class:`Author <libacbf.structs.Author>` objects.
+        List of authors of the ACBF file as :class:`Author <libacbf.Author>` objects.
 
     creation_date_string : str
         Date when the ACBF file was created as a human readable string.
@@ -1052,7 +1050,7 @@ class DocumentInfo:
         self._info = info
         self._ns = book._namespace
 
-        self.authors: List[structs.Author] = []
+        self.authors: List[Author] = []
         self.sync_authors()
 
         self.creation_date_string: str = info.find(f"{self._ns}creation-date").text
@@ -1092,15 +1090,15 @@ class DocumentInfo:
 
     # Author
     @helpers.check_book
-    def add_author(self, *names: str, **knames: Union[str, structs.Author]):
+    def add_author(self, *names: str, **knames: Union[str, Author]):
         add_author(self, *names, **knames)
 
     @helpers.check_book
-    def edit_author(self, author: Union[structs.Author, int], **attributes):
+    def edit_author(self, author: Union[Author, int], **attributes):
         edit_author(self, author, **attributes)
 
     @helpers.check_book
-    def remove_author(self, author: Union[int, structs.Author]):
+    def remove_author(self, author: Union[int, Author]):
         remove_author(self, author)
 
     # Author
@@ -1170,3 +1168,319 @@ class DocumentInfo:
             history_section.clear()
             self._info.remove(history_section)
         self.document_history.pop(index)
+
+class Author:
+    """Defines an author of the comic book.
+
+    See Also
+    --------
+    `Body Info Author specifications
+    <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#Author>`_.
+
+    Examples
+    --------
+    An ``Author`` object can be created with either a nickname, a first and last name or both. ::
+
+        from libacbf.structs import Author
+
+        author1 = Author("Hugh", "Mann")
+        # author1.first_name == "Hugh"
+        # author1.last_name == "Mann"
+
+        author2 = Author("NotAPlatypus")
+        # author2.nickname == "NotAPlatypus"
+
+        author3 = Author("Hugh", "Mann", "NotAPlatypus")
+        # author3.first_name == "Hugh"
+        # author3.last_name == "Mann"
+        # author3.nickname == "NotAPlatypus"
+
+    This is also possible::
+
+        author4 = Author(first_name="Hugh", last_name="Mann", nickname="NotAPlatypus")
+
+    Attributes
+    ----------
+    first_name : str
+        Author's first name.
+
+    last_name : str
+        Author's last name.
+
+    nickname : str
+        Author's nickname.
+
+    middle_name : str, optional
+        Author's middle name.
+
+    home_page : str, optional
+        Author's website.
+
+    email : str, optional
+        Author's email address.
+    """
+
+    def __init__(self, *names: str, first_name=None, last_name=None, nickname=None):
+        self._element = None
+
+        self._first_name: Optional[str] = None
+        self._last_name: Optional[str] = None
+        self._nickname: Optional[str] = None
+
+        if len(names) == 1:
+            nickname = names[0]
+        elif len(names) == 2:
+            first_name = names[0]
+            last_name = names[1]
+        elif len(names) >= 3:
+            first_name = names[0]
+            last_name = names[1]
+            nickname = names[2]
+
+        if (first_name is not None and last_name is not None) or nickname is not None:
+            self._first_name: Optional[str] = first_name
+            self._last_name: Optional[str] = last_name
+            self._nickname: Optional[str] = nickname
+        else:
+            raise ValueError("Author must have either First Name and Last Name or Nickname.")
+
+        self._activity: Optional[constants.AuthorActivities] = None
+        self._lang: Optional[str] = None
+        self.middle_name: Optional[str] = None
+        self.home_page: Optional[str] = None
+        self.email: Optional[str] = None
+
+    @property
+    def first_name(self) -> Optional[str]:
+        return self._first_name
+
+    @first_name.setter
+    def first_name(self, val: Optional[str]):
+        if self.last_name is not None or self.nickname is not None:
+            self._first_name = val
+        else:
+            raise ValueError("Author must have either First Name and Last Name or Nickname.")
+
+    @property
+    def last_name(self) -> Optional[str]:
+        return self._last_name
+
+    @last_name.setter
+    def last_name(self, val: Optional[str]):
+        if self.first_name is not None or self.nickname is not None:
+            self._last_name = val
+        else:
+            raise ValueError("Author must have either First Name and Last Name or Nickname.")
+
+    @property
+    def nickname(self) -> Optional[str]:
+        return self._nickname
+
+    @nickname.setter
+    def nickname(self, val: Optional[str]):
+        if val is None:
+            if self.first_name is not None:
+                self._nickname = None
+        else:
+            self._nickname = val
+
+    @property
+    def activity(self) -> Optional[constants.AuthorActivities]:
+        """Defines the activity that a particular author carried out on the comic book.
+
+        Allowed values are defined in
+        :class:`AuthorActivities <libacbf.constants.AuthorActivities>`.
+
+        Returns
+        -------
+        Optional[AuthorActivities]
+            A value from :class:`AuthorActivities <libacbf.constants.AuthorActivities>` Enum.
+        """
+        return self._activity
+
+    @activity.setter
+    def activity(self, val: Optional[Union[constants.AuthorActivities, int, str]]):
+        if val is None:
+            self._activity = None
+        elif type(val) is constants.AuthorActivities:
+            self._activity = val
+        elif type(val) is str:
+            self._activity = constants.AuthorActivities[val]
+        elif type(val) is int:
+            self._activity = constants.AuthorActivities(val)
+        else:
+            raise ValueError(
+                "`Author.activity` must be an `int`, `str` or `constants.AuthorActivities`.")
+
+    @property
+    def lang(self) -> Optional[str]:
+        """Defines the language that the author worked in.
+
+        Returns
+        -------
+        Optional[str]
+            Returns a standard language code.
+        """
+        return self._lang
+
+    @lang.setter
+    def lang(self, val: Optional[str]):
+        if val is None:
+            self._lang = None
+        else:
+            self._lang = langcodes.standardize_tag(val)
+
+    def copy(self):
+        """Creates a copy of this ``Author`` object not connected to any book.
+
+        Returns
+        -------
+        Author
+            Copy of this object.
+        """
+        copy = Author(self.first_name, self.last_name, self.nickname)
+        copy.activity = self.activity
+        copy.lang = self.lang
+        copy.middle_name = self.middle_name
+        copy.home_page = self.home_page
+        copy.email = self.email
+        return copy
+
+class Genre:
+    """The genre of the book.
+
+    See Also
+    --------
+    `Body Info genre specifications
+    <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#Genre>`_.
+
+    Parameters
+    ----------
+    genre_type : Genres(Enum) | str | int
+        The genre value. String and integer are converted to a value from
+        :class:`Genres <libacbf.constants.Genres>` Enum.
+
+    match : int, optional
+        The match value. Must be an integer from 0 to 100.
+    """
+
+    def __init__(self, genre_type: Union[str, constants.Genres, int], match: Optional[int] = None):
+        self.genre: constants.Genres = genre_type
+        self.match: Optional[int] = match
+
+    @property
+    def genre(self) -> constants.Genres:
+        """Defines the activity that a particular author carried out on the comic book.
+
+        Allowed values are defined in :class:`Genres <libacbf.constants.Genres>`.
+
+        Returns
+        -------
+        Optional[Genres]
+            A value from :class:`Genres <libacbf.constants.Genres>` Enum.
+        """
+        return self._genre
+
+    @genre.setter
+    def genre(self, gn: Union[str, constants.Genres, int]):
+        if type(gn) is constants.Genres:
+            self._genre = gn
+        elif type(gn) is str:
+            self._genre = constants.Genres[gn]
+        elif type(gn) is int:
+            self._genre = constants.Genres(gn)
+
+    @property
+    def match(self) -> Optional[int]:
+        """Defines the match percentage to that particular genre.
+
+        Returns
+        -------
+        Optional[int]
+            An integer percentage from 0 to 100.
+        """
+        return self._match
+
+    @match.setter
+    def match(self, val: Optional[int] = None):
+        self._match = None
+        if val is not None:
+            if 0 <= val <= 100:
+                self._match = val
+            else:
+                raise ValueError("match must be an int from 0 to 100.")
+
+class LanguageLayer:
+    """Used by :attr:`BookInfo.languages <libacbf.metadata.BookInfo.languages>`.
+
+    See Also
+    --------
+    `Body Info Languages specifications
+    <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#Languages>`_.
+
+    Attributes
+    ----------
+    lang : str
+        Language of layer as a standard language code.
+
+    show : bool
+        Whether layer is drawn.
+    """
+
+    def __init__(self, val: str, show: bool):
+        self._element = None
+
+        self.lang: str = langcodes.standardize_tag(val)
+        self.show: bool = show
+
+class Series:
+    """Used by :attr:`BookInfo.series <libacbf.metadata.BookInfo.series>`.
+
+    See Also
+    --------
+    `Body Info Sequence specifications
+    <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#Sequence>`_.
+
+    Attributes
+    ----------
+    title : str
+        Title of the series that this book is part of.
+
+    sequence : str
+        The book's position/entry in the series.
+
+    volume : str, optional
+        The volume that the book belongs to.
+    """
+
+    def __init__(self, title: str, sequence: str, volume: Optional[str] = None):
+        self.title: str = title
+        self.sequence: str = sequence
+        self.volume: Optional[str] = volume
+
+class DBRef:
+    """Used by :attr:`BookInfo.database_ref <libacbf.metadata.BookInfo.database_ref>`.
+
+    See Also
+    --------
+    `Book Info DatabaseRef specifications
+    <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#DatabaseRef>`_.
+
+    Attributes
+    ----------
+    dbname : str
+        Name of database.
+
+    reference : str
+        Reference of book in database.
+
+    type : str, optional
+        Type of the given reference such as URL, ID etc.
+    """
+
+    def __init__(self, dbname: str, ref: str):
+        self._element = None
+
+        self.dbname: str = dbname
+        self.reference: str = ref
+        self.type: Optional[str] = None

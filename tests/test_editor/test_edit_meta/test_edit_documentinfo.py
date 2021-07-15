@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 from libacbf import ACBFBook
-from libacbf.structs import Author
+from libacbf.metadata import Author
 
 edit_dir = Path("tests/results/edit_meta/document_info/")
 os.makedirs(edit_dir, exist_ok=True)

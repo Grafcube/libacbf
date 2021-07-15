@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 from libacbf import ACBFBook
-from libacbf.structs import Author
+from libacbf.metadata import Author
 
 edit_dir = Path("tests/results/edit_meta/book_info/")
 os.makedirs(edit_dir, exist_ok=True)
@@ -79,9 +79,6 @@ def test_annotations():
         book.Metadata.book_info.edit_annotation("ಇದು ಈ ಪುಸ್ತಕದ ವಿವರಣೆ.\nಇದು ಎರಡನೇ ಸಾಲು.", "kn")
         book.Metadata.book_info.remove_annotation()
         book.Metadata.book_info.remove_annotation("kn")
-
-# def test_cover page():
-# 	pass
 
 # --- Optional ---
 

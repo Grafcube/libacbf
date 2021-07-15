@@ -11,7 +11,6 @@ from lxml import etree
 
 if TYPE_CHECKING:
     from libacbf import ACBFBook
-import libacbf.structs as structs
 import libacbf.helpers as helpers
 from libacbf.constants import ImageRefType, PageTransitions, TextAreas
 from libacbf.archivereader import ArchiveReader
@@ -71,6 +70,7 @@ class Page:
         self._jumps = None
 
         self.image_ref: str = ''
+
         self.ref_type: ImageRefType = None
         self.is_coverpage: bool = coverpage
 
@@ -154,7 +154,7 @@ class Page:
         return self._text_layers
 
     @property
-    def frames(self) -> List[structs.Frame]:
+    def frames(self) -> List[Frame]:
         """Gets the frames on this page.
 
         See Also
@@ -164,14 +164,14 @@ class Page:
         Returns
         -------
         List[Frame]
-            A list of :class:`Frame <libacbf.structs.Frame>` objects.
+            A list of :class:`Frame <Frame>` objects.
         """
         if self._frames is None or len(self._frames) == 0:
             item = self._page
             frames = []
             frame_items = item.findall(f"{self._ns}frame")
             for fr in frame_items:
-                frame = structs.Frame(structs.helpers.pts_to_vec(fr.attrib["points"]))
+                frame = Frame(helpers.pts_to_vec(fr.attrib["points"]))
                 frame._element = fr
                 if "bgcolor" in fr.keys():
                     frame.bgcolor = fr.attrib["bgcolor"]
@@ -180,7 +180,7 @@ class Page:
         return self._frames
 
     @property
-    def jumps(self) -> List[structs.Jump]:
+    def jumps(self) -> List[Jump]:
         """Gets the jumps on this page.
 
         See Also
@@ -190,15 +190,14 @@ class Page:
         Returns
         -------
         List[Jump]
-            A list of :class:`Jump <libacbf.structs.Jump>` objects.
+            A list of :class:`Jump <Jump>` objects.
         """
         if self._jumps is None or len(self._jumps) == 0:
             item = self._page
             jumps = []
             jump_items = item.findall(f"{self._ns}jump")
             for jp in jump_items:
-                jump = structs.Jump(structs.helpers.pts_to_vec(jp.attrib["points"]),
-                                    int(jp.attrib["page"]))
+                jump = Jump(helpers.pts_to_vec(jp.attrib["points"]), int(jp.attrib["page"]))
                 jump._element = jp
                 jumps.append(jump)
             self._jumps = jumps
@@ -335,9 +334,8 @@ class Page:
     # Frames
     @helpers.check_book
     def insert_new_frame(self, index: int, points: List[Tuple[int, int]]):
-        fr_element = etree.Element(f"{self._ns}frame",
-                                   {"points": structs.helpers.vec_to_pts(points)})
-        fr = structs.Frame([structs.helpers.Vec2(x, y) for x, y in points])
+        fr_element = etree.Element(f"{self._ns}frame", {"points": helpers.vec_to_pts(points)})
+        fr = Frame([helpers.Vec2(x, y) for x, y in points])
         fr._element = fr_element
 
         if index == len(self.frames):
@@ -370,8 +368,8 @@ class Page:
     def add_jump(self, target_page: int, points: List[Tuple[int, int]]):
         jp_element = etree.SubElement(self._page, f"{self._ns}jump")
         jp_element.set("page", str(target_page))
-        jp_element.set("points", structs.helpers.vec_to_pts(points))
-        jp = structs.Jump([structs.helpers.Vec2(x, y) for x, y in points], target_page)
+        jp_element.set("points", helpers.vec_to_pts(points))
+        jp = Jump([helpers.Vec2(x, y) for x, y in points], target_page)
         jp._element = jp_element
         self.jumps.append(jp)
 
@@ -428,8 +426,8 @@ class TextLayer:
     @helpers.check_book
     def insert_new_textarea(self, idx: int, points: List[Tuple[int, int]], paragraph: str):
         ta = etree.Element(f"{self._ns}text-area")
-        ta.set("points", structs.helpers.vec_to_pts(points))
-        ta.extend(structs.helpers.para_to_tree(paragraph, self._ns))
+        ta.set("points", helpers.vec_to_pts(points))
+        ta.extend(helpers.para_to_tree(paragraph, self._ns))
         self._layer.insert(idx, ta)
         self.text_areas.insert(idx, TextArea(ta, self._ns))
 
@@ -457,7 +455,7 @@ class TextArea:
     ----------
     points : List[2D Vectors]
         A list of named tuples with ``x`` and ``y`` values representing a 2-dimensional vector. Same
-        as :attr:`Frame.points <libacbf.structs.Frame.points>`.
+        as :attr:`Frame.points <Frame.points>`.
 
     paragraph : str
         A multiline string of what text to show in the are. Can have special tags for formatting.
@@ -505,9 +503,9 @@ class TextArea:
         self._area = area
         self._ns = ns
 
-        self.points: List[structs.helpers.Vec2] = structs.helpers.pts_to_vec(area.attrib["points"])
+        self.points: List[helpers.Vec2] = helpers.pts_to_vec(area.attrib["points"])
 
-        self.paragraph: str = structs.helpers.tree_to_para(area, ns)
+        self.paragraph: str = helpers.tree_to_para(area, ns)
 
         # Optional
         self.bgcolor: Optional[str] = None
@@ -537,15 +535,15 @@ class TextArea:
     # Editor
     @helpers.check_book
     def set_point(self, idx: int, x: int, y: int):
-        self.points[idx] = structs.helpers.Vec2(x, y)
-        self._area.set("points", structs.helpers.vec_to_pts(self.points))
+        self.points[idx] = helpers.Vec2(x, y)
+        self._area.set("points", helpers.vec_to_pts(self.points))
 
     @helpers.check_book
     def remove_point(self, idx: int):
         if len(self.points) == 1:
             raise ValueError("`points` cannot be empty.")
         self.points.pop(idx)
-        self._area.set("points", structs.helpers.vec_to_pts(self.points))
+        self._area.set("points", helpers.vec_to_pts(self.points))
 
     @helpers.check_book
     def set_paragraph(self, paragraph: str):
@@ -553,7 +551,7 @@ class TextArea:
             if i != self._area:
                 i.clear()
                 self._area.remove(i)
-        self._area.extend(structs.helpers.para_to_tree(paragraph, self._ns))
+        self._area.extend(helpers.para_to_tree(paragraph, self._ns))
         self.paragraph = paragraph
 
     # --- Optional ---
@@ -604,3 +602,91 @@ class TextArea:
         else:
             self._area.set("transparent", str(tra).lower())
         self.transparent = tra
+
+class Frame:
+    """A subsection of a page.
+
+    See Also
+    --------
+    `Body Info Frame specifications <https://acbf.fandom.com/wiki/Body_Section_Definition#Frame>`_.
+
+    Attributes
+    ----------
+    points : List[2D Vectors]
+        A list of named tuples with ``x`` and ``y`` values representing a 2-dimensional vector. ::
+
+            sixth_point = frame.points[5]
+            sixth_point.x # x-coordinate of point
+            sixth_point.y # y-coordinate of point
+
+    bgcolor : str, optional
+        Defines the background colour for the page. Inherits from
+        :attr:`Page.bgcolor <libacbf.body.Page.bgcolor>` if ``None``.
+    """
+
+    def __init__(self, points: List[helpers.Vec2]):
+        self._element = None
+
+        self.points: List[helpers.Vec2] = points
+        self.bgcolor: Optional[str] = None
+
+    @helpers.check_book
+    def set_point(self, idx: int, x: int, y: int):
+        self.points[idx] = helpers.Vec2(x, y)
+        self._element.set("points", helpers.vec_to_pts(self.points))
+
+    @helpers.check_book
+    def remove_point(self, idx: int):
+        if len(self.points) == 1:
+            raise ValueError("`points` cannot be empty.")
+        self.points.pop(idx)
+        self._element.set("points", helpers.vec_to_pts(self.points))
+
+    @helpers.check_book
+    def set_bgcolor(self, bg: Optional[str]):
+        if bg is not None:
+            self._element.set("bgcolor", bg)
+        elif "bgcolor" in self._element.attrib:
+            self._element.attrib.pop("bgcolor")
+        self.bgcolor = bg
+
+class Jump:
+    """Clickable area on a page which navigates to another page.
+
+    See Also
+    --------
+    `Body Info Jump specifications <https://acbf.fandom.com/wiki/Body_Section_Definition#Jump>`_.
+
+    Attributes
+    ----------
+    points : List[2D Vectors]
+        A list of named tuples with ``x`` and ``y`` values representing a 2-dimensional vector. Same
+        as :attr:`Frame.points`.
+
+    page : int
+        Target page to go to when clicked. Pages start from 1 so first page is ``1``, second page is
+        ``2`` and so on.
+    """
+
+    def __init__(self, points: List[helpers.Vec2], page: int):
+        self._element = None
+
+        self.page: int = page
+        self.points: List[helpers.Vec2] = points
+
+    @helpers.check_book
+    def set_target_page(self, target_page: int):
+        self._element.set("page", str(target_page))
+        self.page = target_page
+
+    @helpers.check_book
+    def set_point(self, idx: int, x: int, y: int):
+        self.points[idx] = helpers.Vec2(x, y)
+        self._element.set("points", helpers.vec_to_pts(self.points))
+
+    @helpers.check_book
+    def remove_point(self, idx: int):
+        if len(self.points) == 1:
+            raise ValueError("`points` cannot be empty.")
+        self.points.pop(idx)
+        self._element.set("points", helpers.vec_to_pts(self.points))
