@@ -5,7 +5,7 @@ from libacbf import ACBFBook
 edit_dir = Path("tests/results/edit_meta/publish_info/")
 os.makedirs(edit_dir, exist_ok=True)
 
-def test_pubisher():
+def test_publisher():
     with ACBFBook(edit_dir / "test_publisher.acbf", 'w', archive_type=None) as book:
         book.Metadata.book_info.edit_title("Test Publisher")
         book.Metadata.publisher_info.set_publisher("Grafcube")

@@ -156,15 +156,15 @@ def remove_author(section: Union[BookInfo, DocumentInfo], author: Union[int, str
     section.authors.remove(author)
 
 def edit_optional(tag: str, section: Union[BookInfo, PublishInfo, DocumentInfo], attr: str,
-                  text: Optional[str]):
+                  text: Optional[Union[str, int]]):
     item = section._info.find(section._ns + tag)
 
     if text is not None:
         if item is None:
             item = etree.Element(section._ns + tag)
             section._info.append(item)
-        item.text = text
-        setattr(section, attr, item.text)
+        item.text = str(text)
+        setattr(section, attr, text)
     elif text is None and item is not None:
         item.clear()
         item.getparent().remove(item)
@@ -1133,7 +1133,7 @@ class DocumentInfo:
         edit_optional("id", self, "document_id", id)
 
     @helpers.check_book
-    def set_document_version(self, version: Optional[str] = None):
+    def set_document_version(self, version: Optional[int] = None):
         edit_optional("version", self, "document_version", version)
 
     # History
