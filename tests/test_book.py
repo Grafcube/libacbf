@@ -12,4 +12,4 @@ def test_book_props(read_books: Tuple[Path, ACBFBook]):
         "namespace": book._namespace
     }
     with open(dir / "test_book_props.json", 'w', encoding="utf-8", newline='\n') as result:
-        result.write(json.dumps(op, ensure_ascii=False))
+        result.write(json.dumps(op, ensure_ascii=False, indent='\t', separators=(', ', ': ')))

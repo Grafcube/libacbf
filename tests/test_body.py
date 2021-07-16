@@ -13,7 +13,7 @@ def test_body_info(read_books: Tuple[Path, ACBFBook]):
     dir = make_body_dir(path)
     with open(dir / "test_body_info.json", "w", encoding="utf-8", newline='\n') as result:
         result.write(json.dumps({"bgcolour": book.Body.bgcolor, "pages": len(book.Body.pages)},
-                                ensure_ascii=False))
+                                ensure_ascii=False, indent='\t', separators=(', ', ': ')))
 
 def test_body_pages(read_books: Tuple[Path, ACBFBook]):
     path, book = read_books
@@ -47,13 +47,14 @@ def test_body_pages(read_books: Tuple[Path, ACBFBook]):
             new_jm = {"page": jm.page, "points": pts}
             fr_jm_output["jumps"][pg.image_ref] = new_jm
 
-        for tl in pg.text_layers.keys():
+        textlayer_output[pg.image_ref] = []
+        for tl in pg.text_layers.values():
             new_tl = {
-                "lang": pg.text_layers[tl].language,
-                "bgcolour": pg.text_layers[tl].bgcolor,
+                "lang": tl.language,
+                "bgcolour": tl.bgcolor,
                 "text_areas": []
             }
-            for ta in pg.text_layers[tl].text_areas:
+            for ta in tl.text_areas:
                 pts = []
                 for p in ta.points:
                     pts.append(f"({p.x},{p.y})")
@@ -69,15 +70,18 @@ def test_body_pages(read_books: Tuple[Path, ACBFBook]):
                     "transparent": ta.transparent
                 }
                 new_tl["text_areas"].append(new_ta)
-            textlayer_output[pg.image_ref] = new_tl
+            textlayer_output[pg.image_ref].append(new_tl)
 
     dir = make_body_dir(path)
     with open(dir / "test_body_pages.json", "w", encoding="utf-8", newline='\n') as result:
-        result.write(json.dumps(page_output, ensure_ascii=False))
+        result.write(
+            json.dumps(page_output, ensure_ascii=False, indent='\t', separators=(', ', ': ')))
     with open(dir / "test_body_textlayers.json", "w", encoding="utf-8", newline='\n') as result:
-        result.write(json.dumps(textlayer_output, ensure_ascii=False))
+        result.write(
+            json.dumps(textlayer_output, ensure_ascii=False, indent='\t', separators=(', ', ': ')))
     with open(dir / "test_body_frames_jumps.json", "w", encoding="utf-8", newline='\n') as result:
-        result.write(json.dumps(fr_jm_output, ensure_ascii=False))
+        result.write(
+            json.dumps(fr_jm_output, ensure_ascii=False, indent='\t', separators=(', ', ': ')))
 
 def test_body_images(read_books: Tuple[Path, ACBFBook]):
     path, book = read_books
@@ -93,4 +97,4 @@ def test_body_images(read_books: Tuple[Path, ACBFBook]):
         }
     dir = make_body_dir(path)
     with open(dir / "test_body_images.json", "w", encoding="utf-8", newline='\n') as result:
-        result.write(json.dumps(op, ensure_ascii=False))
+        result.write(json.dumps(op, ensure_ascii=False, indent='\t', separators=(', ', ': ')))

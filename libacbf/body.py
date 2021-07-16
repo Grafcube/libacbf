@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, List, Dict, Optional, Tuple
+from typing import TYPE_CHECKING, List, Dict, Tuple, Optional, Union
 import os
 import distutils.util
 import re
@@ -148,14 +148,14 @@ class Page:
             A dictionary with keys being a standard language object and values being
             :class:`TextLayer` objects.
         """
-        if self._text_layers is None or len(self._text_layers) == 0:
+        if self._text_layers is None:
+            self._text_layers = {}
+        if len(self._text_layers) == 0:
             item = self._page
-            text_layers = {}
             textlayer_items = item.findall(f"{self._ns}text-layer")
             for lr in textlayer_items:
                 new_lr = TextLayer(lr, self._ns)
-                text_layers[new_lr.language] = new_lr
-            self._text_layers = text_layers
+                self._text_layers[new_lr.language] = new_lr
         return self._text_layers
 
     @property
@@ -171,17 +171,17 @@ class Page:
         List[Frame]
             A list of :class:`Frame <Frame>` objects.
         """
-        if self._frames is None or len(self._frames) == 0:
+        if self._frames is None:
+            self._frames = []
+        if len(self._frames) == 0:
             item = self._page
-            frames = []
             frame_items = item.findall(f"{self._ns}frame")
             for fr in frame_items:
                 frame = Frame(helpers.pts_to_vec(fr.attrib["points"]))
                 frame._element = fr
                 if "bgcolor" in fr.keys():
                     frame.bgcolor = fr.attrib["bgcolor"]
-                frames.append(frame)
-            self._frames = frames
+                self._frames.append(frame)
         return self._frames
 
     @property
@@ -197,15 +197,15 @@ class Page:
         List[Jump]
             A list of :class:`Jump <Jump>` objects.
         """
-        if self._jumps is None or len(self._jumps) == 0:
+        if self._jumps is None:
+            self._jumps = []
+        if len(self._jumps) == 0:
             item = self._page
-            jumps = []
             jump_items = item.findall(f"{self._ns}jump")
             for jp in jump_items:
                 jump = Jump(helpers.pts_to_vec(jp.attrib["points"]), int(jp.attrib["page"]))
                 jump._element = jp
-                jumps.append(jump)
-            self._jumps = jumps
+                self._jumps.append(jump)
         return self._jumps
 
     def sync_image_ref(self):

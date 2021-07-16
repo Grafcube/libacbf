@@ -42,6 +42,8 @@ def test_textlayers():
     with ACBFBook(edit_dir / "test_textlayers.acbf", 'w', archive_type=None) as book:
         book.Metadata.book_info.edit_title("Test Text Layers")
 
+        book.Body.pages[0].add_textlayer("en")
+
 def test_textareas():
     with ACBFBook(edit_dir / "test_textareas.acbf", 'w', archive_type=None) as book:
         book.Metadata.book_info.edit_title("Test Page Transition")
