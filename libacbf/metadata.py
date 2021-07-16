@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import distutils.util
 import re
+import distutils.util
 import dateutil.parser
 import langcodes
 from datetime import date

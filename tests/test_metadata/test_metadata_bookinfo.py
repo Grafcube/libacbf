@@ -77,11 +77,7 @@ def test_database_ref(read_books: Tuple[Path, ACBFBook]):
     path, book = read_books
     op = []
     for i in book.Metadata.book_info.database_ref:
-        new_op = {
-            "dbname": i.dbname,
-            "text": i.reference,
-            "type": i.type
-        }
+        new_op = {"dbname": i.dbname, "text": i.reference, "type": i.type}
         op.append(new_op)
 
     dir = make_bookinfo_dir(path)
@@ -93,10 +89,7 @@ def test_coverpage(read_books: Tuple[Path, ACBFBook]):
     path, book = read_books
     page_output = {}
     textlayer_output = {}
-    fr_jm_output = {
-        "frames": {},
-        "jumps": {}
-    }
+    fr_jm_output = {"frames": {}, "jumps": {}}
 
     pg = book.Metadata.book_info.cover_page
 
@@ -108,10 +101,7 @@ def test_coverpage(read_books: Tuple[Path, ACBFBook]):
         for p in fr.points:
             pts.append(f"({p.x},{p.y})")
 
-        new_fr = {
-            "bgcolor": fr.bgcolor,
-            "points": pts
-        }
+        new_fr = {"bgcolor": fr.bgcolor, "points": pts}
         fr_jm_output["frames"][pg.image_ref] = new_fr
 
     for jm in pg.jumps:
@@ -119,33 +109,21 @@ def test_coverpage(read_books: Tuple[Path, ACBFBook]):
         for p in jm.points:
             pts.append(f"({p.x},{p.y})")
 
-        new_jm = {
-            "page": jm.page,
-            "points": pts
-        }
+        new_jm = {"page": jm.page, "points": pts}
         fr_jm_output["jumps"][pg.image_ref] = new_jm
 
     for tl in pg.text_layers.keys():
-        new_tl = {
-            "lang": pg.text_layers[tl].language,
-            "bgcolour": pg.text_layers[tl].bgcolor,
-            "text_areas": []
-        }
+        new_tl = {"lang": pg.text_layers[tl].language, "bgcolour": pg.text_layers[tl].bgcolor,
+            "text_areas": []}
         for ta in pg.text_layers[tl].text_areas:
             pts = []
             for p in ta.points:
                 pts.append(f"({p.x},{p.y})")
 
             type = ta.type.name if ta.type is not None else None
-            new_ta = {
-                "points": pts,
-                "p": ta.paragraph,
-                "bgcolour": ta.bgcolor,
-                "rotation": ta.rotation,
-                "type": type,
-                "inverted": ta.inverted,
-                "transparent": ta.transparent
-            }
+            new_ta = {"points": pts, "p": ta.paragraph, "bgcolour": ta.bgcolor,
+                "rotation": ta.rotation, "type": type, "inverted": ta.inverted,
+                "transparent": ta.transparent}
             new_tl["text_areas"].append(new_ta)
         textlayer_output[pg.image_ref] = new_tl
 

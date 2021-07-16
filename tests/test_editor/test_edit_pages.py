@@ -38,17 +38,3 @@ def test_title():
         book.Body.pages[0].set_title("Test Page", "en")
         book.Body.pages[0].set_title(None, "en")
         book.Body.pages[0].set_title("First Page", "en")
-
-# def test_bgcolor():
-#     with ACBFBook(edit_dir / "test_bgcolor.acbf", 'w', archive_type=None) as book:
-#         book.Metadata.book_info.edit_title("Test Background Colours")
-#
-#         #
-#         # Write cover, pages, Text layers, Text areas, Frames and Jumps here
-#         #
-#
-#         book.Body.set_bgcolor()
-#
-#         book.Body.pages[0].set_bgcolor()
-#
-#         book.Body.pages[0].set_bgcolor()

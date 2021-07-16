@@ -17,8 +17,7 @@ from libacbf.archivereader import ArchiveReader
 from libacbf.bookdata import BookData
 
 url_pattern = re.compile(
-    r'(((ftp|http|https)://)|(/)|(../))(\w+:?\w*@)?(\S+)(:[0-9]+)?(/|/([\w#!:.?+=&%@\-/]))?',
-    re.IGNORECASE)
+    r'((ftp|http|https)://)(\w+:?\w*@)?(\S+)(:[0-9]+)?(/|/([\w#!:.?+=&%@\-/]))?', re.IGNORECASE)
 
 class Page:
     """A page in the book.
