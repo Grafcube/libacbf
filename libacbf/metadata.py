@@ -1250,6 +1250,10 @@ class Author:
         self.home_page: Optional[str] = None
         self.email: Optional[str] = None
 
+    def __repr__(self):
+        return f'<libacbf.metadata.Author first_name="{self.first_name}" '\
+               f'last_name="{self.last_name}" nickname="{self.nickname}">'
+
     @property
     def first_name(self) -> Optional[str]:
         return self._first_name
@@ -1368,6 +1372,9 @@ class Genre:
         self.genre: constants.Genres = genre_type
         self.match: Optional[int] = match
 
+    def __repr__(self):
+        return f'<libacbf.metadata.Genre "{self.genre.name}">'
+
     @property
     def genre(self) -> constants.Genres:
         """Defines the activity that a particular author carried out on the comic book.
@@ -1433,6 +1440,9 @@ class LanguageLayer:
         self.lang: str = langcodes.standardize_tag(val)
         self.show: bool = show
 
+    def __repr__(self):
+        return f'<libacbf.metadata.LanguageLayer lang="{self.lang}" show={self.show}>'
+
 class Series:
     """Used by :attr:`BookInfo.series <libacbf.metadata.BookInfo.series>`.
 
@@ -1457,6 +1467,9 @@ class Series:
         self.title: str = title
         self.sequence: str = sequence
         self.volume: Optional[str] = volume
+
+    def __repr__(self):
+        return f'<libacbf.metadata.Series title="{self.title}" sequence="{self.sequence}">'
 
 class DBRef:
     """Used by :attr:`BookInfo.database_ref <libacbf.metadata.BookInfo.database_ref>`.
@@ -1484,3 +1497,6 @@ class DBRef:
         self.dbname: str = dbname
         self.reference: str = ref
         self.type: Optional[str] = None
+
+    def __repr__(self):
+        return f'<libacbf.metadata.DBRef dbname="{self.dbname}" reference="{self.reference}">'

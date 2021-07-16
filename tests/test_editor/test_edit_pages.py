@@ -6,7 +6,6 @@ edit_dir = Path("tests/results/edit_body/")
 os.makedirs(edit_dir, exist_ok=True)
 
 def test_pages():
-    # Also tests `Page.set_image_ref()`
     with ACBFBook(edit_dir / "test_pages.acbf", 'w', archive_type=None) as book:
         book.Metadata.book_info.edit_title("Test Pages")
 

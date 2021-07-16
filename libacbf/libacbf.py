@@ -325,10 +325,11 @@ class ACBFBook:
         elif self.mode in ['w', 'a']:
             self.save(overwrite=True)
 
+        self.mode = 'r'
+        self.is_open = False
+
         if self.archive is not None:
             self.archive.close()
-            self.mode = 'r'
-            self.is_open = False
 
     def sync_references(self):
         ns = self._namespace
@@ -411,6 +412,12 @@ class ACBFBook:
                 ref_section.getparent().remove(ref_section)
 
             self.References.pop(id)
+
+    def __repr__(self):
+        if self.is_open:
+            return object.__repr__(self).replace("libacbf.libacbf.ACBFBook", "libacbf.ACBFBook")
+        else:
+            return "<libacbf.ACBFBook [Closed]>"
 
     def __enter__(self):
         return self

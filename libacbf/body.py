@@ -95,6 +95,12 @@ class Page:
                 else:
                     self.title['_'] = t.text
 
+    def __repr__(self):
+        if self.is_coverpage:
+            return f'<libacbf.Metadata.BookInfo.coverpage href="{self.image_ref}">'
+        else:
+            return f'<libacbf.body.Page href="{self.image_ref}">'
+
     @property
     def image(self) -> BookData:
         """Gets the image data from the source.

@@ -37,3 +37,6 @@ class BookData:
         self.is_embedded: bool = self._base64data is not None
 
         self.data: bytes = data
+
+    def __repr__(self):
+        return f'<libacbf.bookdata.BookData id="{self.id}">'
