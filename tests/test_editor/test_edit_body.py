@@ -1,5 +1,6 @@
 import os
 import json
+import pytest
 from pathlib import Path
 from libacbf import ACBFBook
 
@@ -61,6 +62,67 @@ def test_textlayers():
         pg.remove_textlayer("jp")
         pg.change_textlayer_lang("sk", "ta")
 
+def test_textareas():
+    with ACBFBook(edit_dir / "test_textareas.acbf", 'w', archive_type=None) as book:
+        book.Metadata.book_info.edit_title("Test Text Areas")
+
+        book.Body.pages[0].add_textlayer("en")
+        tl = book.Body.pages[0].text_layers["en"]
+
+        tl.insert_new_textarea(0, [(0, 0), (0, 1), (1, 1), (1, 0)], "Area 1.")
+        tl.insert_new_textarea(1, [(0, 0), (0, 1), (1, 1), (1, 0)], "SWAP 5.")
+        tl.insert_new_textarea(2, [(0, 0), (0, 1), (1, 1), (1, 0)], "Area 3.")
+        tl.insert_new_textarea(3, [(0, 0), (0, 1), (1, 1), (1, 0)], "Area 4.")
+        tl.insert_new_textarea(4, [(0, 0), (0, 1), (1, 1), (1, 0)], "REMOVE ME.")
+        tl.insert_new_textarea(5, [(0, 0), (0, 1), (1, 1), (1, 0)], "SWAP 2.")
+        tl.insert_new_textarea(6, [(0, 0), (0, 1), (1, 1), (1, 0)], "Area 6.")
+
+        tl.remove_textarea(4)
+        tl.reorder_textarea(4, 1)
+        tl.reorder_textarea(2, 4)
+
+def test_textarea_props():
+    with ACBFBook(edit_dir / "test_textarea_props.acbf", 'w', archive_type=None) as book:
+        book.Metadata.book_info.edit_title("Test Text Area Properties")
+
+        book.Body.pages[0].add_textlayer("en")
+        book.Body.pages[0].text_layers["en"].insert_new_textarea(0,
+                                                                 [(0, 0), (0, 1), (1, 1), (1, 0)],
+                                                                 "A new area.")
+        ta = book.Body.pages[0].text_layers["en"].text_areas[0]
+
+        ta.set_paragraph("An edited area.")
+        ta.set_paragraph("An edited area\n...with a new line!!!")
+        ta.set_paragraph("An edited area\n...with a new line!!!\nAnd fancy formatting: "
+                         "<strong>strong</strong>, <emphasis>emphasis</emphasis>, "
+                         "<strikethrough>strikethrough</strikethrough>, <sub>sub</sub>, "
+                         '<sup>sup</sup>, <a href="a_reference_001" />')
+
+        ta.append_point(2, 2)
+        ta.insert_point(2, 3, 3)
+        ta.set_point(1, 1, 0)
+        ta.remove_point(4)
+
+        ta.set_rotation(45)
+        ta.set_rotation(None)
+        ta.set_rotation(90)
+        with pytest.raises(ValueError, match="Rotation must be an integer from 0 to 360."):
+            ta.set_rotation(-1)
+        with pytest.raises(ValueError, match="Rotation must be an integer from 0 to 360."):
+            ta.set_rotation(361)
+
+        ta.set_type("code")
+        ta.set_type(None)
+        ta.set_type("speech")
+
+        ta.set_inverted(False)
+        ta.set_inverted(None)
+        ta.set_inverted(True)
+
+        ta.set_transparent(False)
+        ta.set_transparent(None)
+        ta.set_transparent(True)
+
 def test_frames():
     with ACBFBook(edit_dir / "test_frames.acbf", 'w', archive_type=None) as book:
         book.Metadata.book_info.edit_title("Test Frames")
@@ -83,10 +145,10 @@ def test_jumps():
         book.Body.pages[0].remove_jump()
 
 def test_bgcolor():
-    pass  # with ACBFBook(edit_dir / "test_bgcolor.acbf", 'w', archive_type=None) as book:  #  #
-    #    book.Metadata.book_info.edit_title("Test Background Colours")  #  #         #  #  #  #
-    #    Write cover, pages, Text layers, Text areas, Frames and Jumps here  #         #  #  #  #
-    #    book.Body.set_bgcolor()  #
-#         book.Body.pages[0].set_bgcolor()
-#
-#         book.Body.pages[0].set_bgcolor()
+    # with ACBFBook(edit_dir / "test_bgcolor.acbf", 'w', archive_type=None) as book:
+    # book.Metadata.book_info.edit_title("Test Background Colours")
+    # Write cover, pages, Text layers, Text areas, Frames and Jumps here
+    # book.Body.set_bgcolor()
+    # book.Body.pages[0].set_bgcolor()
+    # book.Body.pages[0].set_bgcolor()
+    pass

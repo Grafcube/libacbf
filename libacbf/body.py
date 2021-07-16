@@ -546,6 +546,25 @@ class TextArea:
 
     # Editor
     @helpers.check_book
+    def set_paragraph(self, paragraph: str):
+        for i in self._area.iter():
+            if i != self._area:
+                i.clear()
+                self._area.remove(i)
+        self._area.extend(helpers.para_to_tree(paragraph, self._ns))
+        self.paragraph = paragraph
+
+    @helpers.check_book
+    def insert_point(self, idx: int, x: int, y: int):
+        self.points.insert(idx, helpers.Vec2(x, y))
+        self._area.set("points", helpers.vec_to_pts(self.points))
+
+    @helpers.check_book
+    def append_point(self, x: int, y: int):
+        self.points.append(helpers.Vec2(x, y))
+        self._area.set("points", helpers.vec_to_pts(self.points))
+
+    @helpers.check_book
     def set_point(self, idx: int, x: int, y: int):
         self.points[idx] = helpers.Vec2(x, y)
         self._area.set("points", helpers.vec_to_pts(self.points))
@@ -556,15 +575,6 @@ class TextArea:
             raise ValueError("`points` cannot be empty.")
         self.points.pop(idx)
         self._area.set("points", helpers.vec_to_pts(self.points))
-
-    @helpers.check_book
-    def set_paragraph(self, paragraph: str):
-        for i in self._area.iter():
-            if i != self._area:
-                i.clear()
-                self._area.remove(i)
-        self._area.extend(helpers.para_to_tree(paragraph, self._ns))
-        self.paragraph = paragraph
 
     # --- Optional ---
     @helpers.check_book
