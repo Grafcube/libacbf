@@ -1251,7 +1251,7 @@ class Author:
         self.email: Optional[str] = None
 
     def __repr__(self):
-        return f'<libacbf.metadata.Author first_name="{self.first_name}" '\
+        return f'<libacbf.metadata.Author first_name="{self.first_name}" ' \
                f'last_name="{self.last_name}" nickname="{self.nickname}">'
 
     @property

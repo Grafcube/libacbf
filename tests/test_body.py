@@ -23,8 +23,12 @@ def test_body_pages(read_books: Tuple[Path, ACBFBook]):
     fr_jm_output = {"frames": {}, "jumps": {}}
     for pg in book.Body.pages:
         transition = pg.transition.name if pg.transition is not None else None
-        new_pg = {"bgcolour": pg.bgcolor, "transition": transition, "ref_type": pg.ref_type.name,
-                  "titles": pg.title}
+        new_pg = {
+            "bgcolour": pg.bgcolor,
+            "transition": transition,
+            "ref_type": pg.ref_type.name,
+            "titles": pg.title
+        }
         page_output[pg.image_ref] = new_pg
 
         for fr in pg.frames:
@@ -44,17 +48,26 @@ def test_body_pages(read_books: Tuple[Path, ACBFBook]):
             fr_jm_output["jumps"][pg.image_ref] = new_jm
 
         for tl in pg.text_layers.keys():
-            new_tl = {"lang": pg.text_layers[tl].language, "bgcolour": pg.text_layers[tl].bgcolor,
-                      "text_areas": []}
+            new_tl = {
+                "lang": pg.text_layers[tl].language,
+                "bgcolour": pg.text_layers[tl].bgcolor,
+                "text_areas": []
+            }
             for ta in pg.text_layers[tl].text_areas:
                 pts = []
                 for p in ta.points:
                     pts.append(f"({p.x},{p.y})")
 
                 type = ta.type.name if ta.type is not None else None
-                new_ta = {"points": pts, "p": ta.paragraph, "bgcolour": ta.bgcolor,
-                          "rotation": ta.rotation, "type": type, "inverted": ta.inverted,
-                          "transparent": ta.transparent}
+                new_ta = {
+                    "points": pts,
+                    "p": ta.paragraph,
+                    "bgcolour": ta.bgcolor,
+                    "rotation": ta.rotation,
+                    "type": type,
+                    "inverted": ta.inverted,
+                    "transparent": ta.transparent
+                }
                 new_tl["text_areas"].append(new_ta)
             textlayer_output[pg.image_ref] = new_tl
 
@@ -72,8 +85,12 @@ def test_body_images(read_books: Tuple[Path, ACBFBook]):
     op = {}
     for pg in book.Body.pages:
         img = pg.image
-        op[pg.image_ref] = {"id": img.id, "type": img.type, "is_embedded": img.is_embedded,
-                            "filesize": len(img.data)}
+        op[pg.image_ref] = {
+            "id": img.id,
+            "type": img.type,
+            "is_embedded": img.is_embedded,
+            "filesize": len(img.data)
+        }
     dir = make_body_dir(path)
     with open(dir / "test_body_images.json", "w", encoding="utf-8", newline='\n') as result:
         result.write(json.dumps(op, ensure_ascii=False))

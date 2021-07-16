@@ -14,13 +14,14 @@ def test_authors(read_books: Tuple[Path, ACBFBook]):
     op = [get_au_op(x) for x in book.Metadata.book_info.authors]
     dir = make_bookinfo_dir(path)
     with open(dir / "test_bookinfo_authors.json", 'w', encoding="utf-8", newline='\n') as result:
-        result.write(json.dumps(op, ensure_ascii=False))
+        result.write(json.dumps(op, ensure_ascii=False, indent='\t', separators=(', ', ': ')))
 
 def test_titles(read_books: Tuple[Path, ACBFBook]):
     path, book = read_books
     dir = make_bookinfo_dir(path)
     with open(dir / "test_bookinfo_titles.json", 'w', encoding="utf-8", newline='\n') as result:
-        result.write(json.dumps(book.Metadata.book_info.book_title, ensure_ascii=False))
+        result.write(json.dumps(book.Metadata.book_info.book_title, ensure_ascii=False, indent='\t',
+                                separators=(', ', ': ')))
 
 def test_genres(read_books: Tuple[Path, ACBFBook]):
     path, book = read_books
@@ -29,34 +30,38 @@ def test_genres(read_books: Tuple[Path, ACBFBook]):
 
     dir = make_bookinfo_dir(path)
     with open(dir / "test_bookinfo_genres.json", 'w', encoding="utf-8", newline='\n') as result:
-        result.write(json.dumps(op, ensure_ascii=False))
+        result.write(json.dumps(op, ensure_ascii=False, indent='\t', separators=(', ', ': ')))
 
 def test_annotations(read_books: Tuple[Path, ACBFBook]):
     path, book = read_books
     dir = make_bookinfo_dir(path)
     with open(dir / "test_bookinfo_annotations.json", 'w', encoding="utf-8",
               newline='\n') as result:
-        result.write(json.dumps(book.Metadata.book_info.annotations, ensure_ascii=False))
+        result.write(
+            json.dumps(book.Metadata.book_info.annotations, ensure_ascii=False, indent='\t',
+                       separators=(', ', ': ')))
 
 def test_languages(read_books: Tuple[Path, ACBFBook]):
     path, book = read_books
     op = [{x.lang: x.show} for x in book.Metadata.book_info.languages]
     dir = make_bookinfo_dir(path)
     with open(dir / "test_bookinfo_languages.json", 'w', encoding="utf-8", newline='\n') as result:
-        result.write(json.dumps(op, ensure_ascii=False))
+        result.write(json.dumps(op, ensure_ascii=False, indent='\t', separators=(', ', ': ')))
 
 def test_characters(read_books: Tuple[Path, ACBFBook]):
     path, book = read_books
     dir = make_bookinfo_dir(path)
     with open(dir / "test_bookinfo_characters.json", 'w', encoding="utf-8", newline='\n') as result:
-        result.write(json.dumps(book.Metadata.book_info.characters, ensure_ascii=False))
+        result.write(json.dumps(book.Metadata.book_info.characters, ensure_ascii=False, indent='\t',
+                                separators=(', ', ': ')))
 
 def test_keywords(read_books: Tuple[Path, ACBFBook]):
     path, book = read_books
     op = book.Metadata.book_info.keywords
     dir = make_bookinfo_dir(path)
     with open(dir / "test_bookinfo_keywords.json", 'w', encoding="utf-8", newline='\n') as result:
-        result.write(json.dumps(op, default=list, ensure_ascii=False))
+        result.write(
+            json.dumps(op, default=list, ensure_ascii=False, indent='\t', separators=(', ', ': ')))
 
 def test_series(read_books: Tuple[Path, ACBFBook]):
     path, book = read_books
@@ -64,14 +69,16 @@ def test_series(read_books: Tuple[Path, ACBFBook]):
     op = {x.title: {"sequence": x.sequence, "volume": x.volume} for x in series}
     dir = make_bookinfo_dir(path)
     with open(dir / "test_bookinfo_series.json", 'w', encoding="utf-8", newline='\n') as result:
-        result.write(json.dumps(op, ensure_ascii=False))
+        result.write(json.dumps(op, ensure_ascii=False, indent='\t', separators=(', ', ': ')))
 
 def test_content_rating(read_books: Tuple[Path, ACBFBook]):
     path, book = read_books
     dir = make_bookinfo_dir(path)
     with open(dir / "test_bookinfo_content_rating.json", 'w', encoding="utf-8",
               newline='\n') as result:
-        result.write(json.dumps(book.Metadata.book_info.content_rating, ensure_ascii=False))
+        result.write(
+            json.dumps(book.Metadata.book_info.content_rating, ensure_ascii=False, indent='\t',
+                       separators=(', ', ': ')))
 
 def test_database_ref(read_books: Tuple[Path, ACBFBook]):
     path, book = read_books
@@ -83,7 +90,7 @@ def test_database_ref(read_books: Tuple[Path, ACBFBook]):
     dir = make_bookinfo_dir(path)
     with open(dir / "test_bookinfo_database_ref.json", 'w', encoding="utf-8",
               newline='\n') as result:
-        result.write(json.dumps(op, ensure_ascii=False))
+        result.write(json.dumps(op, ensure_ascii=False, indent='\t', separators=(', ', ': ')))
 
 def test_coverpage(read_books: Tuple[Path, ACBFBook]):
     path, book = read_books
@@ -113,24 +120,36 @@ def test_coverpage(read_books: Tuple[Path, ACBFBook]):
         fr_jm_output["jumps"][pg.image_ref] = new_jm
 
     for tl in pg.text_layers.keys():
-        new_tl = {"lang": pg.text_layers[tl].language, "bgcolour": pg.text_layers[tl].bgcolor,
-            "text_areas": []}
+        new_tl = {
+            "lang": pg.text_layers[tl].language,
+            "bgcolour": pg.text_layers[tl].bgcolor,
+            "text_areas": []
+        }
         for ta in pg.text_layers[tl].text_areas:
             pts = []
             for p in ta.points:
                 pts.append(f"({p.x},{p.y})")
 
             type = ta.type.name if ta.type is not None else None
-            new_ta = {"points": pts, "p": ta.paragraph, "bgcolour": ta.bgcolor,
-                "rotation": ta.rotation, "type": type, "inverted": ta.inverted,
-                "transparent": ta.transparent}
+            new_ta = {
+                "points": pts,
+                "p": ta.paragraph,
+                "bgcolour": ta.bgcolor,
+                "rotation": ta.rotation,
+                "type": type,
+                "inverted": ta.inverted,
+                "transparent": ta.transparent
+            }
             new_tl["text_areas"].append(new_ta)
         textlayer_output[pg.image_ref] = new_tl
 
     dir = make_bookinfo_dir(path)
     with open(dir / "test_cover_page.json", "w", encoding="utf-8", newline='\n') as result:
-        result.write(json.dumps(page_output, ensure_ascii=False))
+        result.write(
+            json.dumps(page_output, ensure_ascii=False, indent='\t', separators=(', ', ': ')))
     with open(dir / "test_cover_textlayers.json", "w", encoding="utf-8", newline='\n') as result:
-        result.write(json.dumps(textlayer_output, ensure_ascii=False))
+        result.write(
+            json.dumps(textlayer_output, ensure_ascii=False, indent='\t', separators=(', ', ': ')))
     with open(dir / "test_cover_frames_jumps.json", "w", encoding="utf-8", newline='\n') as result:
-        result.write(json.dumps(fr_jm_output, ensure_ascii=False))
+        result.write(
+            json.dumps(fr_jm_output, ensure_ascii=False, indent='\t', separators=(', ', ': ')))

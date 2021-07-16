@@ -14,7 +14,7 @@ def test_authors(read_books: Tuple[Path, ACBFBook]):
     op = [get_au_op(x) for x in book.Metadata.document_info.authors]
     dir = make_docinfo_dir(path)
     with open(dir / "test_authors.json", 'w', encoding="utf-8", newline='\n') as result:
-        result.write(json.dumps(op, ensure_ascii=False))
+        result.write(json.dumps(op, ensure_ascii=False, indent='\t', separators=(', ', ': ')))
 
 def test_creation_date_string(read_books: Tuple[Path, ACBFBook]):
     path, book = read_books
@@ -50,4 +50,5 @@ def test_history(read_books: Tuple[Path, ACBFBook]):
     path, book = read_books
     dir = make_docinfo_dir(path)
     with open(dir / "test_history.json", 'w', encoding="utf-8", newline='\n') as result:
-        result.write(json.dumps(book.Metadata.document_info.document_history, ensure_ascii=False))
+        result.write(json.dumps(book.Metadata.document_info.document_history, ensure_ascii=False,
+                                indent='\t', separators=(', ', ': ')))

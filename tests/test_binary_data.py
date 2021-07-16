@@ -13,4 +13,4 @@ def test_embedded(read_books: Tuple[Path, ACBFBook]):
             "filesize": len(book.Data[i].data)
         }
     with open(dir / "test_binary_data.json", 'w', encoding="utf-8", newline='\n') as result:
-        result.write(json.dumps(op, ensure_ascii=False))
+        result.write(json.dumps(op, ensure_ascii=False, indent='\t', separators=(', ', ': ')))

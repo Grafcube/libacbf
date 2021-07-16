@@ -238,7 +238,7 @@ class ArchiveReader:
             for action, source in self.changes.items():
                 action = Path(action)
                 action.resolve()
-                os.makedirs(td/action.parent, exist_ok=True)
+                os.makedirs(td / action.parent, exist_ok=True)
                 if source != '':
                     shutil.copy(source, td / action)
                 else:

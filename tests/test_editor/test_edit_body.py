@@ -55,9 +55,9 @@ def test_jumps():
         book.Metadata.book_info.edit_title("Test Jumps")
 
 def test_bgcolor():
-    pass  # with ACBFBook(edit_dir / "test_bgcolor.acbf", 'w', archive_type=None) as book:  #         book.Metadata.book_info.edit_title("Test Background Colours")  #
-#         #
-#         # Write cover, pages, Text layers, Text areas, Frames and Jumps here
+    pass  # with ACBFBook(edit_dir / "test_bgcolor.acbf", 'w', archive_type=None) as book:  #  #
+    #    book.Metadata.book_info.edit_title("Test Background Colours")  #  #         #  #
+    # Write cover, pages, Text layers, Text areas, Frames and Jumps here
 #         #
 #
 #         book.Body.set_bgcolor()
