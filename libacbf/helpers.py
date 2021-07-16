@@ -54,6 +54,6 @@ def para_to_tree(paragraph: str, ns):
         p = f"<p>{p}</p>"
         p_root = etree.fromstring(p)
         for i in p_root.iter():
-            i.tag = ns + i
+            i.tag = ns + i.tag
         p_elements.append(p_root)
     return p_elements

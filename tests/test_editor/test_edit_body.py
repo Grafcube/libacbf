@@ -42,28 +42,51 @@ def test_textlayers():
     with ACBFBook(edit_dir / "test_textlayers.acbf", 'w', archive_type=None) as book:
         book.Metadata.book_info.edit_title("Test Text Layers")
 
-        book.Body.pages[0].add_textlayer("en")
+        pg = book.Body.pages[0]
 
-def test_textareas():
-    with ACBFBook(edit_dir / "test_textareas.acbf", 'w', archive_type=None) as book:
-        book.Metadata.book_info.edit_title("Test Page Transition")
+        pg.add_textlayer("en")
+        pg.text_layers["en"].insert_new_textarea(0, [(0, 0), (0, 1), (1, 1), (1, 0)],
+                                                 "English Layer")
+
+        pg.add_textlayer("kn")
+        pg.text_layers["kn"].insert_new_textarea(0, [(0, 0), (0, 1), (1, 1), (1, 0)],
+                                                 "ಕನ್ನಡದ ಲೆಯರ್")
+
+        pg.add_textlayer("sk")
+        pg.text_layers["sk"].insert_new_textarea(0, [(0, 0), (0, 1), (1, 1), (1, 0)], "தமிழ் லெயர்")
+
+        pg.add_textlayer("jp")
+        pg.text_layers["jp"].insert_new_textarea(0, [(0, 0), (0, 1), (1, 1), (1, 0)], "日本語のレイヤー")
+
+        pg.remove_textlayer("jp")
+        pg.change_textlayer_lang("sk", "ta")
 
 def test_frames():
     with ACBFBook(edit_dir / "test_frames.acbf", 'w', archive_type=None) as book:
         book.Metadata.book_info.edit_title("Test Frames")
 
+        book.Body.pages[0].insert_new_frame()
+        book.Body.pages[0].insert_new_frame()
+        book.Body.pages[0].insert_new_frame()
+        book.Body.pages[0].insert_new_frame()
+        book.Body.pages[0].remove_frame()
+        book.Body.pages[0].reorder_frame()
+
 def test_jumps():
     with ACBFBook(edit_dir / "test_jumps.acbf", 'w', archive_type=None) as book:
         book.Metadata.book_info.edit_title("Test Jumps")
 
+        book.Body.pages[0].add_jump()
+        book.Body.pages[0].add_jump()
+        book.Body.pages[0].add_jump()
+        book.Body.pages[0].add_jump()
+        book.Body.pages[0].remove_jump()
+
 def test_bgcolor():
     pass  # with ACBFBook(edit_dir / "test_bgcolor.acbf", 'w', archive_type=None) as book:  #  #
-    #    book.Metadata.book_info.edit_title("Test Background Colours")  #  #         #  #
-    # Write cover, pages, Text layers, Text areas, Frames and Jumps here
-#         #
-#
-#         book.Body.set_bgcolor()
-#
+    #    book.Metadata.book_info.edit_title("Test Background Colours")  #  #         #  #  #  #
+    #    Write cover, pages, Text layers, Text areas, Frames and Jumps here  #         #  #  #  #
+    #    book.Body.set_bgcolor()  #
 #         book.Body.pages[0].set_bgcolor()
 #
 #         book.Body.pages[0].set_bgcolor()

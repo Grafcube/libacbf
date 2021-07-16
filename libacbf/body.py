@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, List, Dict, Tuple, Optional, Union
+from typing import TYPE_CHECKING, List, Dict, Tuple, Optional
 import os
 import distutils.util
 import re
@@ -154,7 +154,7 @@ class Page:
             item = self._page
             textlayer_items = item.findall(f"{self._ns}text-layer")
             for lr in textlayer_items:
-                new_lr = TextLayer(lr, self._ns)
+                new_lr = TextLayer(lr, self._ns, self.book)
                 self._text_layers[new_lr.language] = new_lr
         return self._text_layers
 
@@ -319,14 +319,19 @@ class Page:
     @helpers.check_book
     def add_textlayer(self, lang: str):
         lang = langcodes.standardize_tag(lang)
+        tlangs = [langcodes.standardize_tag(x.attrib["lang"]) for x in
+                  self._page.findall(f"{self._ns}text-layer")]
+        if lang in tlangs:
+            return
         t_layer = etree.SubElement(self._page, f"{self._ns}text-layer", {"lang": lang})
-        self.text_layers[lang] = TextLayer(t_layer, self._ns)
+        self.text_layers[lang] = TextLayer(t_layer, self._ns, self.book)
 
     @helpers.check_book
     def remove_textlayer(self, lang: str):
-        t_layer = self.text_layers.pop(lang)
-        t_layer._layer.clear()
-        self._page.remove(t_layer._layer)
+        if lang in self.text_layers:
+            t_layer = self.text_layers.pop(lang)
+            t_layer._layer.clear()
+            self._page.remove(t_layer._layer)
 
     @helpers.check_book
     def change_textlayer_lang(self, src_lang: str, dest_lang: str):
@@ -404,7 +409,8 @@ class TextLayer:
         ``None``.
     """
 
-    def __init__(self, layer, ns):
+    def __init__(self, layer, ns, book: ACBFBook):
+        self.book = book
         self._layer = layer
         self._ns = ns
 
@@ -418,7 +424,7 @@ class TextLayer:
         self.text_areas: List[TextArea] = []
         areas = layer.findall(f"{ns}text-area")
         for ar in areas:
-            self.text_areas.append(TextArea(ar, ns))
+            self.text_areas.append(TextArea(ar, ns, self.book))
 
     @helpers.check_book
     def set_bgcolor(self, bg: Optional[str]):
@@ -434,7 +440,7 @@ class TextLayer:
         ta.set("points", helpers.vec_to_pts(points))
         ta.extend(helpers.para_to_tree(paragraph, self._ns))
         self._layer.insert(idx, ta)
-        self.text_areas.insert(idx, TextArea(ta, self._ns))
+        self.text_areas.insert(idx, TextArea(ta, self._ns, self.book))
 
     @helpers.check_book
     def remove_textarea(self, idx: int):
@@ -504,7 +510,8 @@ class TextArea:
         Whether text is drawn.
     """
 
-    def __init__(self, area, ns):
+    def __init__(self, area, ns, book: ACBFBook):
+        self.book = book
         self._area = area
         self._ns = ns
 
