@@ -491,8 +491,9 @@ class ACBFBody:
 
     @helpers.check_book
     def insert_new_page(self, index: int, image_ref: str) -> Page:
-        pg = etree.SubElement(self._body, f"{self._ns}page")
-        pg.insert(index, etree.Element(f"{self._ns}image", {"href": image_ref}))
+        pg = etree.Element(f"{self._ns}page")
+        self._body.insert(index, pg)
+        etree.SubElement(pg, f"{self._ns}image", {"href": image_ref})
         self.pages.insert(index, Page(pg, self.book))
         return self.pages[index]
 

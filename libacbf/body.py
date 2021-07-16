@@ -294,7 +294,7 @@ class Page:
                     break
         else:
             for i in tl_items:
-                if langcodes.standardize_tag(i.attrib["lang"]) == lang:
+                if "lang" in i.attrib and langcodes.standardize_tag(i.attrib["lang"]) == lang:
                     tl_element = i
                     break
 
