@@ -7,6 +7,7 @@ from libacbf import ACBFBook
 edit_dir = Path("tests/results/edit_body/")
 os.makedirs(edit_dir, exist_ok=True)
 
+
 def test_images(abspath):
     with ACBFBook(edit_dir / "test_images.cbz", 'w') as book:
         book.Metadata.book_info.edit_title("Test Image Ref")
@@ -39,6 +40,7 @@ def test_images(abspath):
         with open(edit_dir / "test_images.json", 'w', encoding="utf-8") as op:
             op.write(json.dumps(ops, ensure_ascii=False, indent='\t', separators=(', ', ': ')))
 
+
 def test_textlayers():
     with ACBFBook(edit_dir / "test_textlayers.acbf", 'w', archive_type=None) as book:
         book.Metadata.book_info.edit_title("Test Text Layers")
@@ -46,12 +48,10 @@ def test_textlayers():
         pg = book.Body.pages[0]
 
         pg.add_textlayer("en")
-        pg.text_layers["en"].insert_new_textarea(0, [(0, 0), (0, 1), (1, 1), (1, 0)],
-                                                 "English Layer")
+        pg.text_layers["en"].insert_new_textarea(0, [(0, 0), (0, 1), (1, 1), (1, 0)], "English Layer")
 
         pg.add_textlayer("kn")
-        pg.text_layers["kn"].insert_new_textarea(0, [(0, 0), (0, 1), (1, 1), (1, 0)],
-                                                 "ಕನ್ನಡದ ಲೆಯರ್")
+        pg.text_layers["kn"].insert_new_textarea(0, [(0, 0), (0, 1), (1, 1), (1, 0)], "ಕನ್ನಡದ ಲೆಯರ್")
 
         pg.add_textlayer("sk")
         pg.text_layers["sk"].insert_new_textarea(0, [(0, 0), (0, 1), (1, 1), (1, 0)], "தமிழ் லெயர்")
@@ -61,6 +61,7 @@ def test_textlayers():
 
         pg.remove_textlayer("jp")
         pg.change_textlayer_lang("sk", "ta")
+
 
 def test_textareas():
     with ACBFBook(edit_dir / "test_textareas.acbf", 'w', archive_type=None) as book:
@@ -81,14 +82,13 @@ def test_textareas():
         tl.reorder_textarea(4, 1)
         tl.reorder_textarea(2, 4)
 
+
 def test_textarea_props():
     with ACBFBook(edit_dir / "test_textarea_props.acbf", 'w', archive_type=None) as book:
         book.Metadata.book_info.edit_title("Test Text Area Properties")
 
         book.Body.pages[0].add_textlayer("en")
-        book.Body.pages[0].text_layers["en"].insert_new_textarea(0,
-                                                                 [(0, 0), (0, 1), (1, 1), (1, 0)],
-                                                                 "A new area.")
+        book.Body.pages[0].text_layers["en"].insert_new_textarea(0, [(0, 0), (0, 1), (1, 1), (1, 0)], "A new area.")
         ta = book.Body.pages[0].text_layers["en"].text_areas[0]
 
         ta.set_paragraph("An edited area.")
@@ -123,6 +123,7 @@ def test_textarea_props():
         ta.set_transparent(None)
         ta.set_transparent(True)
 
+
 def test_frames():
     with ACBFBook(edit_dir / "test_frames.acbf", 'w', archive_type=None) as book:
         book.Metadata.book_info.edit_title("Test Frames")
@@ -134,6 +135,7 @@ def test_frames():
         book.Body.pages[0].remove_frame()
         book.Body.pages[0].reorder_frame()
 
+
 def test_jumps():
     with ACBFBook(edit_dir / "test_jumps.acbf", 'w', archive_type=None) as book:
         book.Metadata.book_info.edit_title("Test Jumps")
@@ -143,6 +145,7 @@ def test_jumps():
         book.Body.pages[0].add_jump()
         book.Body.pages[0].add_jump()
         book.Body.pages[0].remove_jump()
+
 
 def test_bgcolor():
     # with ACBFBook(edit_dir / "test_bgcolor.acbf", 'w', archive_type=None) as book:

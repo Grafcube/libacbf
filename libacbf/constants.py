@@ -1,5 +1,6 @@
 from enum import Enum, auto
 
+
 class AuthorActivities(Enum):
     """List of accepted values for :attr:`Author.activity<libacbf.structs.Author.activity>`.
 
@@ -20,6 +21,7 @@ class AuthorActivities(Enum):
     AssistantEditor = auto()
     Translator = auto()
     Other = 100
+
 
 class Genres(Enum):
     """List of accepted values for :attr:`genre.genre <libacbf.structs.genre.genre>`.
@@ -55,6 +57,7 @@ class Genres(Enum):
     western = auto()
     other = 100
 
+
 class TextAreas(Enum):
     """Types of text areas. Used by :attr:`TextArea.type <libacbf.body.TextArea.type>`.
 
@@ -72,6 +75,7 @@ class TextAreas(Enum):
     thought = auto()
     sign = auto()
 
+
 class PageTransitions(Enum):
     """Allowed values for :attr:`Page.transition <libacbf.body.Page.transition>`.
 
@@ -85,6 +89,7 @@ class PageTransitions(Enum):
     scroll_down = auto()
     none = 100
 
+
 class ImageRefType(Enum):
     """Types of image references. Used by :attr:`ref_type <libacbf.body.Page.ref_type>`.
 
@@ -97,6 +102,7 @@ class ImageRefType(Enum):
     Archived = auto()
     Local = auto()
     URL = auto()
+
 
 class ArchiveTypes(Enum):
     """The type of the source archive file.

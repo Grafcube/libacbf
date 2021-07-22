@@ -13,6 +13,7 @@ from libacbf.exceptions import EditRARArchiveError
 
 Vec2 = namedtuple("Vector2", "x y")
 
+
 def check_book(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
@@ -20,6 +21,7 @@ def check_book(func):
         func(self, *args, **kwargs)
 
     return wrapper
+
 
 def check_write(book: ACBFBook):
     if book.mode == 'r':
@@ -29,6 +31,7 @@ def check_write(book: ACBFBook):
     if book.archive is not None and book.archive.type == ArchiveTypes.Rar:
         raise EditRARArchiveError
 
+
 def pts_to_vec(pts_str: str):
     pts = []
     pts_l = re.split(" ", pts_str)
@@ -37,8 +40,10 @@ def pts_to_vec(pts_str: str):
         pts.append(Vec2(int(ls[0]), int(ls[1])))
     return pts
 
+
 def vec_to_pts(points: List[Tuple[int, int]]):
     return ' '.join([f"{x},{y}" for x, y in points])
+
 
 def tree_to_para(p_root, ns):
     pa = []
@@ -47,6 +52,7 @@ def tree_to_para(p_root, ns):
         text = re.sub(r'</?p[^>]*>', '', p_text)
         pa.append(text)
     return '\n'.join(pa)
+
 
 def para_to_tree(paragraph: str, ns):
     p_elements = []

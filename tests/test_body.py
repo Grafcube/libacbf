@@ -4,9 +4,11 @@ from pathlib import Path
 from typing import Tuple
 from libacbf import ACBFBook
 
+
 def make_body_dir(path):
     os.makedirs(path / "body", exist_ok=True)
     return path / "body"
+
 
 def test_body_info(read_books: Tuple[Path, ACBFBook]):
     path, book = read_books
@@ -14,6 +16,7 @@ def test_body_info(read_books: Tuple[Path, ACBFBook]):
     with open(dir / "test_body_info.json", "w", encoding="utf-8", newline='\n') as result:
         result.write(json.dumps({"bgcolour": book.Body.bgcolor, "pages": len(book.Body.pages)},
                                 ensure_ascii=False, indent='\t', separators=(', ', ': ')))
+
 
 def test_body_pages(read_books: Tuple[Path, ACBFBook]):
     path, book = read_books
@@ -28,7 +31,7 @@ def test_body_pages(read_books: Tuple[Path, ACBFBook]):
             "transition": transition,
             "ref_type": pg.ref_type.name,
             "titles": pg.title
-        }
+            }
         page_output[pg.image_ref] = new_pg
 
         for fr in pg.frames:
@@ -53,7 +56,7 @@ def test_body_pages(read_books: Tuple[Path, ACBFBook]):
                 "lang": tl.language,
                 "bgcolour": tl.bgcolor,
                 "text_areas": []
-            }
+                }
             for ta in tl.text_areas:
                 pts = []
                 for p in ta.points:
@@ -68,7 +71,7 @@ def test_body_pages(read_books: Tuple[Path, ACBFBook]):
                     "type": type,
                     "inverted": ta.inverted,
                     "transparent": ta.transparent
-                }
+                    }
                 new_tl["text_areas"].append(new_ta)
             textlayer_output[pg.image_ref].append(new_tl)
 
@@ -83,6 +86,7 @@ def test_body_pages(read_books: Tuple[Path, ACBFBook]):
         result.write(
             json.dumps(fr_jm_output, ensure_ascii=False, indent='\t', separators=(', ', ': ')))
 
+
 def test_body_images(read_books: Tuple[Path, ACBFBook]):
     path, book = read_books
 
@@ -94,7 +98,7 @@ def test_body_images(read_books: Tuple[Path, ACBFBook]):
             "type": img.type,
             "is_embedded": img.is_embedded,
             "filesize": len(img.data)
-        }
+            }
     dir = make_body_dir(path)
     with open(dir / "test_body_images.json", "w", encoding="utf-8", newline='\n') as result:
         result.write(json.dumps(op, ensure_ascii=False, indent='\t', separators=(', ', ': ')))

@@ -20,6 +20,7 @@ from libacbf.bookdata import BookData
 from libacbf.archivereader import ArchiveReader
 from libacbf.exceptions import InvalidBook, EditRARArchiveError
 
+
 def get_book_template() -> str:
     """[summary]
 
@@ -31,6 +32,7 @@ def get_book_template() -> str:
     with open("libacbf/templates/base_template_1.1.acbf", 'r') as template:
         contents = template.read()
     return contents
+
 
 def _validate_acbf(tree, ns: str):
     version = re.split(r'/', re.sub(r'[{}]', '', ns))[-1]
@@ -46,14 +48,13 @@ def _validate_acbf(tree, ns: str):
         try:
             acbf_schema.assertValid(tree)
         except etree.DocumentInvalid as err:
-            warnings.warn("Validation failed. Books with 1.0 schema are not fully supported.",
-                          UserWarning)
+            warnings.warn("Validation failed. Books with 1.0 schema are not fully supported.", UserWarning)
             warnings.warn('Change the ACBF tag at the top of the `.acbf` XML file to \
-                         `<ACBF xmlns="http://www.acbf.info/xml/acbf/1.1">` to use the 1.1 schema.',
-                          UserWarning)
+                         `<ACBF xmlns="http://www.acbf.info/xml/acbf/1.1">` to use the 1.1 schema.', UserWarning)
             print(err)
     else:
         acbf_schema.assertValid(tree)
+
 
 class ACBFBook:
     """Base class for reading ACBF ebooks.
@@ -340,8 +341,7 @@ class ACBFBook:
             for ref in reference_items:
                 pa = []
                 for p in ref.findall(f"{ns}p"):
-                    text = re.sub(r'</?p[^>]*>', '',
-                                  etree.tostring(p, encoding="utf-8").decode("utf-8").strip())
+                    text = re.sub(r'</?p[^>]*>', '', etree.tostring(p, encoding="utf-8").decode("utf-8").strip())
                     pa.append(text)
                 self.References[ref.attrib["id"]] = {"paragraph": '\n'.join(pa)}
 
@@ -425,6 +425,7 @@ class ACBFBook:
     def __exit__(self, exception_type, exception_value, traceback):
         self.close()
 
+
 class ACBFMetadata:
     """Class to read metadata of the book.
 
@@ -455,6 +456,7 @@ class ACBFMetadata:
         self.book_info: BookInfo = BookInfo(meta_root.find(f"{ns}book-info"), book)
         self.publisher_info: PublishInfo = PublishInfo(meta_root.find(f"{ns}publish-info"), book)
         self.document_info: DocumentInfo = DocumentInfo(meta_root.find(f"{ns}document-info"), book)
+
 
 class ACBFBody:
     """Body section contains the definition of individual book pages, text layers, frames and jumps
@@ -525,6 +527,7 @@ class ACBFBody:
         elif "bgcolor" in self._body.attrib:
             self._body.attrib.pop("bgcolor")
         self.bgcolor = bg
+
 
 class ACBFData:
     """Get any binary data embedded in the ACBF file.
@@ -648,6 +651,7 @@ class ACBFData:
         else:
             raise FileNotFoundError
 
+
 class Styles:
     def __init__(self, book: ACBFBook, contents: str):
         self.book = book
@@ -661,16 +665,15 @@ class Styles:
 
     def sync_styles(self):
         self.styles.clear()
-        style_refs = [x for x in self.book._root.xpath("//processing-instruction()") if
-                      x.target == "xml-stylesheet"]
+        style_refs = [x for x in self.book._root.xpath("//processing-instruction()") if x.target == "xml-stylesheet"]
         for i in style_refs:
             self.styles[i.attrib["href"]] = None
         if self.book._root.find(f"{self.book._namespace}style") is not None:
             self.styles['_'] = None
 
     @helpers.check_book
-    def edit_style(self, stylesheet_ref: Union[str, Path], style_name: Optional[str] = None,
-                   type: str = "text/css", embed: bool = False):
+    def edit_style(self, stylesheet_ref: Union[str, Path], style_name: Optional[str] = None, type: str = "text/css",
+                   embed: bool = False):
 
         if isinstance(stylesheet_ref, str):
             stylesheet_ref = Path(stylesheet_ref)
@@ -681,26 +684,22 @@ class Styles:
         if embed:
             style_element = self.book._root.find(f"{self.book._namespace}style")
             if style_element is None:
-                style_element = etree.SubElement(self.book._root, f"{self.book._namespace}style",
-                                                 {"type": type})
+                style_element = etree.SubElement(self.book._root, f"{self.book._namespace}style", {"type": type})
             with open(stylesheet_ref, 'r') as css:
                 style_element.text = css.read().strip()
             self.styles['_'] = style_element.text
         else:
-            style_refs = [x.attrib["href"] for x in
-                          self.book._root.xpath("//processing-instruction()") if
+            style_refs = [x.attrib["href"] for x in self.book._root.xpath("//processing-instruction()") if
                           x.target == "xml-stylesheet"]
             if style_name not in style_refs:
-                style_element = etree.ProcessingInstruction("xml-stylesheet",
-                                                            f'type="{type}" href="{style_name}"')
+                style_element = etree.ProcessingInstruction("xml-stylesheet", f'type="{type}" href="{style_name}"')
                 self.book._root.addprevious(style_element)
             if self.book.archive is not None:
                 self.book.archive.write(stylesheet_ref, style_name)
 
     @helpers.check_book
     def remove_style(self, style_name: str):
-        style_refs = [x for x in self.book._root.xpath("//processing-instruction()") if
-                      x.target == "xml-stylesheet"]
+        style_refs = [x for x in self.book._root.xpath("//processing-instruction()") if x.target == "xml-stylesheet"]
         for i in style_refs:
             if i.target == "xml-stylesheet" and i.attrib["href"] == style_name:
                 self.book._root.append(i)

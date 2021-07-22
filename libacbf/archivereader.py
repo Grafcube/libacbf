@@ -12,6 +12,7 @@ from rarfile import RarFile, is_rarfile
 from libacbf.constants import ArchiveTypes
 from libacbf.exceptions import EditRARArchiveError, UnsupportedArchive
 
+
 def get_archive_type(file: Union[str, Path, BinaryIO]) -> ArchiveTypes:
     """[summary]
 
@@ -49,6 +50,7 @@ def get_archive_type(file: Union[str, Path, BinaryIO]) -> ArchiveTypes:
         return ArchiveTypes.Tar
     else:
         raise UnsupportedArchive
+
 
 class ArchiveReader:
     """Class to directly read from archives.

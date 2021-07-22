@@ -16,8 +16,8 @@ from libacbf.constants import ImageRefType, PageTransitions, TextAreas
 from libacbf.archivereader import ArchiveReader
 from libacbf.bookdata import BookData
 
-url_pattern = re.compile(
-    r'((ftp|http|https)://)(\w+:?\w*@)?(\S+)(:[0-9]+)?(/|/([\w#!:.?+=&%@\-/]))?', re.IGNORECASE)
+url_pattern = re.compile(r'((ftp|http|https)://)(\w+:?\w*@)?(\S+)(:[0-9]+)?(/|/([\w#!:.?+=&%@\-/]))?', re.IGNORECASE)
+
 
 class Page:
     """A page in the book.
@@ -389,6 +389,7 @@ class Page:
         jp._element.clear()
         self._page.remove(jp._element)
 
+
 class TextLayer:
     """Defines a text layer drawn on a page.
 
@@ -454,6 +455,7 @@ class TextLayer:
         self._layer.remove(ta._area)
         self._layer.insert(dest_index, ta._area)
         self.text_areas.insert(dest_index, ta)
+
 
 class TextArea:
     """Defines an area where text is drawn.
@@ -625,6 +627,7 @@ class TextArea:
             self._area.set("transparent", str(tra).lower())
         self.transparent = tra
 
+
 class Frame:
     """A subsection of a page.
 
@@ -671,6 +674,7 @@ class Frame:
         elif "bgcolor" in self._element.attrib:
             self._element.attrib.pop("bgcolor")
         self.bgcolor = bg
+
 
 class Jump:
     """Clickable area on a page which navigates to another page.

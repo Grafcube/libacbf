@@ -5,6 +5,7 @@ from libacbf import ACBFBook
 edit_dir = Path("tests/results/edit_body/")
 os.makedirs(edit_dir, exist_ok=True)
 
+
 def test_pages():
     with ACBFBook(edit_dir / "test_pages.acbf", 'w', archive_type=None) as book:
         book.Metadata.book_info.edit_title("Test Pages")
@@ -22,6 +23,7 @@ def test_pages():
         book.Body.change_page_index(7, 1)
         book.Body.change_page_index(2, 7)
 
+
 def test_transition():
     with ACBFBook(edit_dir / "test_transition.acbf", 'w', archive_type=None) as book:
         book.Metadata.book_info.edit_title("Test Page Transition")
@@ -29,6 +31,7 @@ def test_transition():
         book.Body.pages[0].set_transition("none")
         book.Body.pages[0].set_transition(None)
         book.Body.pages[0].set_transition("scroll_down")
+
 
 def test_title():
     with ACBFBook(edit_dir / "test_title.acbf", 'w', archive_type=None) as book:

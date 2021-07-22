@@ -1,6 +1,7 @@
 from typing import Optional, Union
 from base64 import b64decode
 
+
 class BookData:
     """Binary data referenced or stored in the book.
 

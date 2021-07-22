@@ -14,6 +14,7 @@ from libacbf.body import Page
 import libacbf.constants as constants
 import libacbf.helpers as helpers
 
+
 def update_authors(author_items, ns) -> List[Author]:
     authors = []
 
@@ -48,6 +49,7 @@ def update_authors(author_items, ns) -> List[Author]:
 
     return authors
 
+
 def add_author(section: Union[BookInfo, DocumentInfo], *names: str, **knames: Union[str, Author]):
     if len(names) > 0 and isinstance(names[0], Author):
         author = names[0]
@@ -74,6 +76,7 @@ def add_author(section: Union[BookInfo, DocumentInfo], *names: str, **knames: Un
     attributes.pop("_nickname")
 
     edit_author(section, author, **attributes)
+
 
 def edit_author(section: Union[BookInfo, DocumentInfo], author: Union[int, Author],
                 **attributes: str):
@@ -129,6 +132,7 @@ def edit_author(section: Union[BookInfo, DocumentInfo], author: Union[int, Autho
                 au_element.remove(element)
         setattr(author, k, v)
 
+
 def remove_author(section: Union[BookInfo, DocumentInfo], author: Union[int, Author]):
     info_section = section._info
 
@@ -154,6 +158,7 @@ def remove_author(section: Union[BookInfo, DocumentInfo], author: Union[int, Aut
     author._element = None
     section.authors.remove(author)
 
+
 def edit_optional(tag: str, section: Union[BookInfo, PublishInfo, DocumentInfo], attr: str,
                   text: Optional[Union[str, int]]):
     item = section._info.find(section._ns + tag)
@@ -168,8 +173,9 @@ def edit_optional(tag: str, section: Union[BookInfo, PublishInfo, DocumentInfo],
         item.clear()
         item.getparent().remove(item)
 
-def edit_date(tag: str, section: Union[BookInfo, PublishInfo, DocumentInfo], attr_s: str,
-              attr_d: str, dt: Union[str, date], include_date: bool = True):
+
+def edit_date(tag: str, section: Union[BookInfo, PublishInfo, DocumentInfo], attr_s: str, attr_d: str,
+              dt: Union[str, date], include_date: bool = True):
     item = section._info.find(section._ns + tag)
 
     if isinstance(dt, str):
@@ -189,6 +195,7 @@ def edit_date(tag: str, section: Union[BookInfo, PublishInfo, DocumentInfo], att
         if "value" in item.attrib.keys():
             item.attrib.pop("value")
         setattr(section, attr_d, None)
+
 
 class BookInfo:
     """Metadata about the book itself.
@@ -617,8 +624,7 @@ class BookInfo:
         self.languages.append(ln)
 
     @helpers.check_book
-    def edit_language(self, layer: Union[int, LanguageLayer], lang: Optional[str] = None,
-                      show: Optional[bool] = None):
+    def edit_language(self, layer: Union[int, LanguageLayer], lang: Optional[str] = None, show: Optional[bool] = None):
         if lang is None and show is None:
             return
 
@@ -926,6 +932,7 @@ class BookInfo:
 
     # endregion
 
+
 class PublishInfo:
     """Metadata about the book's publisher.
 
@@ -1008,6 +1015,7 @@ class PublishInfo:
     @helpers.check_book
     def set_license(self, license: Optional[str]):
         edit_optional("license", self, "license", license)
+
 
 class DocumentInfo:
     """Metadata about the ACBF file itself.
@@ -1168,6 +1176,7 @@ class DocumentInfo:
             history_section.clear()
             self._info.remove(history_section)
         self.document_history.pop(index)
+
 
 class Author:
     """Defines an author of the comic book.
@@ -1350,6 +1359,7 @@ class Author:
         copy.email = self.email
         return copy
 
+
 class Genre:
     """The genre of the book.
 
@@ -1417,6 +1427,7 @@ class Genre:
             else:
                 raise ValueError("match must be an int from 0 to 100.")
 
+
 class LanguageLayer:
     """Used by :attr:`BookInfo.languages <libacbf.metadata.BookInfo.languages>`.
 
@@ -1442,6 +1453,7 @@ class LanguageLayer:
 
     def __repr__(self):
         return f'<libacbf.metadata.LanguageLayer lang="{self.lang}" show={self.show}>'
+
 
 class Series:
     """Used by :attr:`BookInfo.series <libacbf.metadata.BookInfo.series>`.
@@ -1470,6 +1482,7 @@ class Series:
 
     def __repr__(self):
         return f'<libacbf.metadata.Series title="{self.title}" sequence="{self.sequence}">'
+
 
 class DBRef:
     """Used by :attr:`BookInfo.database_ref <libacbf.metadata.BookInfo.database_ref>`.
