@@ -177,7 +177,7 @@ class Page:
             item = self._page
             frame_items = item.findall(f"{self._ns}frame")
             for fr in frame_items:
-                frame = Frame(helpers.pts_to_vec(fr.attrib["points"]))
+                frame = Frame(helpers.pts_to_vec(fr.attrib["points"]), self.book)
                 frame._element = fr
                 if "bgcolor" in fr.keys():
                     frame.bgcolor = fr.attrib["bgcolor"]
@@ -203,7 +203,7 @@ class Page:
             item = self._page
             jump_items = item.findall(f"{self._ns}jump")
             for jp in jump_items:
-                jump = Jump(helpers.pts_to_vec(jp.attrib["points"]), int(jp.attrib["page"]))
+                jump = Jump(helpers.pts_to_vec(jp.attrib["points"]), int(jp.attrib["page"]), self.book)
                 jump._element = jp
                 self._jumps.append(jump)
         return self._jumps
@@ -345,10 +345,13 @@ class Page:
     @helpers.check_book
     def insert_new_frame(self, index: int, points: List[Tuple[int, int]]):
         fr_element = etree.Element(f"{self._ns}frame", {"points": helpers.vec_to_pts(points)})
-        fr = Frame([helpers.Vec2(x, y) for x, y in points])
+        fr = Frame([helpers.Vec2(x, y) for x, y in points], self.book)
         fr._element = fr_element
 
-        if index == len(self.frames):
+        if len(self.frames) == 0:
+            self._page.append(fr_element)
+            self.frames.append(fr)
+        elif index == len(self.frames):
             self.frames[-1]._element.addnext(fr_element)
             self.frames.append(fr)
         else:
@@ -379,7 +382,7 @@ class Page:
         jp_element = etree.SubElement(self._page, f"{self._ns}jump")
         jp_element.set("page", str(target_page))
         jp_element.set("points", helpers.vec_to_pts(points))
-        jp = Jump([helpers.Vec2(x, y) for x, y in points], target_page)
+        jp = Jump([helpers.Vec2(x, y) for x, y in points], target_page, self.book)
         jp._element = jp_element
         self.jumps.append(jp)
 
@@ -649,11 +652,17 @@ class Frame:
         :attr:`Page.bgcolor <libacbf.body.Page.bgcolor>` if ``None``.
     """
 
-    def __init__(self, points: List[helpers.Vec2]):
+    def __init__(self, points: List[helpers.Vec2], book: ACBFBook):
+        self.book = book
         self._element = None
 
         self.points: List[helpers.Vec2] = points
         self.bgcolor: Optional[str] = None
+
+    @helpers.check_book
+    def insert_point(self, idx: int, x: int, y: int):
+        self.points.insert(idx, helpers.Vec2(x, y))
+        self._element.set("points", helpers.vec_to_pts(self.points))
 
     @helpers.check_book
     def set_point(self, idx: int, x: int, y: int):
@@ -694,7 +703,8 @@ class Jump:
         ``2`` and so on.
     """
 
-    def __init__(self, points: List[helpers.Vec2], page: int):
+    def __init__(self, points: List[helpers.Vec2], page: int, book: ACBFBook):
+        self.book = book
         self._element = None
 
         self.page: int = page
@@ -704,6 +714,11 @@ class Jump:
     def set_target_page(self, target_page: int):
         self._element.set("page", str(target_page))
         self.page = target_page
+
+    @helpers.check_book
+    def insert_point(self, idx: int, x: int, y: int):
+        self.points.insert(idx, helpers.Vec2(x, y))
+        self._element.set("points", helpers.vec_to_pts(self.points))
 
     @helpers.check_book
     def set_point(self, idx: int, x: int, y: int):

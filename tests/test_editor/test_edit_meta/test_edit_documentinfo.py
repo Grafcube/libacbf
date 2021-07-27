@@ -91,13 +91,13 @@ def test_history():
     with ACBFBook(edit_dir / "test_history.acbf", 'w', archive_type=None) as book:
         book.Metadata.book_info.edit_title("Test History")
 
-        book.Metadata.document_info.append_history("v1.0.0: Created history")  # 0
-        book.Metadata.document_info.append_history("v1.0.1: Added history")  # 1
-        book.Metadata.document_info.append_history("vAAAAA: REMOVE ME")  # 2
-        book.Metadata.document_info.append_history("v1.0.3: More history")  # 3
-        book.Metadata.document_info.append_history("v1.0.0: EDIT ME")  # 4
-        book.Metadata.document_info.append_history("v1.0.5: Even more history")  # 5
-        book.Metadata.document_info.append_history("v1.1.0: Finished")  # 6
+        book.Metadata.document_info.append_history("v1.0.0: Created history")
+        book.Metadata.document_info.append_history("v1.0.1: Added history")
+        book.Metadata.document_info.append_history("vAAAAA: REMOVE ME")
+        book.Metadata.document_info.append_history("v1.0.3: More history")
+        book.Metadata.document_info.append_history("v1.0.0: EDIT ME")
+        book.Metadata.document_info.append_history("v1.0.5: Even more history")
+        book.Metadata.document_info.append_history("v1.1.0: Finished")
 
         book.Metadata.document_info.remove_history(2)
         book.Metadata.document_info.insert_history(2, "v1.0.2: Inserted history")

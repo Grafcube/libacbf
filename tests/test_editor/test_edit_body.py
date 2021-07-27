@@ -128,12 +128,27 @@ def test_frames():
     with ACBFBook(edit_dir / "test_frames.acbf", 'w', archive_type=None) as book:
         book.Metadata.book_info.edit_title("Test Frames")
 
-        book.Body.pages[0].insert_new_frame()
-        book.Body.pages[0].insert_new_frame()
-        book.Body.pages[0].insert_new_frame()
-        book.Body.pages[0].insert_new_frame()
-        book.Body.pages[0].remove_frame()
-        book.Body.pages[0].reorder_frame()
+        book.Body.pages[0].insert_new_frame(0, [(0, 0), (0, 1), (1, 1), (1, 0)])  # Keep as is
+
+        book.Body.pages[0].insert_new_frame(1, [(0, 0), (0, 1), (1, 1), (1, 0)])  # Edit to 2
+
+        book.Body.pages[0].insert_new_frame(2, [(1, 1), (-1, 1), (-1, -1), (1, -1)])  # Reorder
+        book.Body.pages[0].insert_new_frame(1, [(0, 0), (0, 1)])  # Insert
+
+        book.Body.pages[0].insert_new_frame(-1, [(0, 0)])  # Remove me
+
+        book.Body.pages[0].remove_frame(-2)
+
+        book.Body.pages[0].reorder_frame(3, 1)
+
+        book.Body.pages[0].frames[4].set_point(1, 0, 2)
+        book.Body.pages[0].frames[4].set_point(2, 2, 2)
+        book.Body.pages[0].frames[4].set_point(3, 2, 0)
+
+        book.Body.pages[0].frames[4].insert_point(1, -2, -2)
+        book.Body.pages[0].frames[4].insert_point(-1, 0, 0)
+
+        book.Body.pages[0].frames[4].remove_point(-2)
 
 
 def test_jumps():

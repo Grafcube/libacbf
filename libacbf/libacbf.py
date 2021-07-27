@@ -674,7 +674,6 @@ class Styles:
     @helpers.check_book
     def edit_style(self, stylesheet_ref: Union[str, Path], style_name: Optional[str] = None, type: str = "text/css",
                    embed: bool = False):
-
         if isinstance(stylesheet_ref, str):
             stylesheet_ref = Path(stylesheet_ref)
 
