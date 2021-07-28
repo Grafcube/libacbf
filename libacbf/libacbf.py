@@ -51,7 +51,7 @@ def _validate_acbf(tree, ns: str):
             warnings.warn("Validation failed. Books with 1.0 schema are not fully supported.", UserWarning)
             warnings.warn('Change the ACBF tag at the top of the `.acbf` XML file to \
                          `<ACBF xmlns="http://www.acbf.info/xml/acbf/1.1">` to use the 1.1 schema.', UserWarning)
-            print(err)
+            print(err)  # TODO: Use logging
     else:
         acbf_schema.assertValid(tree)
 

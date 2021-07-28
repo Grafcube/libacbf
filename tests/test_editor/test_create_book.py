@@ -1,7 +1,6 @@
 import os
-from pathlib import Path
-
 import pytest
+from pathlib import Path
 from libacbf import ACBFBook
 from libacbf.exceptions import EditRARArchiveError
 
@@ -37,11 +36,6 @@ def test_create_cbt():
 
 
 def test_create_cbr():
-    try:
+    with pytest.raises(EditRARArchiveError):
         with ACBFBook(edit_dir / "test_create.cbr", 'w', archive_type="Rar") as _:
             pass
-    except EditRARArchiveError as e:
-        with open(edit_dir / "Creating-RAR-failed-successfully.txt", 'w', encoding="utf-8") as op:
-            op.write(str(e))
-    else:
-        pytest.fail("Somehow created a RAR Archive?")

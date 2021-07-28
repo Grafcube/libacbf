@@ -1,4 +1,5 @@
 import os
+import pytest
 from pathlib import Path
 from libacbf import ACBFBook
 from libacbf.metadata import Author
@@ -81,6 +82,16 @@ def test_annotations():
         book.Metadata.book_info.edit_annotation("ಇದು ಈ ಪುಸ್ತಕದ ವಿವರಣೆ.\nಇದು ಎರಡನೇ ಸಾಲು.", "kn")
         book.Metadata.book_info.remove_annotation()
         book.Metadata.book_info.remove_annotation("kn")
+
+
+def test_coverpage():
+    with ACBFBook(edit_dir / "edit_coverpage.acbf", 'w', archive_type=None) as book:
+        book.Metadata.book_info.edit_title("Test Edit Coverpage Fails")
+
+        with pytest.raises(AttributeError, match=r'`coverpage` has no attribute `\w+`\.'):
+            book.Metadata.book_info.cover_page.set_bgcolor("#ffffff")
+            book.Metadata.book_info.cover_page.set_transition("fade")
+            book.Metadata.book_info.cover_page.set_title("Cover title")
 
 
 # --- Optional ---
