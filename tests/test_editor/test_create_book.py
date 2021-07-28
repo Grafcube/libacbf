@@ -22,11 +22,12 @@ def test_create_cbz():
         book.Metadata.book_info.edit_annotation("This was created by a test.\nZip Archive.", "en")
 
 
-# def test_create_cb7(): # TODO: Fix this
-#    with ACBFBook(edit_dir / "test_create.cb7", 'w', archive_type="SevenZip") as book:
-#        book.Metadata.book_info.edit_title("Test Create", "en")
-#        book.save(overwrite=True)
-#        book.Metadata.book_info.edit_annotation("This was created by a test.\n7Zip Archive.", "en")
+def test_create_cb7():
+    with ACBFBook(edit_dir / "test_create.cb7", 'w', archive_type="SevenZip") as book:
+        book.Metadata.book_info.edit_title("Test Create", "en")
+        book.save(overwrite=True)
+        book.Metadata.book_info.edit_annotation("This was created by a test.\n7Zip Archive.", "en")
+
 
 def test_create_cbt():
     with ACBFBook(edit_dir / "test_create.cbt", 'w', archive_type="Tar") as book:

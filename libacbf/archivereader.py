@@ -142,6 +142,7 @@ class ArchiveReader:
         elif self.type == ArchiveTypes.Tar:
             return [x.name for x in self.archive.getmembers() if x.isfile()]
         elif self.type == ArchiveTypes.SevenZip:
+            self.archive.reset()
             return [x.filename for x in self.archive.list() if not x.is_directory]
 
     def list_dirs(self) -> List[str]:
@@ -152,6 +153,7 @@ class ArchiveReader:
         elif self.type == ArchiveTypes.Tar:
             return [x.name for x in self.archive.getmembers() if x.isdir()]
         elif self.type == ArchiveTypes.SevenZip:
+            self.archive.reset()
             return [x.filename for x in self.archive.list() if x.is_directory]
 
     def read(self, target: str) -> Optional[bytes]:
