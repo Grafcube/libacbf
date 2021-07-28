@@ -64,9 +64,9 @@ class Page:
         self._file_id = None
 
         self._image = None
-        self._text_layers = None
-        self._frames = None
-        self._jumps = None
+        self._text_layers = {}
+        self._frames = []
+        self._jumps = []
 
         self.image_ref: str = ''
 
@@ -148,8 +148,6 @@ class Page:
             A dictionary with keys being a standard language object and values being
             :class:`TextLayer` objects.
         """
-        if self._text_layers is None:
-            self._text_layers = {}
         if len(self._text_layers) == 0:
             item = self._page
             textlayer_items = item.findall(f"{self._ns}text-layer")
@@ -171,8 +169,6 @@ class Page:
         List[Frame]
             A list of :class:`Frame <Frame>` objects.
         """
-        if self._frames is None:
-            self._frames = []
         if len(self._frames) == 0:
             item = self._page
             frame_items = item.findall(f"{self._ns}frame")
@@ -197,8 +193,6 @@ class Page:
         List[Jump]
             A list of :class:`Jump <Jump>` objects.
         """
-        if self._jumps is None:
-            self._jumps = []
         if len(self._jumps) == 0:
             item = self._page
             jump_items = item.findall(f"{self._ns}jump")
@@ -319,8 +313,7 @@ class Page:
     @helpers.check_book
     def add_textlayer(self, lang: str):
         lang = langcodes.standardize_tag(lang)
-        tlangs = [langcodes.standardize_tag(x.attrib["lang"]) for x in
-                  self._page.findall(f"{self._ns}text-layer")]
+        tlangs = [langcodes.standardize_tag(x.attrib["lang"]) for x in self._page.findall(f"{self._ns}text-layer")]
         if lang in tlangs:
             return
         t_layer = etree.SubElement(self._page, f"{self._ns}text-layer", {"lang": lang})
@@ -349,8 +342,8 @@ class Page:
         fr._element = fr_element
 
         if len(self.frames) == 0:
-            self._page.append(fr_element)
             self.frames.append(fr)
+            self._page.append(fr_element)
         elif index == len(self.frames):
             self.frames[-1]._element.addnext(fr_element)
             self.frames.append(fr)
@@ -384,7 +377,7 @@ class Page:
         jp_element.set("points", helpers.vec_to_pts(points))
         jp = Jump([helpers.Vec2(x, y) for x, y in points], target_page, self.book)
         jp._element = jp_element
-        self.jumps.append(jp)
+        self._jumps.append(jp)
 
     @helpers.check_book
     def remove_jump(self, index: int):
