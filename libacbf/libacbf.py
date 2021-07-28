@@ -181,7 +181,6 @@ class ACBFBook:
                 elif archive_type == ArchiveTypes.Tar:
                     arc = tar.open(file, 'w')
 
-                nonlocal arc_mode
                 name = self.book_path.stem + ".acbf" if self.book_path is not None else "book.acbf"
                 self.archive = ArchiveReader(arc, arc_mode)
                 acbf_path = Path(tempfile.gettempdir()) / name
@@ -200,8 +199,8 @@ class ACBFBook:
         if mode in ['r', 'a']:
             if self.book_path is not None and not self.book_path.is_file():
                 raise FileNotFoundError
-            arc_mode = 'w'
-            if mode == 'a':
+            if mode == 'a' and not is_text:
+                arc_mode = 'w'
                 self.archive = ArchiveReader(file, arc_mode)
                 if self.archive._get_acbf_file() is None:
                     name = "book.acbf"

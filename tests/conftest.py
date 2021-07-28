@@ -32,7 +32,10 @@ def make_dir(book_path):
 
 @pytest.fixture(scope="session")
 def read_books(book_path):
-    book = (dir / Path(book_path).name, ACBFBook(book_path, 'r'))
+    if Path(book_path).suffix == ".acbf":
+        book = (dir / Path(book_path).name, ACBFBook(book_path, 'r', None))
+    else:
+        book = (dir / Path(book_path).name, ACBFBook(book_path, 'r'))
     yield book
     book[1].close()
 

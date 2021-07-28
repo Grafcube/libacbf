@@ -56,7 +56,7 @@ def test_textlayers():
         pg.add_textlayer("sk")
         pg.text_layers["sk"].insert_new_textarea(0, [(0, 0), (0, 1), (1, 1), (1, 0)], "தமிழ் லெயர்")
 
-        pg.add_textlayer("jp")
+        pg.add_textlayer("ja")
         pg.text_layers["ja"].insert_new_textarea(0, [(0, 0), (0, 1), (1, 1), (1, 0)], "日本語のレイヤー")
 
         pg.remove_textlayer("ja")
@@ -172,10 +172,28 @@ def test_jumps():
 
 
 def test_bgcolor():
-    # with ACBFBook(edit_dir / "test_bgcolor.acbf", 'w', archive_type=None) as book:
-    # book.Metadata.book_info.edit_title("Test Background Colours")
-    # Write cover, pages, Text layers, Text areas, Frames and Jumps here
-    # book.Body.set_bgcolor()
-    # book.Body.pages[0].set_bgcolor()
-    # book.Body.pages[0].set_bgcolor()
-    pass
+    with ACBFBook(edit_dir / "test_bgcolor.acbf", 'w', archive_type=None) as book:
+        book.Metadata.book_info.edit_title("Test Background Colours")
+
+        book.Body.set_bgcolor("#000000")
+        book.Body.set_bgcolor(None)
+        book.Body.set_bgcolor("#0000ff")
+
+        book.Body.pages[0].set_bgcolor("#000000")
+        book.Body.pages[0].set_bgcolor(None)
+        book.Body.pages[0].set_bgcolor("#00ff00")
+
+        book.Body.pages[0].add_textlayer("en")
+        book.Body.pages[0].text_layers["en"].set_bgcolor("#000000")
+        book.Body.pages[0].text_layers["en"].set_bgcolor(None)
+        book.Body.pages[0].text_layers["en"].set_bgcolor("#00ffff")
+
+        book.Body.pages[0].text_layers["en"].insert_new_textarea(0, [(0, 0)], "Testing background colour.")
+        book.Body.pages[0].text_layers["en"].text_areas[0].set_bgcolor("#000000")
+        book.Body.pages[0].text_layers["en"].text_areas[0].set_bgcolor(None)
+        book.Body.pages[0].text_layers["en"].text_areas[0].set_bgcolor("#ff0000")
+
+        book.Body.pages[0].insert_new_frame(0, [(0, 0)])
+        book.Body.pages[0].frames[0].set_bgcolor("#000000")
+        book.Body.pages[0].frames[0].set_bgcolor(None)
+        book.Body.pages[0].frames[0].set_bgcolor("#ff00ff")
