@@ -6,30 +6,30 @@ from typing import Dict, List, Optional, Union, Literal, BinaryIO
 from tempfile import TemporaryDirectory
 from zipfile import ZipFile, is_zipfile
 from py7zr import SevenZipFile, is_7zfile
-import tarfile as tar
 from rarfile import RarFile, is_rarfile
+import tarfile as tar
 
 from libacbf.constants import ArchiveTypes
 from libacbf.exceptions import EditRARArchiveError, UnsupportedArchive
 
 
 def get_archive_type(file: Union[str, Path, BinaryIO]) -> ArchiveTypes:
-    """[summary]
+    """Get the type of archive.
 
     Parameters
     ----------
-    file : Union[str, Path]
-        [description]
+    file : str | Path | BinaryIO
+        File to check.
 
     Returns
     -------
     ArchiveTypes
-        [description]
+        Returns :class:`ArchiveTypes Enum <libacbf.constants.ArchiveTypes>`.
 
     Raises
     ------
-    ValueError
-        [description]
+    UnsupportedArchive
+        Raised if file is not of a supported archive type.
     """
     if isinstance(file, ZipFile):
         return ArchiveTypes.Zip
@@ -55,32 +55,48 @@ def get_archive_type(file: Union[str, Path, BinaryIO]) -> ArchiveTypes:
 class ArchiveReader:
     """Class to directly read from archives.
 
-    This class can read Zip, 7Zip, Tar and Rar archives. There shouldn't usually be a reason to use
-    this class.
+    This class can read and write Zip, 7Zip and Tar archives. Rar archives are read-only.
+
+    Notes
+    -----
+    Writing and creating archives uses the default options for each type. You cannot use this module to change
+    compression levels or other options.
+
+    Parameters
+    ----------
+    file : str | Path | BinaryIO
+        Archive file to be used.
+
+    mode : 'r' | 'w'
+        Mode to open file in. Can be ``'r'`` for read-only or ``'w'`` for read-write. Nothing is overwritten.
 
     Attributes
     ----------
-    archive : zipfile.ZipFile | rarfile.TarFile | rarfile.RarFile | pathlib.Path
-        If it is a ``Path``, the path is to a temporary directory where a ``py7zr.SevenZipFile`` is
-        extracted.
+    archive : zipfile.ZipFile | tarfile.TarFile | py7zr.SevenZipFile | rarfile.RarFile
+        The archive being used.
 
-    type : ArchiveTypes(Enum)
-        The type of archive.
+    type : ArchiveTypes
+        The type of archive. See enum for possible types.
+
+    changes : Dict[str, str]
+        Changes to be applied on save. Writing and deleting files in the archive are not done immediately. They keys
+        are the names of the files in the archive and the values are the target files to be written or ``''`` if it is
+        to be deleted.
     """
 
-    def __init__(self, archive: Union[str, Path, BinaryIO], mode: Literal['r', 'w'] = 'r'):
+    def __init__(self, file: Union[str, Path, BinaryIO], mode: Literal['r', 'w'] = 'r'):
         self.mode: Literal['r', 'w'] = mode
-        self.type: ArchiveTypes = get_archive_type(archive)
+        self.type: ArchiveTypes = get_archive_type(file)
 
         arc = None
-        if isinstance(archive, (ZipFile, SevenZipFile, tar.TarFile, RarFile)):
-            arc = archive
+        if isinstance(file, (ZipFile, SevenZipFile, tar.TarFile, RarFile)):
+            arc = file
 
-        if isinstance(archive, str):
-            archive = Path(archive).resolve(True)
+        if isinstance(file, str):
+            file = Path(file).resolve(True)
 
-        if hasattr(archive, "seek"):
-            archive.seek(0)
+        if hasattr(file, "seek"):
+            file.seek(0)
 
         self.changes: Dict[str, str] = {}
 
@@ -89,21 +105,23 @@ class ArchiveReader:
 
         if arc is None:
             if self.type == ArchiveTypes.Zip:
-                arc = ZipFile(archive, 'r')
+                arc = ZipFile(file, 'r')
             elif self.type == ArchiveTypes.SevenZip:
-                arc = SevenZipFile(archive, 'r')
+                arc = SevenZipFile(file, 'r')
             elif self.type == ArchiveTypes.Tar:
-                if isinstance(archive, (str, Path)):
-                    arc = tar.open(archive, mode='r')
+                if isinstance(file, (str, Path)):
+                    arc = tar.open(file, mode='r')
                 else:
-                    arc = tar.open(fileobj=archive, mode='r')
+                    arc = tar.open(fileobj=file, mode='r')
             elif self.type == ArchiveTypes.Rar:
-                arc = RarFile(archive)
+                arc = RarFile(file)
 
         self.archive: Union[ZipFile, SevenZipFile, tar.TarFile, RarFile] = arc
 
     @property
     def filename(self) -> Optional[str]:
+        """Name of the archive file. Returns ``None`` if it does not have a path.
+        """
         name = None
         if self.type in [ArchiveTypes.Zip, ArchiveTypes.SevenZip, ArchiveTypes.Rar]:
             name = self.archive.filename
@@ -115,6 +133,8 @@ class ArchiveReader:
         return name
 
     def _get_acbf_file(self) -> Optional[str]:
+        """Returns the name of the first file with the ``.acbf`` extension at the root level of the archive.
+        """
         acbf_file = None
         if self.type in [ArchiveTypes.Zip, ArchiveTypes.Rar]:
             for i in self.archive.infolist():
@@ -131,11 +151,10 @@ class ArchiveReader:
                 if i.isfile() and '/' not in i.name and i.name.endswith(".acbf"):
                     acbf_file = i.name
                     break
-
         return acbf_file
 
     def list_files(self) -> List[str]:
-        """[summary]
+        """Returns a list of all the names of the files in the archive.
         """
         if self.type in [ArchiveTypes.Zip, ArchiveTypes.Rar]:
             return [x.filename for x in self.archive.infolist() if not x.is_dir()]
@@ -146,7 +165,7 @@ class ArchiveReader:
             return [x.filename for x in self.archive.list() if not x.is_directory]
 
     def list_dirs(self) -> List[str]:
-        """[summary]
+        """Returns a list of all the directories in the archive.
         """
         if self.type in [ArchiveTypes.Zip, ArchiveTypes.Rar]:
             return [x.filename for x in self.archive.infolist() if x.is_dir()]
@@ -157,11 +176,11 @@ class ArchiveReader:
             return [x.filename for x in self.archive.list() if x.is_directory]
 
     def read(self, target: str) -> Optional[bytes]:
-        """Get file as bytes from archive. Defaults to contents of ACBF file.
+        """Get file as bytes from archive.
 
         Parameters
         ----------
-        target : str, default=ACBF File
+        target : str
             Path relative to root of archive.
 
         Returns
@@ -187,14 +206,14 @@ class ArchiveReader:
         return contents
 
     def write(self, target: Union[str, Path], arcname: Optional[str] = None):
-        """Call ``ACBFBook.save()`` or ``ACBFBook.close()`` to apply changes.
+        """Write file to archive. Call ``save()`` to apply changes.
 
         Parameters
         ----------
         target : str | Path
-            [description]
-        arcname : str | None, default=Name of target file
-            [description]
+            Path of file to be written.
+        arcname : str, default=Name of target file
+            Name of file in archive.
         """
         if self.mode == 'r':
             raise UnsupportedOperation("File is not writeable.")
@@ -208,14 +227,13 @@ class ArchiveReader:
 
         self.changes[arcname] = str(target)
 
-    def remove(self, target: Union[str, Path]):
-        """Call ``ACBFBook.save()`` or ``ACBFBook.close()`` to apply changes. Always recursive for
-        directories.
+    def delete(self, target: Union[str, Path]):
+        """File to delete from archive. Call ``save()`` to apply changes. Always recursive for directories.
 
         Parameters
         ----------
         target : str | Path
-            [description]
+            Path of file to delete relative to root of archive.
         """
         if self.mode == 'r':
             UnsupportedOperation("File is not writeable.")
@@ -230,6 +248,13 @@ class ArchiveReader:
             raise FileNotFoundError("File not in archive.")
 
     def save(self, file: Union[str, BinaryIO]):
+        """Saves all changes.
+
+        Parameters
+        ----------
+        file : str | BinaryIO
+            Path or file object to save the archive to.
+        """
         if self.mode == 'r':
             UnsupportedOperation("File is not writeable.")
 
@@ -275,8 +300,9 @@ class ArchiveReader:
                 self.archive = tar.open(file, 'r')
 
     def close(self):
-        """Close archive file object or remove temporary directory.
+        """Discard changes and close archive file.
         """
+        self.changes.clear()
         self.archive.close()
 
     def __enter__(self):
