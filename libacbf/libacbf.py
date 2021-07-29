@@ -93,16 +93,13 @@ class ACBFBook:
 
     Attributes
     ----------
-    Metadata : ACBFMetadata
-        See :class:`ACBFMetadata <libacbf.libacbf.ACBFMetadata>` for more information.
-
-    Body : ACBFBody
+    body : ACBFBody
         See :class:`ACBFBody <libacbf.libacbf.ACBFBody>` for more information.
 
-    Data : ACBFData
+    data : ACBFData
         See :class:`ACBFData <libacbf.libacbf.ACBFData>` for more information.
 
-    References : dict
+    references : dict
         A dictionary that contains a list of particular references that occur inside the
         main document body. Keys are unique reference ids and values are dictionaries that contain
         a ``paragraph`` key with text. ::
@@ -119,7 +116,7 @@ class ACBFBook:
         ``paragraph`` can contain special tags for formatting. For more information and a full list,
         see :attr:`TextArea.paragraph <libacbf.body.TextArea.paragraph>`.
 
-    Styles : dict-like object
+    styles : dict-like object
         Get styles linked in the ACBF file.
 
         An object that behaves like a dictionary. Use ``Styles[file name]`` to get the contents of
@@ -251,15 +248,22 @@ class ACBFBook:
 
         _validate_acbf(self._root.getroottree(), self._namespace)
 
-        self.Styles: Styles = Styles(self, str(contents))
+        self.styles: Styles = Styles(self, str(contents))
 
-        self.Metadata: ACBFMetadata = ACBFMetadata(self)
+        self.book_info: BookInfo = BookInfo(
+            self._root.find(f"{self._namespace}meta-data/{self._namespace}book-info"), self)
 
-        self.Body: ACBFBody = ACBFBody(self)
+        self.publisher_info: PublishInfo = PublishInfo(
+            self._root.find(f"{self._namespace}meta-data/{self._namespace}publish-info"), self)
 
-        self.Data: ACBFData = ACBFData(self)
+        self.document_info: DocumentInfo = DocumentInfo(
+            self._root.find(f"{self._namespace}meta-data/{self._namespace}document-info"), self)
 
-        self.References: Dict[str, Dict[str, str]] = {}
+        self.body: ACBFBody = ACBFBody(self)
+
+        self.data: ACBFData = ACBFData(self)
+
+        self.references: Dict[str, Dict[str, str]] = {}
         self.sync_references()
 
     def get_acbf_xml(self) -> str:
@@ -334,7 +338,7 @@ class ACBFBook:
     def sync_references(self):
         ns = self._namespace
         ref_root = self._root.find(f"{ns}references")
-        self.References.clear()
+        self.references.clear()
         if ref_root is not None:
             reference_items = ref_root.findall(f"{ns}reference")
             for ref in reference_items:
@@ -342,7 +346,7 @@ class ACBFBook:
                 for p in ref.findall(f"{ns}p"):
                     text = re.sub(r'</?p[^>]*>', '', etree.tostring(p, encoding="utf-8").decode("utf-8").strip())
                     pa.append(text)
-                self.References[ref.attrib["id"]] = {"paragraph": '\n'.join(pa)}
+                self.references[ref.attrib["id"]] = {"paragraph": '\n'.join(pa)}
 
     def edit_reference(self, id: str, text: str):
         """[summary]
@@ -384,9 +388,9 @@ class ACBFBook:
                 i.tag = self._namespace + i.tag
             ref_element.append(p_element)
 
-        if id not in self.References:
-            self.References[id] = {"paragraph": ''}
-        self.References[id]["paragraph"] = text
+        if id not in self.references:
+            self.references[id] = {"paragraph": ''}
+        self.references[id]["paragraph"] = text
 
     def remove_reference(self, id: str):
         """[summary]
@@ -410,7 +414,7 @@ class ACBFBook:
             if len(ref_section.findall(f"{self._namespace}reference")) == 0:
                 ref_section.getparent().remove(ref_section)
 
-            self.References.pop(id)
+            self.references.pop(id)
 
     def __repr__(self):
         if self.is_open:
@@ -425,45 +429,13 @@ class ACBFBook:
         self.close()
 
 
-class ACBFMetadata:
-    """Class to read metadata of the book.
-
-    See Also
-    --------
-    `Meta-data Section Definition <https://acbf.fandom.com/wiki/Meta-data_Section_Definition>`_.
-
-    Attributes
-    ----------
-    book : ACBFBook
-        Book that this metadata belongs to.
-
-    book_info : BookInfo
-        See :class:`BookInfo <libacbf.metadata.BookInfo>`.
-
-    publisher_info : PublishInfo
-        See :class:`PublishInfo <libacbf.metadata.PublishInfo>`.
-
-    document_info : DocumentInfo
-        See :class:`DocumentInfo <libacbf.metadata.DocumentInfo>`.
-    """
-
-    def __init__(self, book: ACBFBook):
-        self.book = book
-        ns = book._namespace
-        meta_root = book._root.find(f"{ns}meta-data")
-
-        self.book_info: BookInfo = BookInfo(meta_root.find(f"{ns}book-info"), book)
-        self.publisher_info: PublishInfo = PublishInfo(meta_root.find(f"{ns}publish-info"), book)
-        self.document_info: DocumentInfo = DocumentInfo(meta_root.find(f"{ns}document-info"), book)
-
-
 class ACBFBody:
-    """Body section contains the definition of individual book pages, text layers, frames and jumps
+    """body section contains the definition of individual book pages, text layers, frames and jumps
     inside those pages.
 
     See Also
     --------
-    `Body Section Definition <https://acbf.fandom.com/wiki/Body_Section_Definition>`_.
+    `body Section Definition <https://acbf.fandom.com/wiki/Body_Section_Definition>`_.
 
     Attributes
     ----------
@@ -533,7 +505,7 @@ class ACBFData:
 
     See Also
     --------
-    `Data Section Definition <https://acbf.fandom.com/wiki/Data_Section_Definition>`_.
+    `data Section Definition <https://acbf.fandom.com/wiki/Data_Section_Definition>`_.
 
     Returns
     -------
@@ -552,8 +524,8 @@ class ACBFData:
         from libacbf import ACBFBook
 
         with ACBFBook("path/to/book.cbz") as book:
-            image = book.Data["image.png"]
-            font = book.Data["font.ttf"]
+            image = book.data["image.png"]
+            font = book.data["font.ttf"]
     """
 
     def __init__(self, book: ACBFBook):

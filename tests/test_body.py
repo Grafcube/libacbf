@@ -14,7 +14,7 @@ def test_body_info(read_books: Tuple[Path, ACBFBook]):
     path, book = read_books
     dir = make_body_dir(path)
     with open(dir / "test_body_info.json", "w", encoding="utf-8", newline='\n') as result:
-        result.write(json.dumps({"bgcolour": book.Body.bgcolor, "pages": len(book.Body.pages)},
+        result.write(json.dumps({"bgcolour": book.body.bgcolor, "pages": len(book.body.pages)},
                                 ensure_ascii=False, indent='\t', separators=(', ', ': ')))
 
 
@@ -24,7 +24,7 @@ def test_body_pages(read_books: Tuple[Path, ACBFBook]):
     page_output = {}
     textlayer_output = {}
     fr_jm_output = {"frames": {}, "jumps": {}}
-    for pg in book.Body.pages:
+    for pg in book.body.pages:
         transition = pg.transition.name if pg.transition is not None else None
         new_pg = {
             "bgcolour": pg.bgcolor,
@@ -91,7 +91,7 @@ def test_body_images(read_books: Tuple[Path, ACBFBook]):
     path, book = read_books
 
     op = {}
-    for pg in book.Body.pages:
+    for pg in book.body.pages:
         img = pg.image
         op[pg.image_ref] = {
             "id": img.id,

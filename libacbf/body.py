@@ -96,7 +96,7 @@ class Page:
 
     def __repr__(self):
         if self.is_coverpage:
-            return f'<libacbf.Metadata.BookInfo.coverpage href="{self.image_ref}">'
+            return f'<libacbf.BookInfo.coverpage href="{self.image_ref}">'
         else:
             return f'<libacbf.body.Page href="{self.image_ref}">'
 
@@ -111,7 +111,7 @@ class Page:
         """
         if self._image is None:
             if self.ref_type == ImageRefType.Embedded:
-                self._image = self.book.Data[self._file_id]
+                self._image = self.book.data[self._file_id]
                 return self._image
 
             elif self.ref_type == ImageRefType.Archived:
@@ -629,7 +629,7 @@ class Frame:
 
     See Also
     --------
-    `Body Info Frame specifications <https://acbf.fandom.com/wiki/Body_Section_Definition#Frame>`_.
+    `body Info Frame specifications <https://acbf.fandom.com/wiki/Body_Section_Definition#Frame>`_.
 
     Attributes
     ----------
@@ -683,7 +683,7 @@ class Jump:
 
     See Also
     --------
-    `Body Info Jump specifications <https://acbf.fandom.com/wiki/Body_Section_Definition#Jump>`_.
+    `body Info Jump specifications <https://acbf.fandom.com/wiki/Body_Section_Definition#Jump>`_.
 
     Attributes
     ----------

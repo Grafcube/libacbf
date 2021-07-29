@@ -13,7 +13,7 @@ def make_bookinfo_dir(path):
 
 def test_authors(read_books: Tuple[Path, ACBFBook]):
     path, book = read_books
-    op = [get_au_op(x) for x in book.Metadata.book_info.authors]
+    op = [get_au_op(x) for x in book.book_info.authors]
     dir = make_bookinfo_dir(path)
     with open(dir / "test_bookinfo_authors.json", 'w', encoding="utf-8", newline='\n') as result:
         result.write(json.dumps(op, ensure_ascii=False, indent='\t', separators=(', ', ': ')))
@@ -23,13 +23,13 @@ def test_titles(read_books: Tuple[Path, ACBFBook]):
     path, book = read_books
     dir = make_bookinfo_dir(path)
     with open(dir / "test_bookinfo_titles.json", 'w', encoding="utf-8", newline='\n') as result:
-        result.write(json.dumps(book.Metadata.book_info.book_title, ensure_ascii=False, indent='\t',
+        result.write(json.dumps(book.book_info.book_title, ensure_ascii=False, indent='\t',
                                 separators=(', ', ': ')))
 
 
 def test_genres(read_books: Tuple[Path, ACBFBook]):
     path, book = read_books
-    genres = book.Metadata.book_info.genres.values()
+    genres = book.book_info.genres.values()
     op = {x.genre.name: x.match for x in genres}
 
     dir = make_bookinfo_dir(path)
@@ -41,13 +41,13 @@ def test_annotations(read_books: Tuple[Path, ACBFBook]):
     path, book = read_books
     dir = make_bookinfo_dir(path)
     with open(dir / "test_bookinfo_annotations.json", 'w', encoding="utf-8", newline='\n') as result:
-        result.write(json.dumps(book.Metadata.book_info.annotations, ensure_ascii=False, indent='\t',
+        result.write(json.dumps(book.book_info.annotations, ensure_ascii=False, indent='\t',
                                 separators=(', ', ': ')))
 
 
 def test_languages(read_books: Tuple[Path, ACBFBook]):
     path, book = read_books
-    op = [{x.lang: x.show} for x in book.Metadata.book_info.languages]
+    op = [{x.lang: x.show} for x in book.book_info.languages]
     dir = make_bookinfo_dir(path)
     with open(dir / "test_bookinfo_languages.json", 'w', encoding="utf-8", newline='\n') as result:
         result.write(json.dumps(op, ensure_ascii=False, indent='\t', separators=(', ', ': ')))
@@ -57,13 +57,13 @@ def test_characters(read_books: Tuple[Path, ACBFBook]):
     path, book = read_books
     dir = make_bookinfo_dir(path)
     with open(dir / "test_bookinfo_characters.json", 'w', encoding="utf-8", newline='\n') as result:
-        result.write(json.dumps(book.Metadata.book_info.characters, ensure_ascii=False, indent='\t',
+        result.write(json.dumps(book.book_info.characters, ensure_ascii=False, indent='\t',
                                 separators=(', ', ': ')))
 
 
 def test_keywords(read_books: Tuple[Path, ACBFBook]):
     path, book = read_books
-    op = book.Metadata.book_info.keywords
+    op = book.book_info.keywords
     dir = make_bookinfo_dir(path)
     with open(dir / "test_bookinfo_keywords.json", 'w', encoding="utf-8", newline='\n') as result:
         result.write(json.dumps(op, default=list, ensure_ascii=False, indent='\t', separators=(', ', ': ')))
@@ -71,7 +71,7 @@ def test_keywords(read_books: Tuple[Path, ACBFBook]):
 
 def test_series(read_books: Tuple[Path, ACBFBook]):
     path, book = read_books
-    series = book.Metadata.book_info.series.values()
+    series = book.book_info.series.values()
     op = {x.title: {"sequence": x.sequence, "volume": x.volume} for x in series}
     dir = make_bookinfo_dir(path)
     with open(dir / "test_bookinfo_series.json", 'w', encoding="utf-8", newline='\n') as result:
@@ -82,14 +82,14 @@ def test_content_rating(read_books: Tuple[Path, ACBFBook]):
     path, book = read_books
     dir = make_bookinfo_dir(path)
     with open(dir / "test_bookinfo_content_rating.json", 'w', encoding="utf-8", newline='\n') as result:
-        result.write(json.dumps(book.Metadata.book_info.content_rating, ensure_ascii=False, indent='\t',
+        result.write(json.dumps(book.book_info.content_rating, ensure_ascii=False, indent='\t',
                                 separators=(', ', ': ')))
 
 
 def test_database_ref(read_books: Tuple[Path, ACBFBook]):
     path, book = read_books
     op = []
-    for i in book.Metadata.book_info.database_ref:
+    for i in book.book_info.database_ref:
         new_op = {"dbname": i.dbname, "text": i.reference, "type": i.type}
         op.append(new_op)
 
@@ -104,7 +104,7 @@ def test_coverpage(read_books: Tuple[Path, ACBFBook]):
     textlayer_output = {}
     fr_jm_output = {"frames": {}, "jumps": {}}
 
-    pg = book.Metadata.book_info.cover_page
+    pg = book.book_info.cover_page
 
     page_output["image_ref"] = pg.image_ref
     page_output["ref_type"] = pg.ref_type.name

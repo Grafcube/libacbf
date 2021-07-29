@@ -1183,7 +1183,7 @@ class Author:
 
     See Also
     --------
-    `Body Info Author specifications
+    `body Info Author specifications
     <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#Author>`_.
 
     Examples
@@ -1365,7 +1365,7 @@ class Genre:
 
     See Also
     --------
-    `Body Info genre specifications
+    `body Info genre specifications
     <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#Genre>`_.
 
     Parameters
@@ -1433,7 +1433,7 @@ class LanguageLayer:
 
     See Also
     --------
-    `Body Info Languages specifications
+    `body Info Languages specifications
     <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#Languages>`_.
 
     Attributes
@@ -1460,7 +1460,7 @@ class Series:
 
     See Also
     --------
-    `Body Info Sequence specifications
+    `body Info Sequence specifications
     <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#Sequence>`_.
 
     Attributes
