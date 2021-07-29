@@ -16,6 +16,8 @@ import libacbf.helpers as helpers
 
 
 def update_authors(author_items, ns) -> List[Author]:
+    """Takes a list of etree elements and returns a list of Author objects.
+    """
     authors = []
 
     for au in author_items:
@@ -51,6 +53,8 @@ def update_authors(author_items, ns) -> List[Author]:
 
 
 def add_author(section: Union[BookInfo, DocumentInfo], *names: str, **knames: Union[str, Author]):
+    """Common function to add author to section. Creates base object and sends it to :meth:`edit_author()`.
+    """
     if len(names) > 0 and isinstance(names[0], Author):
         author = names[0]
     elif "author" in knames and isinstance(knames["author"], Author):
@@ -78,8 +82,9 @@ def add_author(section: Union[BookInfo, DocumentInfo], *names: str, **knames: Un
     edit_author(section, author, **attributes)
 
 
-def edit_author(section: Union[BookInfo, DocumentInfo], author: Union[int, Author],
-                **attributes: str):
+def edit_author(section: Union[BookInfo, DocumentInfo], author: Union[int, Author], **attributes: str):
+    """Edits author from given parameters.
+    """
     au_list = section._info.findall(f"{section._ns}author")
 
     au_element = None
@@ -134,6 +139,8 @@ def edit_author(section: Union[BookInfo, DocumentInfo], author: Union[int, Autho
 
 
 def remove_author(section: Union[BookInfo, DocumentInfo], author: Union[int, Author]):
+    """Removes given author.
+    """
     info_section = section._info
 
     au_list = section._info.findall(f"{section._ns}author")
@@ -161,6 +168,8 @@ def remove_author(section: Union[BookInfo, DocumentInfo], author: Union[int, Aut
 
 def edit_optional(tag: str, section: Union[BookInfo, PublishInfo, DocumentInfo], attr: str,
                   text: Optional[Union[str, int]]):
+    """Common function to edit an optional string property.
+    """
     item = section._info.find(section._ns + tag)
 
     if text is not None:
@@ -176,6 +185,8 @@ def edit_optional(tag: str, section: Union[BookInfo, PublishInfo, DocumentInfo],
 
 def edit_date(tag: str, section: Union[BookInfo, PublishInfo, DocumentInfo], attr_s: str, attr_d: str,
               dt: Union[str, date], include_date: bool = True):
+    """Common function to edit a date property.
+    """
     item = section._info.find(section._ns + tag)
 
     if isinstance(dt, str):

@@ -93,13 +93,6 @@ class ACBFBook:
         -------
         You can only write data by embedding when this is ``None``.
 
-    Notes
-    -----
-    Archive formats use the defaults of each type like compression level etc. Manage the archives yourself if you want
-    to change this. Image refs that are relative paths check within the archive if the book is an archive. Otherwise it
-    checks relative to the '.acbf' file. So you can simply use a directory to manage the book and archive it with your
-    own settings when you are done.
-
     Raises
     ------
     EditRARArchiveError
@@ -107,6 +100,13 @@ class ACBFBook:
 
     InvalidBook
         Raised if the XML does not match ACBF schema or if archive does not contain ACBF file.
+
+    Notes
+    -----
+    Archive formats use the defaults of each type like compression level etc. Manage the archives yourself if you want
+    to change this. Image refs that are relative paths check within the archive if the book is an archive. Otherwise it
+    checks relative to the '.acbf' file. So you can simply use a directory to manage the book and archive it with your
+    own settings when you are done.
 
     See Also
     --------
@@ -180,7 +180,7 @@ class ACBFBook:
     styles : Styles
         See :class:`Styles` for more information.
 
-    book_path : Path
+    book_path : pathlib.Path
         Absolute path to source file.
 
     archive : ArchiveReader | None
@@ -333,7 +333,7 @@ class ACBFBook:
 
         Parameters
         ----------
-        file : str | Path | IO | None, optional
+        file : str | Path | IO, optional
             Path to save to. Defaults to the original path/file.
 
         overwrite : bool, default=False
