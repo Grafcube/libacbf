@@ -21,19 +21,6 @@ from libacbf.archivereader import ArchiveReader
 from libacbf.exceptions import InvalidBook, EditRARArchiveError
 
 
-def get_book_template() -> str:
-    """[summary]
-
-    Returns
-    -------
-    str
-        [description]
-    """
-    with open("libacbf/templates/base_template_1.1.acbf", 'r') as template:
-        contents = template.read()
-    return contents
-
-
 def _validate_acbf(tree, ns: str):
     version = re.split(r'/', re.sub(r'[{}]', '', ns))[-1]
     xsd_path = f"libacbf/schema/acbf-{version}.xsd"
@@ -56,27 +43,82 @@ def _validate_acbf(tree, ns: str):
         acbf_schema.assertValid(tree)
 
 
+def get_book_template() -> str:
+    """Get the bare minimum XML required to create an ACBF book.
+
+    Warning
+    -------
+    Some properties will already exist and have default values. See (INSERT LINK HERE) for more details.
+
+    Returns
+    -------
+    str
+        XML string template.
+    """
+    with open("libacbf/templates/base_template_1.1.acbf", 'r') as template:
+        contents = template.read()
+    return contents
+
+
 class ACBFBook:
     """Base class for reading ACBF ebooks.
 
     Parameters
     ----------
-    file : str, default=Empty book template
-        Path to ACBF book. May be absolute or relative.
+    file : str | Path | IO
+        Path or file object to write ACBF book to. May be absolute or relative.
+
+    mode : 'r' | 'w' | 'a' | 'x', default='r'
+        The mode to open the file in. Defaults to read-only mode.
+
+        r
+            Read only mode. No editing is possible. Can read ACBF, Zip, 7Zip, Tar and Rar formatted books.
+        w
+            Overwrite file with new file. Raises exception for Rar archive types.
+        a
+            Edit the book without truncating. Raises exception for Rar archive types.
+        x
+            Exclusive write to file. Raises ``FileExists`` exception if file already exists. Only works for file
+            paths. Raises exception for Rar archive types.
+
+    archive_type : str | None, default="Zip"
+        The type of ACBF book that the file is. If ``None`` Then creates a plain XML book. Otherwise creates archive of
+        format. Accepted string values are listed at :class:`ArchiveTypes <libacbf.constants.ArchiveTypes>`.
+
+        You do not have to specify the type of archive unless you are creating a new one. The correct type will be
+        determined regardless of this parameter's value. Use this when you want to create a new archive or if you are
+        reading/writing/editing a plain ACBF book.
+
+        Warning
+        -------
+        You can only write data by embedding when this is ``None``.
+
+    Notes
+    -----
+    Archive formats use the defaults of each type like compression level etc. Manage the archives yourself if you want
+    to change this. Image refs that are relative paths check within the archive if the book is an archive. Otherwise it
+    checks relative to the '.acbf' file. So you can simply use a directory to manage the book and archive it with your
+    own settings when you are done.
 
     Raises
     ------
-    ValueError (File is not an ACBF Ebook.)
+    EditRARArchiveError
+        Raised if ``mode`` parameter is not ``'r'`` but file is a Rar archive.
+
+    InvalidBook
         Raised if the XML does not match ACBF schema or if archive does not contain ACBF file.
 
     See Also
     --------
     `ACBF Specifications <https://acbf.fandom.com/wiki/Advanced_Comic_Book_Format_Wiki>`_.
 
+    Warning
+    -------
+    Never try to edit variables directly as you will not be editing the XML. Use the editing functions instead.
+
     Examples
     --------
-    A book object can be opened, read and then closed. It can read files with the extensions
-    ``.acbf``, ``.cbz``, ``.cb7``, ``.cbt``, ``.cbr``. ::
+    A book object can be opened, read and then closed. ::
 
         from libacbf import ACBFBook
 
@@ -91,13 +133,32 @@ class ACBFBook:
         with ACBFBook("path/to/file.cbz") as book:
             # Read data from book
 
+    You can pass a ``BytesIO`` object. Keep in mind that you cannot use ``mode='x'`` in this case. ::
+
+        import io
+        from libacbf import ACBFBook
+
+        file = io.BytesIO()
+
+        with ACBFBook(file, 'w') as book:
+            # Write data to book
+
     Attributes
     ----------
+    book_info : BookInfo
+        See :class:`BookInfo <libacbf.metadata.BookInfo>` for more information.
+
+    publisher_info : PublishInfo
+        See :class:`PublishInfo <libacbf.metadata.PublishInfo>` for more information.
+
+    document_info : DocumentInfo
+        See :class:`DocumentInfo <libacbf.metadata.DocumentInfo>` for more information.
+
     body : ACBFBody
-        See :class:`ACBFBody <libacbf.libacbf.ACBFBody>` for more information.
+        See :class:`ACBFBody` for more information.
 
     data : ACBFData
-        See :class:`ACBFData <libacbf.libacbf.ACBFData>` for more information.
+        See :class:`ACBFData` for more information.
 
     references : dict
         A dictionary that contains a list of particular references that occur inside the
@@ -116,28 +177,18 @@ class ACBFBook:
         ``paragraph`` can contain special tags for formatting. For more information and a full list,
         see :attr:`TextArea.paragraph <libacbf.body.TextArea.paragraph>`.
 
-    styles : dict-like object
-        Get styles linked in the ACBF file.
-
-        An object that behaves like a dictionary. Use ``Styles[file name]`` to get the contents of
-        the stylesheet as a string. Use ``list_styles()`` to get list of all available styles. All
-        paths are relative. ::
-
-            style = book.Styles["style_name.css"]
-
-        If a style is embedded in the ACBF file, use ``Styles['_']`` to get its contents. ::
-
-            embedded_stylesheet = book.Styles['_']
+    styles : Styles
+        See :class:`Styles` for more information.
 
     book_path : Path
         Absolute path to source file.
 
-    archive : ArchiveReader, optional
-        Can be used to read archive directly if file is not ``.acbf``. There probably wont be any
-        reason to use this.
+    archive : ArchiveReader | None
+        Can be used to read archive directly if file is not plain ACBF. Use this if you want to read exactly what
+        files the book contains but try to avoid directly writing files through ``ArchiveReader``.
 
-        :attr:`ArchiveReader.archive <libacbf.archivereader.ArchiveReader.archive>` may be
-        ``zipfile.ZipFile``, ``py7zr.SevenZipFile``, ``tarfile.TarFile`` or ``rarfile.RarFile``.
+        :attr:`ArchiveReader.archive <libacbf.archivereader.ArchiveReader.archive>` may be ``zipfile.ZipFile``,
+        ``py7zr.SevenZipFile``, ``tarfile.TarFile`` or ``rarfile.RarFile``.
     """
 
     def __init__(self, file: Union[str, Path, IO], mode: Literal['r', 'w', 'a', 'x'] = 'r',
@@ -267,24 +318,25 @@ class ACBFBook:
         self.sync_references()
 
     def get_acbf_xml(self) -> str:
-        """[summary]
+        """Converts the XML tree to a string.
 
         Returns
         -------
-        [type]
-            [description]
+        str
+            ACBF book's XML data.
         """
         return etree.tostring(self._root.getroottree(), encoding="utf-8", xml_declaration=True,
                               pretty_print=True).decode("utf-8")
 
     def save(self, file: Union[str, Path, IO, None] = None, overwrite: bool = False):
-        """Save as file.
+        """Save to file.
 
         Parameters
         ----------
-        file : str, optional
-            Path to save to.
-        overwrite : bool, optional
+        file : str | Path | IO | None, optional
+            Path to save to. Defaults to the original path/file.
+
+        overwrite : bool, default=False
             Whether to overwrite if file already exists at path. ``False`` by default.
         """
         if self.mode == 'r':
@@ -320,13 +372,10 @@ class ACBFBook:
             os.remove(acbf_path)
 
     def close(self):
+        """Saves the book and closes the archive if it exists. Metadata and embedded data can still be read. Use
+        ``ACBFBook.is_open`` to check if file is open.
         """
-        Saves the book and closes open archives if file is ``.cbz``, ``.cbt`` or ``.cbr``
-        or ``.cb7`` files.
-        """
-        if self.mode == 'x':
-            self.save()
-        elif self.mode in ['w', 'a']:
+        if self.mode != 'r':
             self.save(overwrite=True)
 
         self.mode = 'r'
@@ -349,14 +398,15 @@ class ACBFBook:
                 self.references[ref.attrib["id"]] = {"paragraph": '\n'.join(pa)}
 
     def edit_reference(self, id: str, text: str):
-        """[summary]
+        """Edit the reference by id. Create it if it does not exist.
 
         Parameters
         ----------
         id : str
-            [description]
+            Reference id. It is unique so be careful of overwriting.
+
         text : str
-            [description]
+            Text of reference. Can be multiline. Does not use special formatting.
         """
         helpers.check_write(self)
 
@@ -393,12 +443,12 @@ class ACBFBook:
         self.references[id]["paragraph"] = text
 
     def remove_reference(self, id: str):
-        """[summary]
+        """Remove a reference by unique id.
 
         Parameters
         ----------
         id : str
-            [description]
+            Reference id.
         """
         helpers.check_write(self)
 
@@ -430,12 +480,12 @@ class ACBFBook:
 
 
 class ACBFBody:
-    """body section contains the definition of individual book pages, text layers, frames and jumps
-    inside those pages.
+    """Body section contains the definition of individual book pages and text layers, frames and jumps inside those
+    pages.
 
     See Also
     --------
-    `body Section Definition <https://acbf.fandom.com/wiki/Body_Section_Definition>`_.
+    `Body Section Definition <https://acbf.fandom.com/wiki/Body_Section_Definition>`_.
 
     Attributes
     ----------
@@ -443,11 +493,11 @@ class ACBFBody:
         Book that this body section belongs to.
 
     pages : List[Page]
-        A list of :class:`Page <libacbf.body.Page>` objects in order.
+        A list of :class:`Page <libacbf.body.Page>` objects in the order they should be displayed in.
 
     bgcolor : str, optional
         Defines a background colour for the whole book. Can be overridden by ``bgcolor`` in pages,
-        text layers and text areas.
+        text layers, text areas and frames.
     """
 
     def __init__(self, book: ACBFBook):
@@ -470,21 +520,48 @@ class ACBFBody:
             self.pages.append(Page(pg, self.book))
 
     @helpers.check_book
-    def insert_new_page(self, index: int, image_ref: str) -> Page:
+    def insert_new_page(self, index: int, image_ref: str):
+        """Insert a new page at an index of the book.
+
+        Parameters
+        ----------
+        index : int
+            Index of the page.
+
+        image_ref : str
+            The image that the page shows. See :attr:`Page.image_ref <libacbf.body.Page.image_ref>` for information
+            on how to format it.
+        """
         pg = etree.Element(f"{self._ns}page")
         self._body.insert(index, pg)
         etree.SubElement(pg, f"{self._ns}image", {"href": image_ref})
         self.pages.insert(index, Page(pg, self.book))
-        return self.pages[index]
 
     @helpers.check_book
     def remove_page(self, index: int):
+        """Removes the page at index.
+
+        Parameters
+        ----------
+        index : int
+            Index of page to remove.
+        """
         pg = self.pages.pop(index)
         pg._page.clear()
         self._body.remove(pg._page)
 
     @helpers.check_book
-    def change_page_index(self, src_index: int, dest_index: int):
+    def reorder_page(self, src_index: int, dest_index: int):
+        """Move page in book.
+
+        Parameters
+        ----------
+        src_index : int
+            Index of page to move.
+
+        dest_index : int
+            Index to move page to.
+        """
         pg = self.pages.pop(src_index)
         self._body.remove(pg._page)
         self._body.insert(dest_index, pg._page)
@@ -493,6 +570,14 @@ class ACBFBody:
     # --- Optional ---
     @helpers.check_book
     def set_bgcolor(self, bg: Optional[str]):
+        """Set background colour of body. Must be a hex colour code starting with ``#``. Value can be removed by passing
+        ``None``.
+
+        Parameters
+        ----------
+        bg : str | None
+            Background colour of body.
+        """
         if bg is not None:
             self._body.set("bgcolor", bg)
         elif "bgcolor" in self._body.attrib:
@@ -501,11 +586,11 @@ class ACBFBody:
 
 
 class ACBFData:
-    """Get any binary data embedded in the ACBF file.
+    """Get any binary data embedded in the ACBF file or write data to archive or embed data in ACBF.
 
     See Also
     --------
-    `data Section Definition <https://acbf.fandom.com/wiki/Data_Section_Definition>`_.
+    `Data Section Definition <https://acbf.fandom.com/wiki/Data_Section_Definition>`_.
 
     Returns
     -------
@@ -553,6 +638,19 @@ class ACBFData:
 
     @helpers.check_book
     def add_data(self, target: Union[str, Path], name: str = '', embed: bool = False):
+        """Add or embed file at target path into the book.
+
+        Parameters
+        ----------
+        target : str | Path
+            Path to file to be added. Cannot directly write data, target must be a path.
+
+        name : str, optional
+            Name to assign to file after writing. Defaults to name part of target.
+
+        embed : bool, default=False
+            Whether to embed the file in the ACBF XML. Cannot be ``False`` if book is not an archive type.
+        """
         if self.book.archive is None and not embed:
             raise AttributeError("Book is not an archive type. Write data with `embed = True`.")
 
@@ -589,6 +687,16 @@ class ACBFData:
 
     @helpers.check_book
     def remove_data(self, target: Union[str, Path], embed: bool = False):
+        """Remove file at target in the archive. If ``embed`` is true, removes from embedded files.
+
+        Parameters
+        ----------
+        target : str | Path
+            Path to file in archive or id of embedded file.
+
+        embed : bool, default=False
+            Whether to check for file in archive or embedded in ACBF XML. Must be true if book is plain ACBF XML.
+        """
         if self.book.archive is None and not embed:
             raise AttributeError("Book is not an archive type. Write data with `embed = True`.")
 
@@ -596,6 +704,8 @@ class ACBFData:
             target = Path(target)
 
         if embed:
+            if not isinstance(target, str):
+                target = str(target)
             data_elements = self.book._root.findall(f"{self._ns}data/{self._ns}binary")
             for i in data_elements:
                 if i.attrib["id"] == target:
@@ -603,7 +713,9 @@ class ACBFData:
                     i.getparent().remove(i)
             self.files.pop(target)
         else:
-            self.book.archive.remove(target)
+            if isinstance(target, str):
+                target = Path(target)
+            self.book.archive.delete(target)
 
     def __len__(self):
         return len(self.files.keys())
@@ -624,6 +736,28 @@ class ACBFData:
 
 
 class Styles:
+    """Stylesheets to be used in the book.
+
+    See Also
+    --------
+    `Stylesheet Declaration <https://acbf.fandom.com/wiki/Stylesheet_Declaration>`_.
+
+    Returns
+    -------
+    str
+        Stylesheet as a string.
+
+    Examples
+    --------
+    To get stylesheets ::
+
+        from libacbf import ACBFBook
+
+        with ACBFBook("path/to/book.cbz") as book:
+            style1 = book.styles["style1.css"]  # Style referenced at the top of the ACBF XML as a string.
+            embedded_style = book.styles['_']  # Returns the stylesheet embedded in ACBF XML style tag as a string.
+    """
+
     def __init__(self, book: ACBFBook, contents: str):
         self.book = book
         self._contents = contents
@@ -631,8 +765,15 @@ class Styles:
         self.styles: Dict[str, Optional[str]] = {}
         self.sync_styles()
 
-    def list_styles(self) -> List[str]:
-        return [str(x) for x in self.styles.keys()]
+    def list_styles(self) -> Set[str]:
+        """All the stylesheets referenced by the ACBF XML.
+
+        Returns
+        -------
+        Set[str]
+            Referenced stylesheets.
+        """
+        return set(self.styles.keys())
 
     def sync_styles(self):
         self.styles.clear()
@@ -643,15 +784,28 @@ class Styles:
             self.styles['_'] = None
 
     @helpers.check_book
-    def edit_style(self, stylesheet_ref: Union[str, Path], style_name: Optional[str] = None, type: str = "text/css",
-                   embed: bool = False):
+    def edit_style(self, stylesheet_ref: Union[str, Path], style_name: Optional[str] = None, type: str = "text/css"):
+        """Writes or overwrites file in archive with referenced stylesheet.
+
+        Parameters
+        ----------
+        stylesheet_ref : str | Path
+            Path to stylesheet. Cannot directly write data.
+
+        style_name : str, optional
+            Name of stylesheet after being written. Defaults to name part of ``stylesheet_ref``. If it is ``'_'``,
+            writes stylesheet to style tag of ACBF XML.
+
+        type : str, default="text/css"
+            MIME Type of stylesheet. Defaults to CSS but can be others (like SASS).
+        """
         if isinstance(stylesheet_ref, str):
             stylesheet_ref = Path(stylesheet_ref)
 
-        if style_name is None and not embed:
+        if style_name is None:
             style_name = stylesheet_ref.name
 
-        if embed:
+        if style_name == '_':
             style_element = self.book._root.find(f"{self.book._namespace}style")
             if style_element is None:
                 style_element = etree.SubElement(self.book._root, f"{self.book._namespace}style", {"type": type})
@@ -669,14 +823,29 @@ class Styles:
 
     @helpers.check_book
     def remove_style(self, style_name: str):
-        style_refs = [x for x in self.book._root.xpath("//processing-instruction()") if x.target == "xml-stylesheet"]
-        for i in style_refs:
-            if i.target == "xml-stylesheet" and i.attrib["href"] == style_name:
-                self.book._root.append(i)
-                self.book._root.remove(i)
-                break
-        if self.book.archive is not None:
-            self.book.archive.remove(style_name)
+        """Remove stylesheet from book.
+
+        Parameters
+        ----------
+        style_name : str
+            Stylesheet to remove. If it is ``'_'``, remove embedded stylesheet.
+        """
+        if style_name == '_':
+            st_element = self.book._root.find(f"{self.book._namespace}style")
+            if st_element is not None:
+                st_element.clear()
+                self.book._root.remove(st_element)
+                self.styles.pop('_')
+        else:
+            style_refs = [x for x in self.book._root.xpath("//processing-instruction()") if
+                          x.target == "xml-stylesheet"]
+            for i in style_refs:
+                if i.attrib["href"] == style_name:
+                    self.book._root.append(i)
+                    self.book._root.remove(i)
+                    break
+            if self.book.archive is not None:
+                self.book.archive.delete(style_name)
 
     def __len__(self):
         len(self.styles.keys())

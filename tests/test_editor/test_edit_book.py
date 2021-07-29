@@ -44,7 +44,7 @@ def test_styles():
     with ACBFBook(edit_dir / "test_styles.cbz", 'w') as book:
         book.book_info.edit_title("Test Edit styles")
 
-        book.styles.edit_style("tests/samples/assets/styles/default.css", embed=True)
+        book.styles.edit_style("tests/samples/assets/styles/default.css", '_')
         book.styles.edit_style("tests/samples/assets/styles/styles.css", "styles/to_be_removed.css")
         book.styles.edit_style("tests/samples/assets/styles/sample.scss", type="text/x-scss")
         book.styles.edit_style("tests/samples/assets/styles/test.scss", "styles/style.scss", "text/x-scss")

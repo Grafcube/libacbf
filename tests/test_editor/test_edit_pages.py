@@ -20,8 +20,8 @@ def test_pages():
         book.body.insert_new_page(1, "SWAP 8.png")
 
         book.body.remove_page(4)
-        book.body.change_page_index(7, 1)
-        book.body.change_page_index(2, 7)
+        book.body.reorder_page(7, 1)
+        book.body.reorder_page(2, 7)
 
 
 def test_transition():

@@ -15,7 +15,8 @@ def test_styles(read_books: Tuple[Path, ACBFBook]):
     dir = make_style_dir(path)
 
     with open(dir / "test_styles.json", 'w', encoding="utf-8", newline='\n') as result:
-        result.write(json.dumps(book.styles.list_styles(), ensure_ascii=False, indent='\t', separators=(', ', ': ')))
+        result.write(json.dumps(list(book.styles.list_styles()), ensure_ascii=False, indent='\t',
+                                separators=(', ', ': ')))
 
     for i in book.styles.list_styles():
         name = i

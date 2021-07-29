@@ -8,3 +8,5 @@ python-dateutil
 rarfile
 setuptools
 pytest
+sphinx
+sphinx_rtd_dark_mode
