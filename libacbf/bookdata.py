@@ -14,11 +14,8 @@ class BookData:
     id : str
         Name of the file with extension.
 
-    type : str
+    file_type : str
         Mime type of the file.
-
-    is_embedded : bool
-        Whether the file is embedded in the ACBD file.
 
     data : bytes
         The actual file's data.

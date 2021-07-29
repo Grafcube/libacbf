@@ -206,7 +206,7 @@ class ArchiveReader:
         return contents
 
     def write(self, target: Union[str, Path], arcname: Optional[str] = None):
-        """Write file to archive. Call ``save()`` to apply changes.
+        """Write file to archive. Call :meth:`save()` to apply changes.
 
         Parameters
         ----------
@@ -228,7 +228,7 @@ class ArchiveReader:
         self.changes[arcname] = str(target)
 
     def delete(self, target: Union[str, Path]):
-        """File to delete from archive. Call ``save()`` to apply changes. Always recursive for directories.
+        """File to delete from archive. Call :meth:`save()` to apply changes. Always recursive for directories.
 
         Parameters
         ----------

@@ -11,10 +11,13 @@ if TYPE_CHECKING:
 from libacbf.constants import ArchiveTypes
 from libacbf.exceptions import EditRARArchiveError
 
-Vec2 = namedtuple("Vector2", "x y")
+Vec2 = namedtuple("Vector2", "x y")  # Not a real vector. Just a named tuple.
 
 
 def check_book(func):
+    """Decorator that checks ``book`` on the class method.
+    """
+
     @wraps(func)
     def wrapper(self, *args, **kwargs):
         check_write(self.book)
@@ -24,6 +27,8 @@ def check_book(func):
 
 
 def check_write(book: ACBFBook):
+    """Checks if the book can be edited. Otherwise raises appropriate exception.
+    """
     if book.mode == 'r':
         raise ValueError("Cannot edit read only book.")
     if not book.is_open:
@@ -33,6 +38,8 @@ def check_write(book: ACBFBook):
 
 
 def pts_to_vec(pts_str: str):
+    """Converts string of number pairs separated by space and comma to a list of 2D vector named tuples.
+    """
     pts = []
     pts_l = re.split(" ", pts_str)
     for pt in pts_l:
@@ -42,10 +49,14 @@ def pts_to_vec(pts_str: str):
 
 
 def vec_to_pts(points: List[Tuple[int, int]]):
+    """Reverse of :meth:`pts_to_vec()`.
+    """
     return ' '.join([f"{x},{y}" for x, y in points])
 
 
 def tree_to_para(p_root, ns):
+    """Converts an XML tree with multiple 'p' tags to a multiline string.
+    """
     pa = []
     for p in p_root.findall(f"{ns}p"):
         p_text = str(etree.tostring(p, encoding="utf-8")).strip()
@@ -55,6 +66,8 @@ def tree_to_para(p_root, ns):
 
 
 def para_to_tree(paragraph: str, ns):
+    """Reverse of :meth:`tree_to_para()`.
+    """
     p_elements = []
     for p in re.split(r'\n', paragraph):
         p = f"<p>{p}</p>"

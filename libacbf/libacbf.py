@@ -797,7 +797,7 @@ class Styles:
             writes stylesheet to style tag of ACBF XML.
 
         type : str, default="text/css"
-            MIME Type of stylesheet. Defaults to CSS but can be others (like SASS).
+            Mime Type of stylesheet. Defaults to CSS but can be others (like SASS).
         """
         if isinstance(stylesheet_ref, str):
             stylesheet_ref = Path(stylesheet_ref)
