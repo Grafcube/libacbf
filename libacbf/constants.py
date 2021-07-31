@@ -1,3 +1,16 @@
+"""
+Warnings
+--------
+
+The values of the enum members don't matter and there is no guarantee that they will never change. If you have to use
+it, use strings instead (case sensitive). ::
+
+    activity = AuthorActivities.Artist.name
+
+    # Does it exist
+    _ = AuthorActivities["Writer"]  # No `KeyError` exception
+    _ = AuthorActivities["asdfgh"]  # `KeyError` exception raised
+"""
 from enum import Enum, auto
 
 
