@@ -222,11 +222,24 @@ class BookInfo:
         Book that the metadata belongs to.
 
     authors : List[Author]
-        A list of :class:`Author <libacbf.Author>` objects.
+        A list of :class:`Author <libacbf.metadata.Author>` objects.
+
+        Warnings
+        --------
+        A newly created book already has one Author object with default values. ::
+
+            from libacbf import ACBFBook
+
+            with ACBFBook("path/to/new_book.cbz", 'w') as book:
+                default_author = book.book_info.authors[0]
+                # default_author.first_name == "First name"
+                # default_author.last_name == "Last name"
+                # default_author.nickname == "Nickname"
+                # All others are `None`
 
     book_title : Dict[str, str]
-        A dictionary with standard language codes as keys and titles as values. Key is ``"_"`` if no
-        language is defined. ::
+        A dictionary with standard language codes as keys and titles as values. Key is ``'_'`` if no language is
+        defined. ::
 
             {
                 "_": "book title without language",
@@ -235,57 +248,58 @@ class BookInfo:
                 "en_US": "English (US) title"
             }
 
-    genres : Dict[str, genre]
-        A dictionary with keys being a string representation of
-        :class:`Genres <libacbf.constants.Genres>` Enum and values being
-        :class:`genre <libacbf.genre>` objects.
+    genres : Dict[str, Genre]
+        A dictionary with keys being a string representation of :class:`constants.Genres <libacbf.constants.Genres>`
+        Enum and values being :class:`Genre <libacbf.metadata.Genre>` objects.
 
     annotations : Dict[str, str]
         A short summary describing the book.
 
-        It is a dictionary with keys being standard language codes or ``"_"`` if no language is
-        defined and values being multiline strings.
+        It is a dictionary with keys being standard language codes or ``'_'`` if no language is defined and values
+        being multiline strings.
 
     cover_page : Page
-        ``cover_page`` is the same as :class:`Page <libacbf.body.Page>` except it does not have
-        :attr:`title <libacbf.body.Page.title>`, :attr:`bgcolor <libacbf.body.Page.bgcolor>`
-        and :attr:`transition <libacbf.body.Page.transition>`.
+        It is the same as :class:`body.Page <libacbf.body.Page>` except it does not have
+        :attr:`body.Page.title <libacbf.body.Page.title>`, :attr:`body.Page.bgcolor <libacbf.body.Page.bgcolor>`
+        and :attr:`body.Page.transition <libacbf.body.Page.transition>`.
 
     languages : List[LanguageLayer], optional
-        ``LanguageLayer`` represents all :class:`TextLayer <libacbf.body.TextLayer>` objects of a
-        language.
+        It represents all :class:`body.TextLayer <libacbf.body.TextLayer>` objects of the book.
 
-        A list of :class:`LanguageLayer <libacbf.LanguageLayer>` objects.
+        A list of :class:`LanguageLayer <libacbf.metadata.LanguageLayer>` objects.
 
     characters : List[str], optional
         List of (main) characters that appear in the book.
 
-    keywords: Dict[str, List[str]], optional
+    keywords: Dict[str, Set[str]], optional
         For use by search engines.
 
-        A dictionary with keys as standard language codes or ``"_"`` if no language is defined.
-        Values are a list of keywords.
+        A dictionary with keys as standard language codes or ``'_'`` if no language is defined. Values are a set of
+        lowercase keywords.
 
     series: Dict[str, Series], optional
         Contains the sequence and number if particular comic book is part of a series.
 
-        A dictionary with keys as the title of the series and values as
-        :class:`Series <libacbf.Series>` objects.
+        A dictionary with keys as the title of the series and values as :class:`Series <libacbf.metadata.Series>`
+        objects.
 
     content_rating: Dict[str, str], optional
         Content rating of the book based on age appropriateness and trigger warnings.
 
-        It is a dictionary with the keys being the rating system or ``"_"`` if not defined and
-        values being the rating itself. ::
+        It is a dictionary with the keys being the rating system or ``'_'`` if not defined and values being the
+        rating. ::
 
             {
-                "_": "18+"
+                "_": "16+",
+                "Age Rating": "15+",
+                "DC Comics rating system": "T+",
+                "Marvel Comics rating system": "PARENTAL ADVISORY"
             }
 
     database_ref : List[DBRef], optional
-        Contains reference to a record in a comic book database (eg: GCD, MAL).
+        References to a record in a comic book database (eg: GCD, MAL).
 
-        A list of :class:`DBRef <libacbf.DBRef>` objects.
+        A list of :class:`DBRef <libacbf.metadata.DBRef>` objects.
     """
 
     def __init__(self, info, book: ACBFBook):
@@ -448,20 +462,134 @@ class BookInfo:
     # region Editor
     # Author
     @helpers.check_book
-    def add_author(self, *names: str, **knames: Union[str, Author]):
-        add_author(self, *names, **knames)
+    def add_author(self, *names: str, first_name: str = None, last_name: str = None, nickname: str = None):
+        """Add an author to book info.
+
+        Parameters
+        ----------
+        *names : str
+            The names to create the author with.
+
+            If only one is given, follows the pattern:
+                nickname
+
+            If two are given, follows the pattern:
+                first_name, last_name
+
+            If three are given, follows the pattern:
+                first_name, last_name, nickname
+
+        first_name : str
+            Author's first name.
+
+        last_name : str
+            Author's last name.
+
+        nickname : str
+            Author's nickname.
+
+        Warnings
+        --------
+        A newly created book already has one Author object with default values. See
+        :attr:`authors <libacbf.metadata.BookInfo.authors>` for the full warning.
+
+        Examples
+        --------
+        An ``Author`` object can be created with either a nickname, a first and last name or both. ::
+
+            from libacbf import ACBFBook
+
+            with ACBFBook("path/to/book.cbz", 'w') as book:
+                book.book_info.add_author("Hugh", "Mann")
+                # book.book_info.authors[1].first_name == "Hugh"
+                # book.book_info.authors[1].last_name == "Mann"
+
+                book.book_info.add_author("NotAPlatypus")
+                # book.book_info.authors[2].nickname == "NotAPlatypus"
+
+                book.book_info.add_author("Hugh", "Mann", "NotAPlatypus")
+                # book.book_info.authors[3].first_name == "Hugh"
+                # book.book_info.authors[3].last_name == "Mann"
+                # book.book_info.authors[3].nickname == "NotAPlatypus"
+
+        This is also possible. ::
+
+            book.book_info.add_author(first_name="Hugh", last_name="Mann", nickname="NotAPlatypus")
+        """
+        add_author(self, *names, first_name, last_name, nickname)
 
     @helpers.check_book
-    def edit_author(self, author: Union[int, Author], **attributes):
+    def edit_author(self, author: Union[int, Author], **attributes: str):
+        """Edit an author's attributes.
+
+        Parameters
+        ----------
+        author : int | Author
+            The author to edit. ``int`` will get the author from the list of authors. ``Author`` object will edit the
+            given author.
+
+        **attributes : str
+            Attributes to change. Passing ``None`` will remove optional attributes.
+            See :class:`Author <libacbf.metadata.Author>` to see the attributes and properties that can be modified.
+
+        Examples
+        --------
+        It can be used like this. ::
+
+            from libacbf import ACBFBook
+
+            with ACBFBook("path/to/new_book.cbz", 'w') as book:
+                book.book_info.authors[0]
+                # Default values of first author in new book.
+                # book.book_info.authors[0].first_name == "First name"
+                # book.book_info.authors[0].last_name == "Last name"
+                # book.book_info.authors[0].nickname == "Nickname"
+                # All others are `None`
+
+                book.book_info.edit_author(0, first_name="Hugh", last_name="Mann", nickname=None)
+                # book.book_info.authors[0].first_name == "Hugh"
+                # book.book_info.authors[0].last_name == "Mann"
+                # book.book_info.authors[0].nickname == None
+                # book.book_info.authors[0].email == None
+
+                book.book_info.edit_author(0, email="human@example.com")
+                # book.book_info.authors[0].first_name == "Hugh"
+                # book.book_info.authors[0].last_name == "Mann"
+                # book.book_info.authors[0].nickname == None
+                # book.book_info.authors[0].email == "human@example.com"
+        """
         edit_author(self, author, **attributes)
 
     @helpers.check_book
     def remove_author(self, author: Union[int, Author]):
+        """Removes an author from book info.
+
+        Parameters
+        ----------
+        author : int | Author
+            Removes the given author from book info. If ``int``, removes author at that index.
+            If :class:`Author <libacbf.metadata.BookInfo>` object, removes that object from book info.
+
+        Raises
+        ------
+        AttributeError: "Book must have at least one author."
+            Raised when removal would result in the book not having any authors.
+        """
         remove_author(self, author)
 
     # Titles
     @helpers.check_book
     def edit_title(self, title: str, lang: str = '_'):
+        """Edit the title of the book.
+
+        Parameters
+        ----------
+        title : str
+            Title of the book.
+
+        lang : str, default='_'
+            A standard language code.
+        """
         title_elements = self._info.findall(f"{self._ns}book-title")
 
         t_element = None
@@ -489,6 +617,18 @@ class BookInfo:
 
     @helpers.check_book
     def remove_title(self, lang: str = '_'):
+        """Remove the title in the given language from the book.
+
+        Parameters
+        ----------
+        lang : str, default='_'
+            Standard language code.
+
+        Raises
+        ------
+        AttributeError: "Book must have a title."
+            Raised when removal would result in the book not having any titles.
+        """
         title_elements = self._info.findall(f"{self._ns}book-title")
 
         t_item = None
@@ -514,6 +654,16 @@ class BookInfo:
     # Genres
     @helpers.check_book
     def edit_genre(self, genre: str, match: Optional[int] = '_'):
+        """Edit a genre. Add it if it doesn't exist.
+
+        Parameters
+        ----------
+        genre : str
+            See :class:`constants.Genres <libacbf.constants.Genres>` enum for a list of possible values.
+
+        match : int | None, optional
+            Set the match percentage of the genre. If ``None``, removes the match value.
+        """
         gn_elements = self._info.findall(f"{self._ns}genre")
 
         genre = constants.Genres[genre]
@@ -545,6 +695,18 @@ class BookInfo:
 
     @helpers.check_book
     def remove_genre(self, genre: str):
+        """Removes the specified genre from the book if it exists.
+
+        Parameters
+        ----------
+        genre : str
+            See :class:`constants.Genres <libacbf.constants.Genres>` enum for a list of possible values.
+
+        Raises
+        ------
+        AttributeError: "Book must have at least one genre."
+            Raised when removal would result in the book not having any genres.
+        """
         gn_elements = self._info.findall(f"{self._ns}genre")
 
         genre = constants.Genres[genre]
@@ -562,6 +724,16 @@ class BookInfo:
     # Annotations
     @helpers.check_book
     def edit_annotation(self, text: str, lang: str = '_'):
+        """Edit the annotation in a language. Added if it doesn't exist.
+
+        Parameters
+        ----------
+        text : str
+            Multiline string.
+
+        lang : str, default='_'
+            Standard language code.
+        """
         annotation_elements = self._info.findall(f"{self._ns}annotation")
 
         an_element = None
@@ -593,6 +765,18 @@ class BookInfo:
 
     @helpers.check_book
     def remove_annotation(self, lang: str = '_'):
+        """Removes the annotation in the language.
+
+        Parameters
+        ----------
+        lang : str, default='_'
+            Standard language code.
+
+        Raises
+        ------
+        AttributeError: "Book must have at least one annotation."
+            Raised when removal would result in the book not having any annotations.
+        """
         annotation_elements = self._info.findall(f"{self._ns}annotation")
 
         an_element = None
@@ -620,6 +804,16 @@ class BookInfo:
     # Languages
     @helpers.check_book
     def add_language(self, lang: str, show: bool):
+        """Add a language layer to the book.
+
+        Parameters
+        ----------
+        lang : str
+            Standard language layer.
+
+        show : bool
+            Whether the layer should be drawn.
+        """
         lang = langcodes.standardize_tag(lang)
 
         ln_section = self._info.find(f"{self._ns}languages")
@@ -636,6 +830,19 @@ class BookInfo:
 
     @helpers.check_book
     def edit_language(self, layer: Union[int, LanguageLayer], lang: Optional[str] = None, show: Optional[bool] = None):
+        """Edit a language layer.
+
+        Parameters
+        ----------
+        layer : int | LanguageLayer
+            Layer to edit. If ``int``, edits layer at that index. If ``LanguageLayer``, edits that layer.
+
+        lang : str, optional
+            Standard language code to change to.
+
+        show : bool, optional
+            Change whether layer is drawn.
+        """
         if lang is None and show is None:
             return
 
@@ -657,6 +864,13 @@ class BookInfo:
 
     @helpers.check_book
     def remove_language(self, layer: Union[int, LanguageLayer]):
+        """Removes given language layer.
+
+        Parameters
+        ----------
+        layer : int | LanguageLayer
+            Layer to remove. If ``int``, removes layer at that index. If ``LanguageLayer``, removes that layer.
+        """
         ln_section = self._info.find(f"{self._ns}languages")
 
         if isinstance(layer, int):
@@ -673,6 +887,13 @@ class BookInfo:
     # Characters
     @helpers.check_book
     def add_character(self, name: str):
+        """Add a character to the book.
+
+        Parameters
+        ----------
+        name : str
+            Name of the character.
+        """
         char_section = self._info.find(f"{self._ns}characters")
 
         if char_section is None:
@@ -683,7 +904,14 @@ class BookInfo:
         self.characters.append(name)
 
     @helpers.check_book
-    def remove_character(self, item: Union[str, int]):
+    def remove_character(self, item: Union[int, str]):
+        """Remove a character from the book.
+
+        Parameters
+        ----------
+        item : int | str
+            If ``int``, remove character at that index. If ``str``, remove first occurence.
+        """
         char_section = self._info.find(f"{self._ns}characters")
 
         if char_section is not None:
@@ -710,6 +938,16 @@ class BookInfo:
     # Keywords
     @helpers.check_book
     def add_keywords(self, *kwords: str, lang: str = '_'):
+        """Add keywords to book.
+
+        Parameters
+        ----------
+        *kwords : str
+            Keywords to add. Case insensitive.
+
+        lang : str, default='_'
+            Standard language code.
+        """
         key_elements = self._info.findall(f"{self._ns}keywords")
 
         key_element = None
@@ -743,6 +981,16 @@ class BookInfo:
 
     @helpers.check_book
     def remove_keyword(self, *kwords: str, lang: str = '_'):
+        """Remove keywords from book.
+
+        Parameters
+        ----------
+        *kwords : str
+            Keywords to add. Case insensitive.
+
+        lang : str, default='_'
+            Standard language code.
+        """
         key_elements = self._info.findall(f"{self._ns}keywords")
 
         key_element = None
@@ -769,6 +1017,13 @@ class BookInfo:
 
     @helpers.check_book
     def clear_keywords(self, lang: str = '_'):
+        """Remove all keywords in a language.
+
+        Parameters
+        ----------
+        lang : str, default='_'
+            Removes all keywords in this language.
+        """
         key_elements = self._info.findall(f"{self._ns}keywords")
         key_element = None
         if lang == '_':
@@ -789,7 +1044,22 @@ class BookInfo:
 
     # Series
     @helpers.check_book
-    def edit_series(self, title: str, sequence=None, volume='_'):
+    def edit_series(self, title: str, sequence: str = None, volume: Optional[str] = '_'):
+        """Edit the series that this book belongs to. Create an entry if it doesn't exist.
+
+        Parameters
+        ----------
+        title : str
+            Title of series.
+
+        sequence : str
+            Where the book is in the sequence.
+
+            eg: Fourth book --> sequence = 4
+
+        volume : str, optional
+            Volume of the series that the book is in. Pass ``None`` to remove volume.
+        """
         ser_items = self._info.findall(f"{self._ns}sequence")
 
         if sequence is not None:
@@ -834,6 +1104,13 @@ class BookInfo:
 
     @helpers.check_book
     def remove_series(self, title: str):
+        """Remove the series' information from the book.
+
+        Parameters
+        ----------
+        title : str
+            Series to remove.
+        """
         seq_items = self._info.findall(f"{self._ns}sequence")
 
         for i in seq_items:
@@ -846,6 +1123,16 @@ class BookInfo:
     # Content Rating
     @helpers.check_book
     def edit_content_rating(self, rating: str, type: str = '_'):
+        """Edit the book's content rating. Create a new type if it doesn't exist.
+
+        Parameters
+        ----------
+        rating : str
+            The rating.
+
+        type : str, default='_'
+            The type of rating system used.
+        """
         rt_items = self._info.findall(f"{self._ns}content-rating")
 
         rt_element = None
@@ -874,6 +1161,13 @@ class BookInfo:
 
     @helpers.check_book
     def remove_content_rating(self, type: str = '_'):
+        """Remove content rating from the book.
+
+        Parameters
+        ----------
+        type : str, default='_'
+            Type of rating to remove.
+        """
         rt_items = self._info.findall(f"{self._ns}content-rating")
 
         rt_element = None
@@ -891,6 +1185,21 @@ class BookInfo:
     # Database Ref
     @helpers.check_book
     def add_database_ref(self, dbname: str, ref: str, type: Optional[str] = None):
+        """Add a reference to a database to the book.
+
+        Parameters
+        ----------
+        dbname : str
+            Name of the database.
+
+        ref : str
+            Reference to the book in the database.
+
+        type : str, optional
+            Type of reference.
+
+            eg: id, url etc.
+        """
         db_items = self._info.findall(f"{self._ns}databaseref")
 
         db_element = etree.Element(f"{self._ns}databaseref")
@@ -910,8 +1219,24 @@ class BookInfo:
         self.database_ref.append(db)
 
     @helpers.check_book
-    def edit_database_ref(self, dbref: Union[int, DBRef], dbname: Optional[str] = None,
-                          ref: Optional[str] = None, type: Optional[str] = '_'):
+    def edit_database_ref(self, dbref: Union[int, DBRef], dbname: Optional[str] = None, ref: Optional[str] = None,
+                          type: Optional[str] = '_'):
+        """Edit a database reference.
+
+        Parameters
+        ----------
+        dbref : int | DBRef
+            Database reference to edit. If ``int``, edit the one at the index. If ``DBRef``, edit that reference.
+
+        dbname : str, optional
+            New dbname to set.
+
+        ref : str, optional
+            New reference to set.
+
+        type : str | None, optional
+            New type to set. Pass ``None`` to remove type information.
+        """
         if isinstance(dbref, int):
             dbref = self.database_ref[dbref]
 
@@ -934,6 +1259,13 @@ class BookInfo:
 
     @helpers.check_book
     def remove_database_ref(self, dbref: Union[int, DBRef]):
+        """Remove a database reference from the book.
+
+        Parameters
+        ----------
+        dbref : int | DBRef
+            Database reference to remove. If ``int``, remove at the index. If ``DBRef``, remove that reference.
+        """
         if isinstance(dbref, int):
             dbref = self.database_ref[dbref]
 

@@ -101,16 +101,16 @@ class ACBFBook:
     InvalidBook
         Raised if the XML does not match ACBF schema or if archive does not contain ACBF file.
 
+    See Also
+    --------
+    `ACBF Specifications <https://acbf.fandom.com/wiki/Advanced_Comic_Book_Format_Wiki>`_.
+
     Notes
     -----
     Archive formats use the defaults of each type like compression level etc. Manage the archives yourself if you want
     to change this. Image refs that are relative paths check within the archive if the book is an archive. Otherwise it
     checks relative to the '.acbf' file. So you can simply use a directory to manage the book and archive it with your
     own settings when you are done.
-
-    See Also
-    --------
-    `ACBF Specifications <https://acbf.fandom.com/wiki/Advanced_Comic_Book_Format_Wiki>`_.
 
     Warnings
     --------
