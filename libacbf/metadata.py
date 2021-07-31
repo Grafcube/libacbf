@@ -491,7 +491,7 @@ class BookInfo:
         Warnings
         --------
         A newly created book already has one Author object with default values. See
-        :attr:`authors <libacbf.metadata.BookInfo.authors>` for the full warning.
+        :attr:`BookInfo.authors <libacbf.metadata.BookInfo.authors>` for the full warning.
 
         Examples
         --------
@@ -1411,7 +1411,7 @@ class DocumentInfo:
         Book that the metadata belongs to.
 
     authors : List[Author]
-        List of authors of the ACBF file as :class:`Author <libacbf.Author>` objects.
+        Authors of the ACBF file as a list of :class:`Author <libacbf.metadata.Author>` objects.
 
     creation_date_string : str
         Date when the ACBF file was created as a human readable string.
@@ -1429,7 +1429,7 @@ class DocumentInfo:
     document_version : str, optional
         Version of ACBF file.
 
-    document_history : str, optional
+    document_history : List[str], optional
         Change history of the ACBF file with change information in a list of strings.
     """
 
@@ -1464,7 +1464,7 @@ class DocumentInfo:
         if info.find(f"{self._ns}version") is not None:
             self.document_version = info.find(f"{self._ns}version").text
 
-        self.document_history: Optional[List[str]] = []
+        self.document_history: List[str] = []
         self.sync_history()
 
     def sync_authors(self):
@@ -1478,26 +1478,97 @@ class DocumentInfo:
 
     # Author
     @helpers.check_book
-    def add_author(self, *names: str, **knames: Union[str, Author]):
-        add_author(self, *names, **knames)
+    def add_author(self, *names: str, first_name: str = None, last_name: str = None, nickname: str = None):
+        """Add an author to document info.
+        This function follows the same rules as :meth:`BookInfo.add_author() <libacbf.metadata.BookInfo.add_author>`.
+
+        Parameters
+        ----------
+        *names : str
+            The names to create the author with.
+
+            If only one is given, follows the pattern:
+                nickname
+
+            If two are given, follows the pattern:
+                first_name, last_name
+
+            If three are given, follows the pattern:
+                first_name, last_name, nickname
+
+        first_name : str
+            Author's first name.
+
+        last_name : str
+            Author's last name.
+
+        nickname : str
+            Author's nickname.
+        """
+        add_author(self, *names, first_name, last_name, nickname)
 
     @helpers.check_book
-    def edit_author(self, author: Union[Author, int], **attributes):
+    def edit_author(self, author: Union[int, Author], **attributes: str):
+        """Edit an author's attributes.
+        This function follows the same rules as :meth:`BookInfo.edit_author() <libacbf.metadata.BookInfo.edit_author>`.
+
+        Parameters
+        ----------
+        author : int | Author
+            The author to edit. ``int`` will get the author from the list of authors. ``Author`` object will edit the
+            given author.
+
+        **attributes : str
+            Attributes to change. Passing ``None`` will remove optional attributes.
+            See :class:`Author <libacbf.metadata.Author>` to see the attributes and properties that can be modified.
+        """
         edit_author(self, author, **attributes)
 
     @helpers.check_book
     def remove_author(self, author: Union[int, Author]):
+        """Removes an author from document info.
+        This function follows the same rules as
+        :meth:`BookInfo.remove_author() <libacbf.metadata.BookInfo.remove_author>`.
+
+        Parameters
+        ----------
+        author : int | Author
+            Removes the given author from book info. If ``int``, removes author at that index.
+            If :class:`Author <libacbf.metadata.BookInfo>` object, removes that object from book info.
+
+        Raises
+        ------
+        AttributeError: "Book must have at least one author."
+            Raised when removal would result in the book not having any authors.
+        """
         remove_author(self, author)
 
     # Author
 
     @helpers.check_book
     def set_creation_date(self, dt: Union[str, date], include_date: bool = True):
+        """Edit the date the ACBF file was created.
+
+        Parameters
+        ----------
+        dt : str | datetime.date
+            Date to set to.
+
+        include_date : bool, default=True
+            Whether to also write another date attribute in YYYY-MM-DD format.
+        """
         edit_date("creation-date", self, "creation_date_string", "creation_date", dt, include_date)
 
     # --- Optional ---
     @helpers.check_book
     def set_source(self, source: Optional[str]):
+        """Edit the source of the book.
+
+        Parameters
+        ----------
+        source : str | None
+            Source to set to. Pass ``None`` to remove source.
+        """
         src_section = self._info.find(f"{self._ns}source")
 
         if source is not None:
@@ -1516,15 +1587,39 @@ class DocumentInfo:
 
     @helpers.check_book
     def set_document_id(self, id: Optional[str]):
+        """Edit the ID of the document.
+
+        Parameters
+        ----------
+        id : str | None
+            ID to set to. Pass ``None`` to remove it.
+        """
         edit_optional("id", self, "document_id", id)
 
     @helpers.check_book
     def set_document_version(self, version: Optional[int] = None):
+        """Edit the document version.
+
+        Parameters
+        ----------
+        version : int | None
+            Version to set to. Pass ``None`` to remove it.
+        """
         edit_optional("version", self, "document_version", version)
 
     # History
     @helpers.check_book
     def insert_history(self, index: int, entry: str):
+        """Insert a history entry.
+
+        Parameters
+        ----------
+        index : int
+            Index to insert in.
+
+        entry : str
+            History entry text.
+        """
         history_section = self._info.find(f"{self._ns}history")
         if history_section is None:
             history_section = etree.SubElement(self._info, f"{self._ns}history")
@@ -1536,17 +1631,41 @@ class DocumentInfo:
 
     @helpers.check_book
     def append_history(self, entry: str):
+        """Append an entry to the history.
+
+        Parameters
+        ----------
+        entry : str
+            Entry to append.
+        """
         idx = len(self._info.findall(f"{self._ns}history/{self._ns}p"))
         self.insert_history(idx, entry)
 
     @helpers.check_book
     def edit_history(self, index: int, text: str):
+        """Edit a history entry.
+
+        Parameters
+        ----------
+        index : int
+            Index of entry to edit.
+
+        text : str
+            Entry text to set to.
+        """
         item = self._info.findall(f"{self._ns}history/{self._ns}p")[index]
         item.text = text
         self.document_history[index] = text
 
     @helpers.check_book
     def remove_history(self, index: int):
+        """Remove history entry.
+
+        Parameters
+        ----------
+        index : int
+            Index to remove at.
+        """
         item = self._info.findall(f"{self._ns}history/{self._ns}p")[index]
         item.clear()
         item.getparent().remove(item)
