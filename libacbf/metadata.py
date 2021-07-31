@@ -52,15 +52,11 @@ def update_authors(author_items, ns) -> List[Author]:
     return authors
 
 
-def add_author(section: Union[BookInfo, DocumentInfo], *names: str, first_name: str = None, last_name: str = None,
-               nickname: str = None, author: Author = None):
+def add_author(section: Union[BookInfo, DocumentInfo], *names: str, author: Author = None, **knames: str):
     """Common function to add author to section. Creates base object and sends it to :meth:`edit_author()`.
     """
     if author is None:
-        if isinstance(names[0], Author):
-        author = names[0]
-    else:
-            author = Author(*names, first_name, last_name, nickname)
+        author = Author(*names, **knames)
 
     au_element = etree.Element(f"{section._ns}author")
     section._info.findall(f"{section._ns}author")[-1].addnext(au_element)
@@ -462,7 +458,8 @@ class BookInfo:
     # region Editor
     # Author
     @helpers.check_book
-    def add_author(self, *names: str, first_name: str = None, last_name: str = None, nickname: str = None):
+    def add_author(self, *names: str, first_name: str = None, last_name: str = None, nickname: str = None,
+                   author: Author = None):
         """Add an author to book info.
 
         Parameters
@@ -487,6 +484,9 @@ class BookInfo:
 
         nickname : str
             Author's nickname.
+
+        author : Author, optional
+            Directly add an :class:`Author <libacbf.metadata.Author>` object.
 
         Warnings
         --------
@@ -516,7 +516,7 @@ class BookInfo:
 
             book.book_info.add_author(first_name="Hugh", last_name="Mann", nickname="NotAPlatypus")
         """
-        add_author(self, *names, first_name, last_name, nickname)
+        add_author(self, *names, author=author, first_name=first_name, last_name=last_name, nickname=nickname)
 
     @helpers.check_book
     def edit_author(self, author: Union[int, Author], **attributes: str):
@@ -1478,7 +1478,8 @@ class DocumentInfo:
 
     # Author
     @helpers.check_book
-    def add_author(self, *names: str, first_name: str = None, last_name: str = None, nickname: str = None):
+    def add_author(self, *names: str, first_name: str = None, last_name: str = None, nickname: str = None,
+                   author: Author = None):
         """Add an author to document info.
         This function follows the same rules as :meth:`BookInfo.add_author() <libacbf.metadata.BookInfo.add_author>`.
 
@@ -1504,8 +1505,11 @@ class DocumentInfo:
 
         nickname : str
             Author's nickname.
+
+        author : Author, optional
+            Directly add an :class:`Author <libacbf.metadata.Author>` object.
         """
-        add_author(self, *names, first_name, last_name, nickname)
+        add_author(self, *names, author=author, first_name=first_name, last_name=last_name, nickname=nickname)
 
     @helpers.check_book
     def edit_author(self, author: Union[int, Author], **attributes: str):

@@ -1,4 +1,5 @@
 import os
+import pytest
 from pathlib import Path
 from libacbf import ACBFBook
 from libacbf.metadata import Author
@@ -14,34 +15,23 @@ def test_authors():
         book.document_info.add_author("Test")
         book.document_info.add_author("Hugh", "Mann")
         au = book.document_info.authors[-1]
-        book.document_info.add_author(Author("Grafcube"))
-        book.document_info.add_author(author=Author("Another", "Grafcube"))
+        book.document_info.add_author(author=Author("Grafcube"))
         book.document_info.add_author("Remove", "This")
         rem = book.document_info.authors[-1]
         book.document_info.add_author("NotGrafcube")
 
         book.document_info.edit_author(0, first_name="TheFirst", last_name="TheLast", middle_name="TheMid",
-                                                lang="kn", nickname=None, home_page="https://example.com/testing")
+                                       lang="kn", nickname=None, home_page="https://example.com/testing")
 
         book.document_info.edit_author(au, middle_name=None, lang=None)
 
         book.document_info.edit_author(0, activity="Translator")
 
-        try:
+        with pytest.raises(ValueError, match="Author must have either First Name and Last Name or Nickname."):
             book.document_info.edit_author(au, first_name=None)
-        except ValueError as e:
-            if str(e) == "Author must have either First Name and Last Name or Nickname.":
-                pass
-            else:
-                raise e
 
-        try:
+        with pytest.raises(AttributeError, match="`Author` has no attribute `something`."):
             book.document_info.edit_author(au, something="Non existant")
-        except AttributeError as e:
-            if str(e) == "`Author` has no attribute `something`.":
-                pass
-            else:
-                raise e
 
         book.document_info.remove_author(-1)
         book.document_info.remove_author(rem)
