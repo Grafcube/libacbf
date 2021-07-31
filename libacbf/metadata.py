@@ -1686,30 +1686,7 @@ class Author:
 
     See Also
     --------
-    `body Info Author specifications
-    <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#Author>`_.
-
-    Examples
-    --------
-    An ``Author`` object can be created with either a nickname, a first and last name or both. ::
-
-        from libacbf.structs import Author
-
-        author1 = Author("Hugh", "Mann")
-        # author1.first_name == "Hugh"
-        # author1.last_name == "Mann"
-
-        author2 = Author("NotAPlatypus")
-        # author2.nickname == "NotAPlatypus"
-
-        author3 = Author("Hugh", "Mann", "NotAPlatypus")
-        # author3.first_name == "Hugh"
-        # author3.last_name == "Mann"
-        # author3.nickname == "NotAPlatypus"
-
-    This is also possible::
-
-        author4 = Author(first_name="Hugh", last_name="Mann", nickname="NotAPlatypus")
+    `Author specifications <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#Author>`_.
 
     Attributes
     ----------
