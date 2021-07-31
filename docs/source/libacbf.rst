@@ -1,36 +1,119 @@
-libacbf package
-===============
+API Reference
+=============
 
-libacbf.libacbf module
-----------------------
+Main module
+-----------
 
-.. automodule:: libacbf.libacbf
+get_book_template()
+~~~~~~~~~~~~~~~~~~~
+
+.. autofunction:: libacbf.get_book_template
+
+ACBFBook
+~~~~~~~~
+
+.. autoclass:: libacbf.ACBFBook
+    :members:
+    :show-inheritance:
+
+ACBFBody
+~~~~~~~~
+
+.. autoclass:: libacbf.libacbf.ACBFBody
+    :members:
+    :show-inheritance:
+
+ACBFData
+~~~~~~~~
+
+.. autoclass:: libacbf.libacbf.ACBFData
+    :members:
+    :show-inheritance:
+
+Styles
+~~~~~~
+
+.. autoclass:: libacbf.libacbf.Styles
+    :members:
+    :show-inheritance:
+
+Metadata
+--------
+
+Book Info
+~~~~~~~~~
+
+.. autoclass:: libacbf.metadata.BookInfo
    :members:
    :show-inheritance:
 
-libacbf.metadata module
------------------------
+Publisher Info
+~~~~~~~~~~~~~~
 
-.. automodule:: libacbf.metadata
+.. autoclass:: libacbf.metadata.PublishInfo
    :members:
    :show-inheritance:
-   :exclude-members: update_authors, add_author, edit_author, remove_author, edit_optional, edit_date
 
-libacbf.body module
+Document Info
+~~~~~~~~~~~~~
+
+.. autoclass:: libacbf.metadata.DocumentInfo
+   :members:
+   :show-inheritance:
+
+Metadata Extras
+---------------
+
+Author
+~~~~~~
+
+.. autoclass:: libacbf.metadata.Author
+   :members:
+   :show-inheritance:
+
+Genre
+~~~~~
+
+.. autoclass:: libacbf.metadata.Genre
+   :members:
+   :show-inheritance:
+
+LanguageLayer
+~~~~~~~~~~~~~
+
+.. autoclass:: libacbf.metadata.LanguageLayer
+   :members:
+   :show-inheritance:
+
+Series
+~~~~~~
+
+.. autoclass:: libacbf.metadata.Series
+   :members:
+   :show-inheritance:
+
+DBRef
+~~~~~
+
+.. autoclass:: libacbf.metadata.DBRef
+   :members:
+   :show-inheritance:
+
+Body module
 -------------------
 
 .. automodule:: libacbf.body
    :members:
    :show-inheritance:
 
-libacbf.bookdata module
+Book Data module
 -----------------------
 
 .. automodule:: libacbf.bookdata
    :members:
    :show-inheritance:
 
-libacbf.constants module
+Constants module
 ------------------------
 
 .. automodule:: libacbf.constants
@@ -38,7 +121,7 @@ libacbf.constants module
    :undoc-members:
    :show-inheritance:
 
-libacbf.exceptions module
+Exceptions module
 -------------------------
 
 .. automodule:: libacbf.exceptions

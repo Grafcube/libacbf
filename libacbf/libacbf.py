@@ -46,8 +46,8 @@ def _validate_acbf(tree, ns: str):
 def get_book_template() -> str:
     """Get the bare minimum XML required to create an ACBF book.
 
-    Warning
-    -------
+    Warnings
+    --------
     Some properties will already exist and have default values. See (INSERT LINK HERE) for more details.
 
     Returns
@@ -89,8 +89,8 @@ class ACBFBook:
         determined regardless of this parameter's value. Use this when you want to create a new archive or if you are
         reading/writing/editing a plain ACBF book.
 
-        Warning
-        -------
+        Warnings
+        --------
         You can only write data by embedding when this is ``None``.
 
     Raises
@@ -112,8 +112,8 @@ class ACBFBook:
     --------
     `ACBF Specifications <https://acbf.fandom.com/wiki/Advanced_Comic_Book_Format_Wiki>`_.
 
-    Warning
-    -------
+    Warnings
+    --------
     Never try to edit variables directly as you will not be editing the XML. Use the editing functions instead.
 
     Examples
@@ -155,10 +155,10 @@ class ACBFBook:
         See :class:`DocumentInfo <libacbf.metadata.DocumentInfo>` for more information.
 
     body : ACBFBody
-        See :class:`ACBFBody` for more information.
+        See :class:`ACBFBody <libacbf.libacbf.ACBFBody>` for more information.
 
     data : ACBFData
-        See :class:`ACBFData` for more information.
+        See :class:`ACBFData <libacbf.libacbf.ACBFData>` for more information.
 
     references : dict
         A dictionary that contains a list of particular references that occur inside the
@@ -178,7 +178,7 @@ class ACBFBook:
         see :attr:`TextArea.paragraph <libacbf.body.TextArea.paragraph>`.
 
     styles : Styles
-        See :class:`Styles` for more information.
+        See :class:`Styles <libacbf.libacbf.Styles>` for more information.
 
     book_path : pathlib.Path
         Absolute path to source file.
@@ -620,8 +620,7 @@ class ACBFData:
         self.sync_data()
 
     def list_files(self) -> Set[str]:
-        """Returns a list of all the names of the files embedded in the ACBF file. May be images,
-        fonts etc.
+        """Returns a list of all the names of the files embedded in the ACBF file. May be images, fonts etc.
 
         Returns
         -------

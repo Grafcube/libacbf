@@ -52,15 +52,16 @@ def update_authors(author_items, ns) -> List[Author]:
     return authors
 
 
-def add_author(section: Union[BookInfo, DocumentInfo], *names: str, **knames: Union[str, Author]):
+def add_author(section: Union[BookInfo, DocumentInfo], *names: str, first_name: str = None, last_name: str = None,
+               nickname: str = None, author: Author = None):
     """Common function to add author to section. Creates base object and sends it to :meth:`edit_author()`.
     """
-    if len(names) > 0 and isinstance(names[0], Author):
+    if author is None:
+        if isinstance(names[0], Author):
         author = names[0]
-    elif "author" in knames and isinstance(knames["author"], Author):
-        author = knames.pop("author")
     else:
-        author = Author(*names, **knames)
+            author = Author(*names, first_name, last_name, nickname)
+
     au_element = etree.Element(f"{section._ns}author")
     section._info.findall(f"{section._ns}author")[-1].addnext(au_element)
     author._element = au_element
@@ -213,8 +214,7 @@ class BookInfo:
 
     See Also
     --------
-    `Book-Info section
-    <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#Book-info_section>`_.
+    `Book-Info section <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#Book-info_section>`_.
 
     Attributes
     ----------
