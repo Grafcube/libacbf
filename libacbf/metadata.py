@@ -1281,8 +1281,7 @@ class PublishInfo:
 
     See Also
     --------
-    `Publish-Info section
-    <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#Publish-Info_Section>`_.
+    `Publish-Info section <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#Publish-Info_Section>`_.
 
     Attributes
     ----------
@@ -1338,25 +1337,63 @@ class PublishInfo:
 
     @helpers.check_book
     def set_publisher(self, name: str):
+        """Edit the publisher's name.
+
+        Parameters
+        ----------
+        name : str
+            New name of publisher.
+        """
         pub_item = self._info.find(f"{self._ns}publisher")
         pub_item.text = name
         self.publisher = pub_item.text
 
     @helpers.check_book
     def set_publish_date(self, dt: Union[str, date], include_date: bool = True):
+        """Edit the date the book was published.
+
+        Parameters
+        ----------
+        dt : str | datetime.date
+            Date to set to.
+
+        include_date : bool, default=True
+            Whether to also write another date attribute in YYYY-MM-DD format.
+        """
         edit_date("publish-date", self, "publish_date_string", "publish_date", dt, include_date)
 
     # --- Optional ---
     @helpers.check_book
     def set_publish_city(self, city: Optional[str]):
+        """Edit the city the book was published in.
+
+        Parameters
+        ----------
+        city : str | None
+            New city to set it to. Pass ``None`` to remove it.
+        """
         edit_optional("city", self, "publish_city", city)
 
     @helpers.check_book
     def set_isbn(self, isbn: Optional[str]):
+        """Edit ISBN value of book.
+
+        Parameters
+        ----------
+        isbn : str | None
+            Value to set it to. Pass ``None`` to remove it.
+        """
         edit_optional("isbn", self, "isbn", isbn)
 
     @helpers.check_book
     def set_license(self, license: Optional[str]):
+        """Edit the license the book is under.
+
+        Parameters
+        ----------
+        license : str | None
+            License to set it to. Pass ``None`` to remove it.
+        """
         edit_optional("license", self, "license", license)
 
 
