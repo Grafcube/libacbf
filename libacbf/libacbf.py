@@ -192,18 +192,18 @@ class ACBFBook:
     references : dict
         A dictionary that contains a list of particular references that occur inside the
         main document body. Keys are unique reference ids and values are dictionaries that contain
-        a ``paragraph`` key with text. ::
+        a ``'_'`` key with text. ::
 
             {
                 "ref_id_001": {
-                    "paragraph": "This is a reference."
+                    "_": "This is a reference."
                 }
                 "ref_id_002": {
-                    "paragraph": "This is another reference."
+                    "_": "This is another reference."
                 }
             }
 
-        ``paragraph`` can contain special tags for formatting. For more information and a full list,
+        ``'_'`` can contain special tags for formatting. For more information and a full list,
         see :attr:`TextArea.paragraph <libacbf.body.TextArea.paragraph>`.
 
     styles : Styles
@@ -363,13 +363,7 @@ class ACBFBook:
         meta = root.find("meta-data")
         body = root.find("body")
 
-        #region Level 1
-        if len(self.data) > 0:
-            etree.SubElement(root, "data")
-        if len(self.references) > 0:
-            etree.SubElement(root, "references")
-
-        # Add styles
+        #region Styles
         for st in self.styles.list_styles():
             if st == '_':
                 style = etree.Element("style")
@@ -576,10 +570,28 @@ class ACBFBook:
         #endregion
 
         #region Data
+        if len(self.data) > 0:
+            dt = etree.SubElement(root, "data")
 
+            for file in self.data.list_files():
+                data = self.data[file]
+                bn = etree.SubElement(dt, "binary", attrib={"id": data.id, "content-type": data.type})
+                bn.text = data._base64data
         #endregion
 
         #region References
+        if len(self.references) > 0:
+            refs = etree.SubElement(root, "references")
+
+            for id, reference in self.references.items():
+                reference = reference['_']
+                ref = etree.SubElement(refs, "reference", id=id)
+                for r in reference.splitlines():
+                    p = f"<p>{r}</p>"
+                    p_element = etree.fromstring(bytes(p, encoding="utf-8"))
+                    for i in list(p_element.iter()):
+                        i.tag = ns + i.tag
+                    ref.append(p_element)
 
         #endregion
 
@@ -658,7 +670,7 @@ class ACBFBook:
                 for p in ref.findall(f"{ns}p"):
                     text = re.sub(r'</?p[^>]*>', '', etree.tostring(p, encoding="utf-8").decode("utf-8").strip())
                     pa.append(text)
-                self.references[ref.attrib["id"]] = {"paragraph": '\n'.join(pa)}
+                self.references[ref.attrib["id"]] = {'_': '\n'.join(pa)}
 
     def edit_reference(self, id: str, text: str):
         """Edit the reference by id. Create it if it does not exist.
@@ -702,8 +714,8 @@ class ACBFBook:
             ref_element.append(p_element)
 
         if id not in self.references:
-            self.references[id] = {"paragraph": ''}
-        self.references[id]["paragraph"] = text
+            self.references[id] = {'_': ''}
+        self.references[id]['_'] = text
 
     def remove_reference(self, id: str):
         """Remove a reference by unique id.
@@ -994,7 +1006,7 @@ class ACBFData:
                         self.files[key] = new_data
                         return new_data
         else:
-            raise FileNotFoundError
+            raise FileNotFoundError(f"`{key}` not found embedded in book.")
 
 
 class Styles:
