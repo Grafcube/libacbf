@@ -1682,7 +1682,8 @@ class DocumentInfo:
 
 
 class Author:
-    """Defines an author of the comic book.
+    """Defines an author of the comic book. An author must at least have a nickname not be ``None`` or have both
+    first name and last name not be ``None``.
 
     See Also
     --------
@@ -1779,15 +1780,13 @@ class Author:
 
     @property
     def activity(self) -> Optional[constants.AuthorActivities]:
-        """Defines the activity that a particular author carried out on the comic book.
-
-        Allowed values are defined in
+        """Defines the activity that a particular author carried out on the comic book. Allowed values are defined in
         :class:`AuthorActivities <libacbf.constants.AuthorActivities>`.
 
         Returns
         -------
-        Optional[AuthorActivities]
-            A value from :class:`AuthorActivities <libacbf.constants.AuthorActivities>` Enum.
+        AuthorActivities(Enum) | None
+            A value from :class:`AuthorActivities <libacbf.constants.AuthorActivities>` enum or ``None`` if not defined.
         """
         return self._activity
 
@@ -1811,8 +1810,8 @@ class Author:
 
         Returns
         -------
-        Optional[str]
-            Returns a standard language code.
+        str | None
+            Returns a standard language code or ``None`` if not defined.
         """
         return self._lang
 
@@ -1845,17 +1844,15 @@ class Genre:
 
     See Also
     --------
-    `body Info genre specifications
-    <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#Genre>`_.
+    `Book Info Genre specifications <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#Genre>`_.
 
-    Parameters
+    Attributes
     ----------
-    genre_type : Genres(Enum) | str | int
-        The genre value. String and integer are converted to a value from
-        :class:`Genres <libacbf.constants.Genres>` Enum.
+    genre : Genres(Enum)
+        The genre of the book. Allowed values are defined in :class:`Genres <libacbf.constants.Genres>`.
 
     match : int, optional
-        The match value. Must be an integer from 0 to 100.
+        Defines the match percentage to that particular genre. Must be an integer from 0 to 100.
     """
 
     def __init__(self, genre_type: Union[str, constants.Genres, int], match: Optional[int] = None):
@@ -1867,15 +1864,6 @@ class Genre:
 
     @property
     def genre(self) -> constants.Genres:
-        """Defines the activity that a particular author carried out on the comic book.
-
-        Allowed values are defined in :class:`Genres <libacbf.constants.Genres>`.
-
-        Returns
-        -------
-        Optional[Genres]
-            A value from :class:`Genres <libacbf.constants.Genres>` Enum.
-        """
         return self._genre
 
     @genre.setter
@@ -1889,13 +1877,6 @@ class Genre:
 
     @property
     def match(self) -> Optional[int]:
-        """Defines the match percentage to that particular genre.
-
-        Returns
-        -------
-        Optional[int]
-            An integer percentage from 0 to 100.
-        """
         return self._match
 
     @match.setter
@@ -1905,7 +1886,7 @@ class Genre:
             if 0 <= val <= 100:
                 self._match = val
             else:
-                raise ValueError("match must be an int from 0 to 100.")
+                raise ValueError("`match` must be an int from 0 to 100.")
 
 
 class LanguageLayer:
@@ -1913,13 +1894,12 @@ class LanguageLayer:
 
     See Also
     --------
-    `body Info Languages specifications
-    <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#Languages>`_.
+    `Book Info Languages specifications <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#Languages>`_.
 
     Attributes
     ----------
     lang : str
-        Language of layer as a standard language code.
+        Language of the layer as a standard language code.
 
     show : bool
         Whether layer is drawn.
@@ -1928,11 +1908,19 @@ class LanguageLayer:
     def __init__(self, val: str, show: bool):
         self._element = None
 
-        self.lang: str = langcodes.standardize_tag(val)
+        self.lang: str = val
         self.show: bool = show
 
     def __repr__(self):
         return f'<libacbf.metadata.LanguageLayer lang="{self.lang}" show={self.show}>'
+
+    @property
+    def lang(self):
+        return self._lang
+
+    @lang.setter
+    def lang(self, val: str):
+        self._lang = langcodes.standardize_tag(val)
 
 
 class Series:
@@ -1940,8 +1928,7 @@ class Series:
 
     See Also
     --------
-    `body Info Sequence specifications
-    <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#Sequence>`_.
+    `Book Info Sequence specifications <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#Sequence>`_.
 
     Attributes
     ----------
@@ -1969,13 +1956,12 @@ class DBRef:
 
     See Also
     --------
-    `Book Info DatabaseRef specifications
-    <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#DatabaseRef>`_.
+    `Book Info DatabaseRef specifications <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#DatabaseRef>`_.
 
     Attributes
     ----------
     dbname : str
-        Name of database.
+        Name of the database.
 
     reference : str
         Reference of book in database.
