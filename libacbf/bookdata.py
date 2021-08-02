@@ -7,7 +7,7 @@ class BookData:
 
     See Also
     --------
-    `Binary data <https://acbf.fandom.com/wiki/Data_Section_Definition#Binary>`_.
+    `Binary data specifications <https://acbf.fandom.com/wiki/Data_Section_Definition#Binary>`_.
 
     Attributes
     ----------

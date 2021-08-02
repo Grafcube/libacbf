@@ -23,8 +23,8 @@ def get_archive_type(file: Union[str, Path, BinaryIO]) -> ArchiveTypes:
 
     Returns
     -------
-    ArchiveTypes
-        Returns :class:`ArchiveTypes Enum <libacbf.constants.ArchiveTypes>`.
+    ArchiveTypes(Enum)
+        Returns :class:`ArchiveTypes <libacbf.constants.ArchiveTypes>` enum.
 
     Raises
     ------
@@ -53,9 +53,7 @@ def get_archive_type(file: Union[str, Path, BinaryIO]) -> ArchiveTypes:
 
 
 class ArchiveReader:
-    """Class to directly read from archives.
-
-    This class can read and write Zip, 7Zip and Tar archives. Rar archives are read-only.
+    """This can read and write Zip, 7Zip and Tar archives. Rar archives are read-only.
 
     Notes
     -----
