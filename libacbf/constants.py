@@ -7,19 +7,15 @@ it, use strings instead (case sensitive). ::
 
     activity = AuthorActivities.Artist.name
 
-    # Does it exist
+    # Check if value exists
     _ = AuthorActivities["Writer"]  # No `KeyError` exception
-    _ = AuthorActivities["asdfgh"]  # `KeyError` exception raised
+    _ = AuthorActivities["asdfgh"]  # `KeyError` exception is raised
 """
 from enum import Enum, auto
 
 
 class AuthorActivities(Enum):
-    """List of accepted values for :attr:`Author.activity<libacbf.structs.Author.activity>`.
-
-    See Also
-    --------
-    `ACBF Author specification <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#Author>`_.
+    """List of accepted values for :attr:`Author.activity<libacbf.metadata.Author.activity>`.
     """
     Writer = 0
     Adapter = auto()
@@ -37,11 +33,7 @@ class AuthorActivities(Enum):
 
 
 class Genres(Enum):
-    """List of accepted values for :attr:`genre.genre <libacbf.structs.genre.genre>`.
-
-    See Also
-    --------
-    `ACBF Genre specification <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#Genre>`_
+    """List of accepted values for :attr:`Genre.genre <libacbf.metadata.Genre.genre>`.
     """
     adult = 0
     adventure = auto()
@@ -73,10 +65,6 @@ class Genres(Enum):
 
 class TextAreas(Enum):
     """Types of text areas. Used by :attr:`TextArea.type <libacbf.body.TextArea.type>`.
-
-    See Also
-    --------
-    `Text Area types <https://acbf.fandom.com/wiki/Body_Section_Definition#Text-area>`_.
     """
     speech = 0
     commentary = auto()
@@ -91,10 +79,6 @@ class TextAreas(Enum):
 
 class PageTransitions(Enum):
     """Allowed values for :attr:`Page.transition <libacbf.body.Page.transition>`.
-
-    See Also
-    --------
-    `Page Transitions <https://acbf.fandom.com/wiki/Body_Section_Definition#Page>`_.
     """
     fade = 0
     blend = auto()
@@ -104,11 +88,7 @@ class PageTransitions(Enum):
 
 
 class ImageRefType(Enum):
-    """Types of image references. Used by :attr:`ref_type <libacbf.body.Page.ref_type>`.
-
-    See Also
-    --------
-    `Image Reference Types <https://acbf.fandom.com/wiki/Body_Section_Definition#Image>`_.
+    """Types of image references. Used by :attr:`Page.ref_type <libacbf.body.Page.ref_type>`.
     """
     Embedded = 0
     SelfArchived = auto()
