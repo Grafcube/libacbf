@@ -327,7 +327,7 @@ class ACBFBook:
         self._namespace: str = r"{" + self._root.nsmap[None] + r"}"  # TODO: Change to nsmap
 
         if mode == 'r':
-        _validate_acbf(self._root.getroottree(), self._namespace)
+            _validate_acbf(self._root.getroottree(), self._namespace)
 
         self.styles: Styles = Styles(self, str(contents))
 
@@ -1018,6 +1018,11 @@ class Styles:
         with ACBFBook("path/to/book.cbz") as book:
             style1 = book.styles["style1.css"]  # Style referenced at the top of the ACBF XML as a string.
             embedded_style = book.styles['_']  # Returns the stylesheet embedded in ACBF XML style tag as a string.
+
+    Attributes
+    ----------
+    types : Dict[str, str | None]
+        A dictionary with keys being the style name (or ``'_'``) and values being the type or ``None`` if not specified.
     """
 
     def __init__(self, book: ACBFBook, contents: str):
@@ -1025,6 +1030,7 @@ class Styles:
         self._contents = contents
 
         self.styles: Dict[str, Optional[str]] = {}
+        self.types: Dict[str, Optional[str]] = {}
         self.sync_styles()
 
     def list_styles(self) -> Set[str]:
@@ -1035,15 +1041,18 @@ class Styles:
         Set[str]
             Referenced stylesheets.
         """
-        return set(self.styles.keys())
+        return set(self.types.keys())
 
     def sync_styles(self):
         self.styles.clear()
         style_refs = [x for x in self.book._root.xpath("//processing-instruction()") if x.target == "xml-stylesheet"]
         for i in style_refs:
             self.styles[i.attrib["href"]] = None
-        if self.book._root.find(f"{self.book._namespace}style") is not None:
+            self.types[i.attrib["href"]] = i.attrib["type"] if "type" in i.attrib.keys() else None
+        embedded = self.book._root.find(f"{self.book._namespace}style")
+        if embedded is not None:
             self.styles['_'] = None
+            self.types['_'] = embedded.attrib["type"] if "type" in embedded.keys() else None
 
     @helpers.check_book
     def edit_style(self, stylesheet_ref: Union[str, Path], style_name: Optional[str] = None, type: str = "text/css"):
@@ -1074,14 +1083,18 @@ class Styles:
             with open(stylesheet_ref, 'r') as css:
                 style_element.text = css.read().strip()
             self.styles['_'] = style_element.text
+            self.types['_'] = type
         else:
             style_refs = [x.attrib["href"] for x in self.book._root.xpath("//processing-instruction()") if
                           x.target == "xml-stylesheet"]
             if style_name not in style_refs:
-                style_element = etree.ProcessingInstruction("xml-stylesheet", f'type="{type}" href="{style_name}"')
+                sub = f'type="{type}" ' if type is not None else ''
+                style_element = etree.ProcessingInstruction("xml-stylesheet", f'{sub}href="{style_name}"')
                 self.book._root.addprevious(style_element)
             if self.book.archive is not None:
                 self.book.archive.write(stylesheet_ref, style_name)
+            self.styles[style_name] = None
+            self.types[style_name] = type
 
     @helpers.check_book
     def remove_style(self, style_name: str):
