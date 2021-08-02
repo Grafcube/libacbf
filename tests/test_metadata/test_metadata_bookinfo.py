@@ -127,7 +127,7 @@ def test_coverpage(read_books: Tuple[Path, ACBFBook]):
 
     for tl in pg.text_layers.keys():
         new_tl = {
-            "lang": pg.text_layers[tl].language,
+            "lang": pg.text_layers[tl].lang,
             "bgcolour": pg.text_layers[tl].bgcolor,
             "text_areas": []
             }

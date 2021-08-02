@@ -1291,10 +1291,10 @@ class PublishInfo:
     publisher : str
         Name of the publisher.
 
-    publish_date_string : str
+    publish_date : str
         Date when the book was published as a human readable string.
 
-    publish_date : datetime.date, optional
+    publish_date_value : datetime.date, optional
         Date when the book was published.
 
     publish_city : str, optional
@@ -1315,12 +1315,12 @@ class PublishInfo:
 
         self.publisher: str = info.find(f"{self._ns}publisher").text
 
-        self.publish_date_string: str = info.find(f"{self._ns}publish-date").text
+        self.publish_date: str = info.find(f"{self._ns}publish-date").text
 
         # --- Optional ---
-        self.publish_date: Optional[date] = None
+        self.publish_date_value: Optional[date] = None
         if "value" in info.find(f"{self._ns}publish-date").keys():
-            self.publish_date = date.fromisoformat(
+            self.publish_date_value = date.fromisoformat(
                 info.find(f"{self._ns}publish-date").attrib["value"])
 
         self.publish_city: Optional[str] = None
@@ -1360,7 +1360,7 @@ class PublishInfo:
         include_date : bool, default=True
             Whether to also write another date attribute in YYYY-MM-DD format.
         """
-        edit_date("publish-date", self, "publish_date_string", "publish_date", dt, include_date)
+        edit_date("publish-date", self, "publish_date", "publish_date_value", dt, include_date)
 
     # --- Optional ---
     @helpers.check_book
@@ -1402,8 +1402,7 @@ class DocumentInfo:
 
     See Also
     --------
-    `Document-Info section
-    <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#Document-Info_Section>`_.
+    `Document-Info section <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#Document-Info_Section>`_.
 
     Attributes
     ----------
@@ -1413,10 +1412,10 @@ class DocumentInfo:
     authors : List[Author]
         Authors of the ACBF file as a list of :class:`Author <libacbf.metadata.Author>` objects.
 
-    creation_date_string : str
+    creation_date : str
         Date when the ACBF file was created as a human readable string.
 
-    creation_date : datetime.date, optional
+    creation_date_value : datetime.date, optional
         Date when the ACBF file was created.
 
     source : str, optional
@@ -1441,12 +1440,12 @@ class DocumentInfo:
         self.authors: List[Author] = []
         self.sync_authors()
 
-        self.creation_date_string: str = info.find(f"{self._ns}creation-date").text
+        self.creation_date: str = info.find(f"{self._ns}creation-date").text
 
         # --- Optional ---
-        self.creation_date: Optional[date] = None
+        self.creation_date_value: Optional[date] = None
         if "value" in info.find(f"{self._ns}creation-date").keys():
-            self.creation_date = date.fromisoformat(
+            self.creation_date_value = date.fromisoformat(
                 info.find(f"{self._ns}creation-date").attrib["value"])
 
         self.source: Optional[str] = None
@@ -1561,7 +1560,7 @@ class DocumentInfo:
         include_date : bool, default=True
             Whether to also write another date attribute in YYYY-MM-DD format.
         """
-        edit_date("creation-date", self, "creation_date_string", "creation_date", dt, include_date)
+        edit_date("creation-date", self, "creation_date", "creation_date_value", dt, include_date)
 
     # --- Optional ---
     @helpers.check_book

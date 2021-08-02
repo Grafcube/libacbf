@@ -11,6 +11,10 @@ if TYPE_CHECKING:
 from libacbf.constants import ArchiveTypes
 from libacbf.exceptions import EditRARArchiveError
 
+namespaces = {
+    "1.1": "http://www.acbf.info/xml/acbf/1.1"
+    }
+
 Vec2 = namedtuple("Vector2", "x y")  # Not a real vector. Just a named tuple.
 
 

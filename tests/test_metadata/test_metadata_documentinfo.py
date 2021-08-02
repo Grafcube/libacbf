@@ -23,14 +23,14 @@ def test_creation_date_string(read_books: Tuple[Path, ACBFBook]):
     path, book = read_books
     dir = make_docinfo_dir(path)
     with open(dir / "test_creation_date_string.txt", 'w', encoding="utf-8", newline='\n') as result:
-        result.write(book.document_info.creation_date_string)
+        result.write(book.document_info.creation_date)
 
 
 def test_creation_date(read_books: Tuple[Path, ACBFBook]):
     path, book = read_books
     dir = make_docinfo_dir(path)
     with open(dir / "test_creation_date.txt", 'w', encoding="utf-8", newline='\n') as result:
-        result.write(str(book.document_info.creation_date))
+        result.write(str(book.document_info.creation_date_value))
 
 
 def test_source(read_books: Tuple[Path, ACBFBook]):

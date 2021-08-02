@@ -53,7 +53,7 @@ def test_body_pages(read_books: Tuple[Path, ACBFBook]):
         textlayer_output[pg.image_ref] = []
         for tl in pg.text_layers.values():
             new_tl = {
-                "lang": tl.language,
+                "lang": tl.lang,
                 "bgcolour": tl.bgcolor,
                 "text_areas": []
                 }

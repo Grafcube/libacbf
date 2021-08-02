@@ -152,7 +152,7 @@ class Page:
             textlayer_items = item.findall(f"{self._ns}text-layer")
             for lr in textlayer_items:
                 new_lr = TextLayer(lr, self._ns, self.book)
-                self._text_layers[new_lr.language] = new_lr
+                self._text_layers[new_lr.lang] = new_lr
         return self._text_layers
 
     @property
@@ -350,7 +350,7 @@ class Page:
         src_lang, dest_lang = map(langcodes.standardize_tag, (src_lang, dest_lang))
         t_layer = self.text_layers.pop(src_lang)
         t_layer._layer.set("lang", dest_lang)
-        t_layer.language = dest_lang
+        t_layer.lang = dest_lang
         self.text_layers[dest_lang] = t_layer
 
     # Frames
@@ -414,7 +414,7 @@ class TextLayer:
 
     Attributes
     ----------
-    language : str
+    lang : str
         A standard language code that defines the language of the text in this layer.
 
     text_areas : List[TextArea]
@@ -429,7 +429,7 @@ class TextLayer:
         self._layer = layer
         self._ns = ns
 
-        self.language: str = langcodes.standardize_tag(layer.attrib["lang"])
+        self.lang: str = langcodes.standardize_tag(layer.attrib["lang"])
 
         self.bgcolor: Optional[str] = None
         if "bgcolor" in layer.keys():
@@ -710,7 +710,7 @@ class Jump:
         :attr:`TextArea.points`.
 
     page : int
-        Target page to go to when clicked. Pages start from 1 so first page is ``1``, second page is ``2`` and so on.
+        Target page to go to when clicked. Cover page is ``0``, first page is ``1``, second page is ``2`` and so on.
     """
 
     def __init__(self, points: List[helpers.Vec2], page: int, book: ACBFBook):
