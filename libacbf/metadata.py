@@ -1823,12 +1823,7 @@ class Author:
             self._lang = langcodes.standardize_tag(val)
 
     def copy(self):
-        """Creates a copy of this ``Author`` object not connected to any book.
-
-        Returns
-        -------
-        Author
-            Copy of this object.
+        """Returns a copy of this object.
         """
         copy = Author(self.first_name, self.last_name, self.nickname)
         copy.activity = self.activity
@@ -1902,7 +1897,7 @@ class LanguageLayer:
         Language of the layer as a standard language code.
 
     show : bool
-        Whether layer is drawn.
+        Whether the layer is drawn.
     """
 
     def __init__(self, val: str, show: bool):
@@ -1933,7 +1928,7 @@ class Series:
     Attributes
     ----------
     title : str
-        Title of the series that this book is part of.
+        Title of the series that this book is a part of.
 
     sequence : str
         The book's position/entry in the series.
@@ -1964,7 +1959,7 @@ class DBRef:
         Name of the database.
 
     reference : str
-        Reference of book in database.
+        Reference of the book in the database.
 
     type : str, optional
         Type of the given reference such as URL, ID etc.

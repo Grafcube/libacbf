@@ -32,18 +32,18 @@ class Page:
         Book that this page belongs to.
 
     image_ref : str
-        Reference to the image file. May be embedded in the ACBF file, in the ACBF archive, in an
-        external archive, a local path or a URL.
+        Reference to the image file. May be embedded in the ACBF file, in the ACBF archive, in an external archive,
+        a local path or a URL. For information on how to format it,
+        see `<https://acbf.fandom.com/wiki/Body_Section_Definition#Image>`_.
 
     ref_type : ImageRefType(Enum)
-        A value from :class:`ImageRefType <libacbf.constants.ImageRefType>` indicating the type of
-        reference in :attr:`image_ref`.
+        A value from :class:`ImageRefType <libacbf.constants.ImageRefType>` indicating the type of reference in
+        :attr:`Page.image_ref`.
 
     title : Dict[str, str], optional
-        It is used to define beginning of chapters, sections of the book and can be used to create a
-        table of contents.
+        It is used to define beginning of chapters, sections of the book and can be used to create a table of contents.
 
-        Keys are standard language codes or ``"_"`` if not defined. Values are titles as string.
+        Keys are standard language codes or ``'_'`` if not defined. Values are titles as string.
 
     bgcolor : str, optional
         Defines the background colour for the page. Inherits from
@@ -140,13 +140,12 @@ class Page:
 
         See Also
         --------
-        `Text Layers <https://acbf.fandom.com/wiki/Body_Section_Definition#Text-layer>`_.
+        `Text Layers specifications <https://acbf.fandom.com/wiki/Body_Section_Definition#Text-layer>`_.
 
         Returns
         -------
         Dict[str, TextLayer]
-            A dictionary with keys being a standard language object and values being
-            :class:`TextLayer` objects.
+            A dictionary with keys being a standard language object and values being :class:`TextLayer` objects.
         """
         if len(self._text_layers) == 0:
             item = self._page
@@ -167,7 +166,7 @@ class Page:
         Returns
         -------
         List[Frame]
-            A list of :class:`Frame <Frame>` objects.
+            A list of :class:`Frame` objects.
         """
         if len(self._frames) == 0:
             item = self._page
@@ -191,7 +190,7 @@ class Page:
         Returns
         -------
         List[Jump]
-            A list of :class:`Jump <Jump>` objects.
+            A list of :class:`Jump` objects.
         """
         if len(self._jumps) == 0:
             item = self._page
@@ -243,7 +242,7 @@ class Page:
     # Editor
     @helpers.check_book
     def set_image_ref(self, img_ref: str):
-        """Remember to use ACBFData to write image if contained in file.
+        """Set the image reference.
 
         Parameters
         ----------
@@ -255,6 +254,12 @@ class Page:
     # --- Optional ---
     @helpers.check_book
     def set_bgcolor(self, bg: Optional[str]):
+        """Set bgcolor.
+
+        Parameters
+        ----------
+        bg
+        """
         if self.is_coverpage:
             raise AttributeError("`coverpage` has no attribute `bgcolor`.")
 
@@ -266,6 +271,12 @@ class Page:
 
     @helpers.check_book
     def set_transition(self, tr: Optional[str]):
+        """Set transition.
+
+        Parameters
+        ----------
+        tr
+        """
         if self.is_coverpage:
             raise AttributeError("`coverpage` has no attribute `transition`.")
 
@@ -279,6 +290,14 @@ class Page:
 
     @helpers.check_book
     def set_title(self, tl: Optional[str], lang: str = '_'):
+        """Set title.
+
+        Parameters
+        ----------
+        tl
+
+        lang
+        """
         if self.is_coverpage:
             raise AttributeError("`coverpage` has no attribute `title`.")
 
@@ -402,8 +421,7 @@ class TextLayer:
         A list of :class:`TextArea` objects in order (order matters for text-to-speech).
 
     bgcolor : str, optional
-        Defines the background colour of the text areas or inherits from :attr:`Page.bgcolor` if
-        ``None``.
+        Defines the background colour of the text areas or inherits from :attr:`Page.bgcolor` if ``None``.
     """
 
     def __init__(self, layer, ns, book: ACBFBook):
@@ -463,8 +481,11 @@ class TextArea:
     Attributes
     ----------
     points : List[2D Vectors]
-        A list of named tuples with ``x`` and ``y`` values representing a 2-dimensional vector. Same
-        as :attr:`Frame.points <Frame.points>`.
+        A list of named tuples with ``x`` and ``y`` values representing a 2-dimensional vector. ::
+
+            sixth_point = <Item in TextArea list>.points[5]
+            sixth_point.x # x-coordinate of point
+            sixth_point.y # y-coordinate of point
 
     paragraph : str
         A multiline string of what text to show in the are. Can have special tags for formatting.
@@ -629,20 +650,17 @@ class Frame:
 
     See Also
     --------
-    `body Info Frame specifications <https://acbf.fandom.com/wiki/Body_Section_Definition#Frame>`_.
+    `Frame specifications <https://acbf.fandom.com/wiki/Body_Section_Definition#Frame>`_.
 
     Attributes
     ----------
     points : List[2D Vectors]
-        A list of named tuples with ``x`` and ``y`` values representing a 2-dimensional vector. ::
-
-            sixth_point = frame.points[5]
-            sixth_point.x # x-coordinate of point
-            sixth_point.y # y-coordinate of point
+        A list of named tuples with ``x`` and ``y`` values representing a 2-dimensional vector. Same as
+        :attr:`TextArea.points`.
 
     bgcolor : str, optional
-        Defines the background colour for the page. Inherits from
-        :attr:`Page.bgcolor <libacbf.body.Page.bgcolor>` if ``None``.
+        Defines the background colour for the page. Inherits from :attr:`Page.bgcolor <libacbf.body.Page.bgcolor>`if
+        ``None``.
     """
 
     def __init__(self, points: List[helpers.Vec2], book: ACBFBook):
@@ -688,12 +706,11 @@ class Jump:
     Attributes
     ----------
     points : List[2D Vectors]
-        A list of named tuples with ``x`` and ``y`` values representing a 2-dimensional vector. Same
-        as :attr:`Frame.points`.
+        A list of named tuples with ``x`` and ``y`` values representing a 2-dimensional vector. Same as
+        :attr:`TextArea.points`.
 
     page : int
-        Target page to go to when clicked. Pages start from 1 so first page is ``1``, second page is
-        ``2`` and so on.
+        Target page to go to when clicked. Pages start from 1 so first page is ``1``, second page is ``2`` and so on.
     """
 
     def __init__(self, points: List[helpers.Vec2], page: int, book: ACBFBook):
