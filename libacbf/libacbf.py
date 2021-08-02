@@ -43,7 +43,31 @@ def _validate_acbf(tree, ns: str):
         acbf_schema.assertValid(tree)
 
 
-def get_book_template() -> str:
+def get_root_template(nsmap: Dict):
+    """Get the lxml root tree for a basic ACBF book.
+
+    Parameters
+    ----------
+    nsmap : dict
+        Namespaces
+    """
+    root = etree.Element("ACBF", nsmap=nsmap)
+    meta = etree.SubElement(root, "meta-data")
+    root.append(etree.Element("body"))
+
+    book_info = etree.SubElement(meta, "book-info")
+
+    publish_info = etree.SubElement(meta, "publish-info")
+    publish_info.append(etree.Element("publisher"))
+    publish_info.append(etree.Element("publish-date"))
+
+    document_info = etree.SubElement(meta, "document-info")
+    document_info.append(etree.Element("creation-date"))
+
+    return root
+
+
+def get_book_template(ns: str = None) -> str:
     """Get the bare minimum XML required to create an ACBF book.
 
     Warnings
@@ -55,9 +79,14 @@ def get_book_template() -> str:
     str
         XML string template.
     """
-    with open("libacbf/templates/base_template_1.1.acbf", 'r') as template:
-        contents = template.read()
-    return contents
+    if ns is None:
+        ns = helpers.namespaces["1.1"]
+
+    return etree.tostring(get_root_template({None: ns}).getroottree(),
+                          encoding="utf-8",
+                          xml_declaration=True,
+                          pretty_print=True
+                          ).decode("utf-8")
 
 
 class ACBFBook:
@@ -295,8 +324,9 @@ class ACBFBook:
 
         self._root = etree.fromstring(bytes(contents, "utf-8"))
 
-        self._namespace: str = r"{" + self._root.nsmap[None] + r"}"
+        self._namespace: str = r"{" + self._root.nsmap[None] + r"}"  # TODO: Change to nsmap
 
+        if mode == 'r':
         _validate_acbf(self._root.getroottree(), self._namespace)
 
         self.styles: Styles = Styles(self, str(contents))
@@ -325,8 +355,241 @@ class ACBFBook:
         str
             ACBF book's XML data.
         """
-        return etree.tostring(self._root.getroottree(), encoding="utf-8", xml_declaration=True,
-                              pretty_print=True).decode("utf-8")
+        if self.mode == 'r':
+            raise UnsupportedOperation("File is not writeable.")
+
+        ns = self._namespace
+        root = get_root_template({None: re.sub(r'[{}]', '', ns)})
+        meta = root.find("meta-data")
+        body = root.find("body")
+
+        #region Level 1
+        if len(self.data) > 0:
+            etree.SubElement(root, "data")
+        if len(self.references) > 0:
+            etree.SubElement(root, "references")
+
+        # Add styles
+        for st in self.styles.list_styles():
+            if st == '_':
+                style = etree.Element("style")
+                root.find("meta-data").addprevious(style)
+                if self.styles.types['_'] is not None:
+                    style.set("type", self.styles.types['_'])
+            else:
+                sub = f'type="{self.styles.types[st]}" ' if self.styles.types[st] is not None else ''
+                style = etree.ProcessingInstruction("xml-stylesheet", f'{sub}href="{st}"')
+                root.addprevious(style)
+
+        #endregion
+
+        #region Book Info
+        b_info = meta.find("book-info")
+
+        def add_authors(section, au_list):
+            for author in au_list:
+                au = etree.SubElement(section, "author")
+                props = {x.replace('_', '-'): getattr(author, x)
+                         for x in ("first_name", "last_name", "nickname")
+                         if getattr(author, x) is not None}
+                props.update({x.replace('_', '-'): getattr(author, x)
+                              for x in ("middle_name", "home_page", "email")
+                              if getattr(author, x) is not None}
+                             )
+
+                if author.activity is not None:
+                    au.set("activity", author.activity.name)
+                if author.lang is not None:
+                    au.set("lang", author.lang)
+
+                for k, v in props.items():
+                    pr = etree.SubElement(au, k)
+                    pr.text = str(v)
+
+        # Authors
+        add_authors(b_info, self.book_info.authors)
+
+        # Titles
+        for lang, title in self.book_info.book_title.items():
+            ti = etree.SubElement(b_info, "book-title")
+            if lang != '_':
+                ti.set("lang", lang)
+            ti.text = title
+
+        # Genres
+        for genre in self.book_info.genres.values():
+            gn = etree.SubElement(b_info, "genre")
+            gn.text = genre.genre.name
+            if genre.match is not None:
+                gn.set("match", genre.match)
+
+        # Annotations
+        for lang, annotation in self.book_info.annotations.items():
+            an = etree.SubElement(b_info, "annotation")
+            if lang != '_':
+                an.set("lang", lang)
+            for para in annotation.splitlines():
+                p = etree.SubElement(an, 'p')
+                p.text = para
+
+        # Cover Page (Filled in body section)
+        etree.SubElement(b_info, "coverpage")
+
+        # --- Optional ---
+        # Language Layers
+        ll = etree.SubElement(b_info, "languages")
+        for layer in self.book_info.languages:
+            tl = etree.SubElement(ll, "text-layer", lang=layer.lang, show=layer.show)
+
+        # Characters
+        ch = etree.SubElement(b_info, "characters")
+        for name in self.book_info.characters:
+            nm = etree.SubElement(ch, "name")
+            nm.text = name
+
+        # Keywords
+        for lang, kwords in self.book_info.keywords.items():
+            kw = etree.SubElement(b_info, "keywords")
+            if lang != '_':
+                kw.set("lang", lang)
+            kw.text = ", ".join(kwords)
+
+        # Series
+        for series in self.book_info.series.values():
+            seq = etree.SubElement(b_info, "sequence", title=series.title)
+            seq.text = series.sequence
+            if series.volume is not None:
+                seq.set("volume", series.volume)
+
+        # Content Rating
+        for type, rating in self.book_info.content_rating.items():
+            cr = etree.SubElement(b_info, "content-rating")
+            cr.text = rating
+            if type != '_':
+                cr.set("type", type)
+
+        # Database Reference
+        for dbref in self.book_info.database_ref:
+            db = etree.SubElement(b_info, "databaseref", dbname=dbref.dbname)
+            db.text = dbref.reference
+            if dbref.type is not None:
+                db.set(dbref.type)
+
+        #endregion
+
+        #region Publisher Info
+        p_info = meta.find("publish-info")
+
+        p_info.find("publisher").text = self.publisher_info.publisher
+
+        p_info.find("publish-date").text = self.publisher_info.publish_date
+        if self.publisher_info.publish_date_value is not None:
+            p_info.find("publish-date").set("value", self.publisher_info.publish_date_value.isoformat())
+
+        city = etree.SubElement(p_info, "city")
+        city.text = self.publisher_info.publish_city
+
+        isbn = etree.SubElement(p_info, "isbn")
+        isbn.text = self.publisher_info.isbn
+
+        license = etree.SubElement(p_info, "license")
+        license.text = self.publisher_info.license
+
+        #endregion
+
+        #region Document Info
+        d_info = meta.find("document-info")
+
+        add_authors(d_info, self.document_info.authors)
+
+        d_info.find("creation-date").text = self.document_info.creation_date
+        if self.document_info.creation_date_value is not None:
+            d_info.find("creation-date").set("value", self.document_info.creation_date_value.isoformat())
+
+        source = etree.SubElement(d_info, "source")
+        source.text = self.document_info.source
+
+        id = etree.SubElement(d_info, "id")
+        id.text = self.document_info.document_id
+
+        version = etree.SubElement(d_info, "version")
+        version.text = self.document_info.document_version
+
+        hst = etree.SubElement(d_info, "history")
+        for entry in self.document_info.document_history:
+            p = etree.SubElement(hst, 'p')
+            p.text = entry
+
+        #endregion
+
+        #region Body
+        if self.body.bgcolor is not None:
+            body.set("bgcolor", self.body.bgcolor)
+
+        for page in self.body.pages.copy().insert(0, self.book_info.cover_page):
+            pg = None
+            if page.is_coverpage:
+                pg = b_info.find("coverpage")
+            else:
+                pg = etree.SubElement(body, "page")
+                if page.bgcolor is not None:
+                    pg.set("bgcolor", page.bgcolor)
+                if page.transition is not None:
+                    pg.set("transition", page.transition)
+
+                for lang, title in page.title.items():
+                    ti = etree.SubElement(pg, "title")
+                    if lang != '_':
+                        ti.set("lang", lang)
+                    ti.text = title
+
+            etree.SubElement(pg, "image", href=page.image_ref)
+
+            for tx_layer in page.text_layers.values():
+                tl = etree.SubElement(pg, "text-layer", lang=tx_layer.lang)
+                if tx_layer.bgcolor is not None:
+                    tl.set("bgcolor", tx_layer.bgcolor)
+
+                for tx_area in tx_layer.text_areas:
+                    ta = etree.SubElement(tl, "text-area", points=helpers.vec_to_pts(tx_area.points))
+                    ta.extend(helpers.para_to_tree(tx_area.paragraph, ns))
+
+                    for i in ("bgcolor", "rotation"):
+                        if getattr(tx_area, i) is not None:
+                            ta.set(i, str(getattr(tx_area, i)))
+
+                    for i in ("inverted", "transparent"):
+                        if getattr(tx_area, i) is not None:
+                            ta.set(i, str(getattr(tx_area, i)).lower())
+
+                    if tx_area.type is not None:
+                        ta.set("type", tx_area.type.name)
+
+            for frame in page.frames:
+                fr = etree.SubElement(pg, "frame", points=helpers.vec_to_pts(frame.points))
+                if frame.bgcolor is not None:
+                    fr.set("bgcolor", frame.bgcolor)
+
+            for jump in page.jumps:
+                jp = etree.SubElement(pg, "jump", page=jump.page, points=helpers.vec_to_pts(jump.points))
+
+        #endregion
+
+        #region Data
+
+        #endregion
+
+        #region References
+
+        #endregion
+
+        _validate_acbf(root.getroottree(), self._namespace)
+
+        return etree.tostring(root.getroottree(),
+                              encoding="utf-8",
+                              xml_declaration=True,
+                              pretty_print=True
+                              ).decode("utf-8")
 
     def save(self, file: Union[str, Path, IO, None] = None, overwrite: bool = False):
         """Save to file.
@@ -342,7 +605,7 @@ class ACBFBook:
         if self.mode == 'r':
             raise UnsupportedOperation("File is not writeable.")
 
-        _validate_acbf(self._root.getroottree(), self._namespace)
+        xml_data = self.get_acbf_xml()
 
         if isinstance(file, str):
             file = Path(file)
@@ -360,13 +623,13 @@ class ACBFBook:
         if self.archive is None:
             if isinstance(file, Path):
                 with open(str(file), 'w') as book:
-                    book.write(self.get_acbf_xml())
+                    book.write(xml_data)
             else:
-                file.write(self.get_acbf_xml())
+                file.write(xml_data)
         else:
             acbf_path = Path(tempfile.gettempdir()) / self.archive._get_acbf_file()
             with open(acbf_path, 'w') as xml:
-                xml.write(self.get_acbf_xml())
+                xml.write(xml_data)
             self.archive.write(acbf_path)
             self.archive.save(file)
             os.remove(acbf_path)
