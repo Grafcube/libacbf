@@ -1,11 +1,18 @@
 Welcome to libacbf's documentation!
 ===================================
 
-.. toctree::
-   :maxdepth: 3
-   :caption: Contents:
+This is a Python library to read and edit ACBF formatted comic book files and archives.
 
-   libacbf
+See `ACBF Specifications <https://acbf.fandom.com/wiki/Advanced_Comic_Book_Format_Wiki>`__
+for information on the XML schema.
+
+.. toctree::
+    :maxdepth: 2
+    :caption: Contents:
+
+    install
+    tutorial
+    libacbf
 
 Indices and tables
 ==================
