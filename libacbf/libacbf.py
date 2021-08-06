@@ -1118,89 +1118,37 @@ class ACBFBody:
     """
 
     def __init__(self, book: ACBFBook):
-        self.book = book
-
-        self._ns = book._namespace
-        self._body = book._root.find(f"{self._ns}body")
+        self._book = book
+        nsmap = book._nsmap
+        body = book._root.find("body", namespaces=nsmap)
 
         self.pages: List[Page] = []
-        self.sync_pages()
 
         # Optional
         self.bgcolor: Optional[str] = None
-        if "bgcolor" in self._body.keys():
-            self.bgcolor = self._body.attrib["bgcolor"]
 
-    def sync_pages(self):
-        self.pages.clear()
-        for pg in self._body.findall(f"{self._ns}page"):
-            self.pages.append(Page(pg, self.book))
+        # Background Colour
+        if "bgcolor" in body.keys():
+            self.bgcolor = body.attrib["bgcolor"]
+
+        # Pages
+        for pg in body.findall("page", namespaces=nsmap):
+            page = Page(pg, book)
+
+            self.pages.append(page)
 
     @helpers.check_book
-    def insert_new_page(self, index: int, image_ref: str):
-        """Insert a new page at an index of the book.
+    def add_page(self, image_ref: str) -> Page:
+        """
 
         Parameters
         ----------
-        index : int
-            Index of the page.
+        image_ref
 
-        image_ref : str
-            The image that the page shows. See :attr:`Page.image_ref <libacbf.body.Page.image_ref>` for information
-            on how to format it.
+        Returns
+        -------
+        Page
         """
-        pg = etree.Element(f"{self._ns}page")
-        self._body.insert(index, pg)
-        etree.SubElement(pg, f"{self._ns}image", {"href": image_ref})
-        self.pages.insert(index, Page(pg, self.book))
-
-    @helpers.check_book
-    def remove_page(self, index: int):
-        """Removes the page at index.
-
-        Parameters
-        ----------
-        index : int
-            Index of page to remove.
-        """
-        pg = self.pages.pop(index)
-        pg._page.clear()
-        self._body.remove(pg._page)
-
-    @helpers.check_book
-    def reorder_page(self, src_index: int, dest_index: int):
-        """Move page in book.
-
-        Parameters
-        ----------
-        src_index : int
-            Index of page to move.
-
-        dest_index : int
-            Index to move page to.
-        """
-        pg = self.pages.pop(src_index)
-        self._body.remove(pg._page)
-        self._body.insert(dest_index, pg._page)
-        self.pages.insert(dest_index, pg)
-
-    # --- Optional ---
-    @helpers.check_book
-    def set_bgcolor(self, bg: Optional[str]):
-        """Set background colour of body. Must be a hex colour code starting with ``#``. Value can be removed by passing
-        ``None``.
-
-        Parameters
-        ----------
-        bg : str | None
-            Background colour of body.
-        """
-        if bg is not None:
-            self._body.set("bgcolor", bg)
-        elif "bgcolor" in self._body.attrib:
-            self._body.attrib.pop("bgcolor")
-        self.bgcolor = bg
-
 
 class ACBFData:
     """Get any binary data embedded in the ACBF file or write data to archive or embed data in ACBF.
@@ -1231,7 +1179,7 @@ class ACBFData:
     """
 
     def __init__(self, book: ACBFBook):
-        self._ns = book._namespace
+        self._ns = book._nsmap
         self.book: ACBFBook = book
         self.files: Dict[str, Optional[BookData]] = {}
         self.sync_data()
@@ -1399,11 +1347,11 @@ class Styles:
 
     def sync_styles(self):
         self.styles.clear()
-        style_refs = [x for x in self.book._root.xpath("//processing-instruction()") if x.target == "xml-stylesheet"]
+        style_refs = self.book._root.xpath("//processing-instruction('xml-stylesheet')")
         for i in style_refs:
             self.styles[i.attrib["href"]] = None
             self.types[i.attrib["href"]] = i.attrib["type"] if "type" in i.attrib.keys() else None
-        embedded = self.book._root.find(f"{self.book._namespace}style")
+        embedded = self.book._root.find(f"{self.book._nsmap}style")
         if embedded is not None:
             self.styles['_'] = None
             self.types['_'] = embedded.attrib["type"] if "type" in embedded.keys() else None
@@ -1431,9 +1379,9 @@ class Styles:
             style_name = stylesheet_ref.name
 
         if style_name == '_':
-            style_element = self.book._root.find(f"{self.book._namespace}style")
+            style_element = self.book._root.find(f"{self.book._nsmap}style")
             if style_element is None:
-                style_element = etree.SubElement(self.book._root, f"{self.book._namespace}style", {"type": type})
+                style_element = etree.SubElement(self.book._root, f"{self.book._nsmap}style", {"type": type})
             with open(stylesheet_ref, 'r') as css:
                 style_element.text = css.read().strip()
             self.styles['_'] = style_element.text
@@ -1460,7 +1408,7 @@ class Styles:
             Stylesheet to remove. If it is ``'_'``, remove embedded stylesheet.
         """
         if style_name == '_':
-            st_element = self.book._root.find(f"{self.book._namespace}style")
+            st_element = self.book._root.find(f"{self.book._nsmap}style")
             if st_element is not None:
                 st_element.clear()
                 self.book._root.remove(st_element)
@@ -1484,7 +1432,7 @@ class Styles:
             if self.styles[key] is not None:
                 return self.styles[key]
             elif key == '_':
-                self.styles['_'] = self.book._root.find(f"{self.book._namespace}style").text.strip()
+                self.styles['_'] = self.book._root.find(f"{self.book._nsmap}style").text.strip()
             else:
                 if self.book.archive is None:
                     st_path = self.book.book_path.parent / Path(key)

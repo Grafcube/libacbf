@@ -12,11 +12,9 @@ from lxml import etree
 if TYPE_CHECKING:
     from libacbf import ACBFBook
 import libacbf.helpers as helpers
-from libacbf.constants import ImageRefType, PageTransitions, TextAreas
+import libacbf.constants as consts
 from libacbf.archivereader import ArchiveReader
 from libacbf.bookdata import BookData
-
-url_pattern = re.compile(r'((ftp|http|https)://)(\w+:?\w*@)?(\S+)(:[0-9]+)?(/|/([\w#!:.?+=&%@\-/]))?', re.IGNORECASE)
 
 
 class Page:
@@ -55,50 +53,114 @@ class Page:
     """
 
     def __init__(self, page, book: ACBFBook, coverpage: bool = False):
-        self.book = book
-        self._ns = book._namespace
+        self._book = book
+        self._nsmap = book._nsmap
         self._page = page
 
         self._arch_path = None
         self._file_path = None
         self._file_id = None
 
+        self._image_ref = ''
         self._image = None
-        self._text_layers = {}
-        self._frames = []
-        self._jumps = []
+
+        self.text_layers: Dict[str, TextLayer] = {}
+        self.frames = []
+        self.jumps = []
 
         self.image_ref: str = ''
 
-        self.ref_type: ImageRefType = None
         self.is_coverpage: bool = coverpage
-
-        # Sub
-        self.sync_image_ref()
+        self.ref_type: consts.ImageRefType = None
 
         # --- Optional ---
         if not coverpage:
             self.bgcolor: Optional[str] = None
+            self.transition: Optional[consts.PageTransitions] = None
+            self.title: Dict[str, str] = {}
+
+            # BGColor
             if "bgcolor" in page.keys():
                 self.bgcolor = page.attrib["bgcolor"]
 
-            self.transition: Optional[PageTransitions] = None
+            # Transition
             if "transition" in page.keys():
-                self.transition = PageTransitions[page.attrib["transition"]]
+                self.transition = consts.PageTransitions[page.attrib["transition"]]
 
-            self.title: Dict[str, str] = {}
-            title_items = page.findall(f"{self._ns}title")
+            # Title
+            title_items = page.findall(f"{self._nsmap}title")
             for t in title_items:
+                lang = '_'
                 if "lang" in t.keys():
-                    self.title[langcodes.standardize_tag(t.attrib["lang"])] = t.text
-                else:
-                    self.title['_'] = t.text
+                    lang = langcodes.standardize_tag(t.attrib["lang"])
+                self.title[lang] = t.text
+
+        # Text Layers
+        for lr in page.findall("text-layer", namespaces=self._nsmap):
+            lang = langcodes.standardize_tag(lr.attrib["lang"])
+            self.text_layers[lang] = TextLayer(lr, self._nsmap, self.book)
+
+        # Frames
+        for fr in page.findall("frame", namespaces=self._nsmap):
+            frame = Frame(helpers.pts_to_vec(fr.attrib["points"]))
+            if "bgcolor" in fr.keys():
+                frame.bgcolor = fr.attrib["bgcolor"]
+            self.frames.append(frame)
+
+        # Jumps
+        for jp in page.findall("jump", namespaces=self._nsmap):
+            jump = Jump(helpers.pts_to_vec(jp.attrib["points"]), int(jp.attrib["page"]))
+            self.jumps.append(jump)
 
     def __repr__(self):
         if self.is_coverpage:
-            return f'<libacbf.BookInfo.coverpage href="{self.image_ref}">'
+            return f'<libacbf.BookInfo.coverpage as `Page` href="{self.image_ref}">'
         else:
             return f'<libacbf.body.Page href="{self.image_ref}">'
+
+    @property
+    def image_ref(self) -> str:
+        return self._image_ref
+
+    @image_ref.setter
+    def image_ref(self, ref: str):
+        self._image = None
+
+        if ref.startswith("#"):
+            self.ref_type = consts.ImageRefType.Embedded
+            self._file_id = re.sub("#", '', ref)
+
+        elif ref.startswith("zip:"):
+            self.ref_type = consts.ImageRefType.Archived
+            ref_path = re.sub("zip:", '', ref)
+            self._arch_path = Path(re.split("!", ref_path)[0])
+            self._file_path = Path(re.split("!", ref_path)[1])
+            self._file_id = self._file_path.name
+            if not os.path.isabs(self._arch_path):
+                self._arch_path = Path(os.path.abspath(str(self._arch_path)))
+
+        elif re.fullmatch(helpers.url_pattern, ref):
+            self.ref_type = consts.ImageRefType.URL
+            self._file_id = re.split("/", ref)[-1]
+
+        else:
+            if ref.startswith("file://"):
+                self._file_path = Path(os.path.abspath(ref))
+            else:
+                self._file_path = Path(ref)
+
+            if os.path.isabs(ref):
+                self.ref_type = consts.ImageRefType.Local
+            else:
+                if self._book.archive is not None:
+                    self.ref_type = consts.ImageRefType.SelfArchived
+                else:
+                    self.ref_type = consts.ImageRefType.Local
+                    self._file_path = self._book.book_path.parent / self._file_path
+
+            self._file_id = self._file_path.name
+
+        self._image_ref: str = ref
 
     @property
     def image(self) -> BookData:
@@ -110,22 +172,22 @@ class Page:
             A :class:`BookData <libacbf.bookdata.BookData>` object.
         """
         if self._image is None:
-            if self.ref_type == ImageRefType.Embedded:
-                self._image = self.book.data[self._file_id]
+            if self.ref_type == consts.ImageRefType.Embedded:
+                self._image = self._book.data[self._file_id]
                 return self._image
 
-            elif self.ref_type == ImageRefType.Archived:
+            elif self.ref_type == consts.ImageRefType.Archived:
                 with ArchiveReader(self._arch_path) as ext_archive:
                     contents = ext_archive.read(str(self._file_path))
 
-            elif self.ref_type == ImageRefType.URL:
+            elif self.ref_type == consts.ImageRefType.URL:
                 response = requests.get(self.image_ref)
                 contents = response.content
 
             else:
-                if self.ref_type == ImageRefType.SelfArchived:
-                    contents = self.book.archive.read(str(self._file_path))
-                elif self.ref_type == ImageRefType.Local:
+                if self.ref_type == consts.ImageRefType.SelfArchived:
+                    contents = self._book.archive.read(str(self._file_path))
+                elif self.ref_type == consts.ImageRefType.Local:
                     with open(str(self._file_path), "rb") as image:
                         contents = image.read()
 
@@ -134,143 +196,8 @@ class Page:
 
         return self._image
 
-    @property
-    def text_layers(self) -> Dict[str, TextLayer]:
-        """Gets the textlayers for this page.
-
-        See Also
-        --------
-        `Text Layers specifications <https://acbf.fandom.com/wiki/Body_Section_Definition#Text-layer>`_.
-
-        Returns
-        -------
-        Dict[str, TextLayer]
-            A dictionary with keys being a standard language object and values being :class:`TextLayer` objects.
-        """
-        if len(self._text_layers) == 0:
-            item = self._page
-            textlayer_items = item.findall(f"{self._ns}text-layer")
-            for lr in textlayer_items:
-                new_lr = TextLayer(lr, self._ns, self.book)
-                self._text_layers[new_lr.lang] = new_lr
-        return self._text_layers
-
-    @property
-    def frames(self) -> List[Frame]:
-        """Gets the frames on this page.
-
-        See Also
-        --------
-        `Frame specifications <https://acbf.fandom.com/wiki/Body_Section_Definition#Frame>`_.
-
-        Returns
-        -------
-        List[Frame]
-            A list of :class:`Frame` objects.
-        """
-        if len(self._frames) == 0:
-            item = self._page
-            frame_items = item.findall(f"{self._ns}frame")
-            for fr in frame_items:
-                frame = Frame(helpers.pts_to_vec(fr.attrib["points"]), self.book)
-                frame._element = fr
-                if "bgcolor" in fr.keys():
-                    frame.bgcolor = fr.attrib["bgcolor"]
-                self._frames.append(frame)
-        return self._frames
-
-    @property
-    def jumps(self) -> List[Jump]:
-        """Gets the jumps on this page.
-
-        See Also
-        --------
-        `Jump specifications <https://acbf.fandom.com/wiki/Body_Section_Definition#Jump>`_.
-
-        Returns
-        -------
-        List[Jump]
-            A list of :class:`Jump` objects.
-        """
-        if len(self._jumps) == 0:
-            item = self._page
-            jump_items = item.findall(f"{self._ns}jump")
-            for jp in jump_items:
-                jump = Jump(helpers.pts_to_vec(jp.attrib["points"]), int(jp.attrib["page"]), self.book)
-                jump._element = jp
-                self._jumps.append(jump)
-        return self._jumps
-
-    def sync_image_ref(self):
-        self._image = None
-        self.image_ref: str = self._page.find(f"{self._ns}image").attrib["href"]
-
-        if self.image_ref.startswith("#"):
-            self.ref_type = ImageRefType.Embedded
-            self._file_id = re.sub("#", '', self.image_ref)
-
-        elif self.image_ref.startswith("zip:"):
-            self.ref_type = ImageRefType.Archived
-            ref_path = re.sub("zip:", '', self.image_ref)
-            self._arch_path = Path(re.split("!", ref_path)[0])
-            self._file_path = Path(re.split("!", ref_path)[1])
-            self._file_id = self._file_path.name
-            if not os.path.isabs(self._arch_path):
-                self._arch_path = Path(os.path.abspath(str(self._arch_path)))
-
-        elif re.fullmatch(url_pattern, self.image_ref):
-            self.ref_type = ImageRefType.URL
-            self._file_id = re.split("/", self.image_ref)[-1]
-
-        else:
-            if self.image_ref.startswith("file://"):
-                self._file_path = Path(os.path.abspath(self.image_ref))
-            else:
-                self._file_path = Path(self.image_ref)
-
-            if os.path.isabs(self.image_ref):
-                self.ref_type = ImageRefType.Local
-            else:
-                if self.book.archive is not None:
-                    self.ref_type = ImageRefType.SelfArchived
-                else:
-                    self.ref_type = ImageRefType.Local
-                    self._file_path = self.book.book_path.parent / self._file_path
-
-            self._file_id = self._file_path.name
-
-    # Editor
     @helpers.check_book
-    def set_image_ref(self, img_ref: str):
-        """Set the image reference.
-
-        Parameters
-        ----------
-        img_ref
-        """
-        self._page.find(f"{self._ns}image").set("href", img_ref)
-        self.sync_image_ref()
-
-    # --- Optional ---
-    @helpers.check_book
-    def set_bgcolor(self, bg: Optional[str]):
-        """Set bgcolor.
-
-        Parameters
-        ----------
-        bg
-        """
-        if self.is_coverpage:
-            raise AttributeError("`coverpage` has no attribute `bgcolor`.")
-
-        if bg is not None:
-            self._page.set("bgcolor", bg)
-        elif "bgcolor" in self._page.attrib:
-            self._page.attrib.pop("bgcolor")
-        self.bgcolor = bg
-
-    @helpers.check_book
-    def set_transition(self, tr: Optional[str]):
+    def set_transition(self, tr: str):
         """Set transition.
 
         Parameters
@@ -280,53 +207,7 @@ class Page:
         if self.is_coverpage:
             raise AttributeError("`coverpage` has no attribute `transition`.")
 
-        if tr is not None:
-            tr = PageTransitions[tr]
-            self._page.set("transition", tr.name)
-            self.transition = tr
-        elif "transition" in self._page.attrib:
-            self._page.attrib.pop("transition")
-            self.transition = None
-
-    @helpers.check_book
-    def set_title(self, tl: Optional[str], lang: str = '_'):
-        """Set title.
-
-        Parameters
-        ----------
-        tl
-
-        lang
-        """
-        if self.is_coverpage:
-            raise AttributeError("`coverpage` has no attribute `title`.")
-
-        lang = langcodes.standardize_tag(lang) if lang != '_' else lang
-        tl_items = self._page.findall(f"{self._ns}title")
-
-        tl_element = None
-        if lang == '_':
-            for i in tl_items:
-                if "lang" not in i.keys():
-                    tl_element = i
-                    break
-        else:
-            for i in tl_items:
-                if "lang" in i.attrib and langcodes.standardize_tag(i.attrib["lang"]) == lang:
-                    tl_element = i
-                    break
-
-        if tl is not None:
-            if tl_element is None:
-                tl_element = etree.SubElement(self._page, f"{self._ns}title")
-                if lang != '_':
-                    tl_element.set("lang", lang)
-            tl_element.text = tl
-            self.title[lang] = tl
-        elif tl_element is not None:
-            tl_element.clear()
-            self._page.remove(tl_element)
-            self.title[lang] = tl
+        self.transition = consts.PageTransitions[tr]
 
     # Text Layers
     @helpers.check_book
@@ -428,8 +309,6 @@ class TextLayer:
         self.book = book
         self._layer = layer
         self._ns = ns
-
-        self.lang: str = langcodes.standardize_tag(layer.attrib["lang"])
 
         self.bgcolor: Optional[str] = None
         if "bgcolor" in layer.keys():
@@ -551,9 +430,9 @@ class TextArea:
             else:
                 raise ValueError("Rotation must be an integer from 0 to 360.")
 
-        self.type: Optional[TextAreas] = None
+        self.type: Optional[consts.TextAreas] = None
         if "type" in area.keys():
-            self.type = TextAreas[area.attrib["type"]]
+            self.type = consts.TextAreas[area.attrib["type"]]
 
         self.inverted: Optional[bool] = None
         if "inverted" in area.keys():
@@ -622,7 +501,7 @@ class TextArea:
                 self._area.attrib.pop("type")
             self.type = None
         else:
-            ty = TextAreas[ty]
+            ty = consts.TextAreas[ty]
             self._area.set("type", ty.name)
             self.type = ty
 

@@ -17,6 +17,8 @@ namespaces = {
 
 Vec2 = namedtuple("Vector2", "x y")  # Not a real vector. Just a named tuple.
 
+url_pattern = re.compile(r'((ftp|http|https)://)(\w+:?\w*@)?(\S+)(:[0-9]+)?(/|/([\w#!:.?+=&%@\-/]))?', re.IGNORECASE)
+
 
 def check_book(func):
     """Decorator that checks ``book`` on the class method.
