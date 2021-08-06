@@ -3,8 +3,12 @@ import re
 import warnings
 import tempfile
 import magic
+import distutils.util
+import dateutil.parser
+import langcodes
 from io import TextIOBase, UnsupportedOperation
 from pathlib import Path
+from datetime import date
 from typing import List, Dict, Optional, Set, Union, Literal, IO
 from base64 import b64encode
 from lxml import etree
@@ -13,8 +17,8 @@ from py7zr import SevenZipFile
 import tarfile as tar
 
 import libacbf.helpers as helpers
-from libacbf.constants import ArchiveTypes
-from libacbf.metadata import BookInfo, PublishInfo, DocumentInfo
+import libacbf.constants as consts
+import libacbf.metadata as meta
 from libacbf.body import Page
 from libacbf.bookdata import BookData
 from libacbf.archivereader import ArchiveReader
@@ -22,7 +26,7 @@ from libacbf.exceptions import InvalidBook, EditRARArchiveError
 
 
 def _validate_acbf(tree, ns: str):
-    version = re.split(r'/', re.sub(r'[{}]', '', ns))[-1]
+    version = re.split(r'/', ns)[-1]
     xsd_path = f"libacbf/schema/acbf-{version}.xsd"
 
     with open(xsd_path, encoding="utf-8") as file:
@@ -41,6 +45,59 @@ def _validate_acbf(tree, ns: str):
             warnings.warn(str(err), UserWarning)
     else:
         acbf_schema.assertValid(tree)
+
+
+def _update_authors(author_items, nsmap) -> List[meta.Author]:
+    """Takes a list of etree elements and returns a list of Author objects.
+    """
+    authors = []
+
+    for au in author_items:
+        first_name = None
+        last_name = None
+        nickname = None
+        if au.find("first-name", namespaces=nsmap) is not None:
+            first_name = au.find("first-name", namespaces=nsmap).text
+        if au.find("last-name", namespaces=nsmap) is not None:
+            last_name = au.find("last-name", namespaces=nsmap).text
+        if au.find("nickname", namespaces=nsmap) is not None:
+            nickname = au.find("nickname", namespaces=nsmap).text
+
+        author: meta.Author = meta.Author(first_name, last_name, nickname)
+
+        if "activity" in au.keys():
+            author.activity = au.attrib["activity"]
+        if "lang" in au.keys():
+            author.lang = au.attrib["lang"]
+
+        # Optional
+        if au.find("middle-name", namespaces=nsmap) is not None:
+            author.middle_name = au.find("middle-name", namespaces=nsmap).text
+        if au.find("home-page", namespaces=nsmap) is not None:
+            author.home_page = au.find("home-page", namespaces=nsmap).text
+        if au.find("email", namespaces=nsmap) is not None:
+            author.email = au.find("email", namespaces=nsmap).text
+
+        authors.append(author)
+
+    return authors
+
+
+def _edit_date(section, attr_s: str, attr_d: str, dt: Union[str, date], include_date: bool = True):
+    """Common function to edit a date property.
+    """
+    if isinstance(dt, str):
+        date_text = dt
+    else:
+        date_text = dt.isoformat()
+    setattr(section, attr_s, date_text)
+
+    date_val = None
+    if include_date:
+        date_val = dt
+        if isinstance(dt, str):
+            date_val = dateutil.parser.parse(dt, fuzzy=True).date()
+    setattr(section, attr_d, date_val)
 
 
 def get_root_template(nsmap: Dict):
@@ -222,28 +279,24 @@ class ACBFBook:
 
     def __init__(self, file: Union[str, Path, IO], mode: Literal['r', 'w', 'a', 'x'] = 'r',
                  archive_type: Optional[str] = "Zip"):
-        self.book_path: Path = None
-
-        self.archive: Optional[ArchiveReader] = None
-
-        self.mode: Literal['r', 'w', 'a', 'x'] = mode
-
-        self.is_open: bool = True
-
         self._source = file
+        self.book_path: Path = None
+        self.archive: Optional[ArchiveReader] = None
+        self.mode: Literal['r', 'w', 'a', 'x'] = mode
+        self.is_open: bool = True
 
         if isinstance(file, str):
             self.book_path = Path(file).resolve()
         if isinstance(file, Path):
             self.book_path = file.resolve()
 
-        archive_type = ArchiveTypes[archive_type] if archive_type is not None else None
+        archive_type = consts.ArchiveTypes[archive_type] if archive_type is not None else None
         is_text = archive_type is None
         if isinstance(file, TextIOBase):
             archive_type = None
             is_text = True
 
-        if archive_type == ArchiveTypes.Rar and mode != 'r':
+        if archive_type == consts.ArchiveTypes.Rar and mode != 'r':
             raise EditRARArchiveError
 
         arc_mode = mode
@@ -251,11 +304,11 @@ class ACBFBook:
         def create_file():
             if not is_text:
                 arc = None
-                if archive_type == ArchiveTypes.Zip:
+                if archive_type == consts.ArchiveTypes.Zip:
                     arc = ZipFile(file, 'w')
-                elif archive_type == ArchiveTypes.SevenZip:
+                elif archive_type == consts.ArchiveTypes.SevenZip:
                     arc = SevenZipFile(file, 'w')
-                elif archive_type == ArchiveTypes.Tar:
+                elif archive_type == consts.ArchiveTypes.Tar:
                     arc = tar.open(file, 'w')
 
                 name = self.book_path.stem + ".acbf" if self.book_path is not None else "book.acbf"
@@ -323,29 +376,27 @@ class ACBFBook:
             contents = contents.decode("utf-8")
 
         self._root = etree.fromstring(bytes(contents, "utf-8"))
-
-        self._namespace: str = r"{" + self._root.nsmap[None] + r"}"  # TODO: Change to nsmap
+        self._nsmap: str = self._root.nsmap
 
         if mode == 'r':
-            _validate_acbf(self._root.getroottree(), self._namespace)
+            _validate_acbf(self._root.getroottree(), self._nsmap[None])
 
         self.styles: Styles = Styles(self, str(contents))
-
-        self.book_info: BookInfo = BookInfo(
-            self._root.find(f"{self._namespace}meta-data/{self._namespace}book-info"), self)
-
-        self.publisher_info: PublishInfo = PublishInfo(
-            self._root.find(f"{self._namespace}meta-data/{self._namespace}publish-info"), self)
-
-        self.document_info: DocumentInfo = DocumentInfo(
-            self._root.find(f"{self._namespace}meta-data/{self._namespace}document-info"), self)
-
+        self.book_info: BookInfo = BookInfo(self)
+        self.publisher_info: PublishInfo = PublishInfo(self)
+        self.document_info: DocumentInfo = DocumentInfo(self)
         self.body: ACBFBody = ACBFBody(self)
-
         self.data: ACBFData = ACBFData(self)
-
         self.references: Dict[str, Dict[str, str]] = {}
-        self.sync_references()
+
+        # References
+        if self._root.find("references", namespaces=self._nsmap) is not None:
+            for ref in self._root.findall("references/reference", namespaces=self._nsmap):
+                pa = []
+                for p in ref.findall("p", namespaces=self._nsmap):
+                    text = re.sub(r'</?p[^>]*>', '', etree.tostring(p, encoding="utf-8").decode("utf-8").strip())
+                    pa.append(text)
+                self.references[ref.attrib["id"]] = {'_': '\n'.join(pa)}
 
     def get_acbf_xml(self) -> str:
         """Converts the XML tree to a string.
@@ -358,7 +409,7 @@ class ACBFBook:
         if self.mode == 'r':
             raise UnsupportedOperation("File is not writeable.")
 
-        ns = self._namespace
+        ns = self._nsmap
         root = get_root_template({None: re.sub(r'[{}]', '', ns)})
         meta = root.find("meta-data")
         body = root.find("body")
@@ -520,7 +571,7 @@ class ACBFBook:
         if self.body.bgcolor is not None:
             body.set("bgcolor", self.body.bgcolor)
 
-        for page in self.body.pages.copy().insert(0, self.book_info.cover_page):
+        for page in self.body.pages.copy().insert(0, self.book_info.coverpage):
             pg = None
             if page.is_coverpage:
                 pg = b_info.find("coverpage")
@@ -595,7 +646,7 @@ class ACBFBook:
 
         #endregion
 
-        _validate_acbf(root.getroottree(), self._namespace)
+        _validate_acbf(root.getroottree(), self._nsmap[None])
 
         return etree.tostring(root.getroottree(),
                               encoding="utf-8",
@@ -659,88 +710,6 @@ class ACBFBook:
         if self.archive is not None:
             self.archive.close()
 
-    def sync_references(self):
-        ns = self._namespace
-        ref_root = self._root.find(f"{ns}references")
-        self.references.clear()
-        if ref_root is not None:
-            reference_items = ref_root.findall(f"{ns}reference")
-            for ref in reference_items:
-                pa = []
-                for p in ref.findall(f"{ns}p"):
-                    text = re.sub(r'</?p[^>]*>', '', etree.tostring(p, encoding="utf-8").decode("utf-8").strip())
-                    pa.append(text)
-                self.references[ref.attrib["id"]] = {'_': '\n'.join(pa)}
-
-    def edit_reference(self, id: str, text: str):
-        """Edit the reference by id. Create it if it does not exist.
-
-        Parameters
-        ----------
-        id : str
-            Reference id. It is unique so be careful of overwriting.
-
-        text : str
-            Text of reference. Can be multiline. Does not use special formatting.
-        """
-        helpers.check_write(self)
-
-        ref_section = self._root.find(f"{self._namespace}references")
-        if ref_section is None:
-            ref_section = etree.Element(f"{self._namespace}references")
-            self._root.append(ref_section)
-
-        ref_items = ref_section.findall(f"{self._namespace}reference")
-
-        ref_element = None
-        for i in ref_items:
-            if i.attrib["id"] == id:
-                ref_element = i
-                break
-
-        if ref_element is None:
-            ref_element = etree.Element(f"{self._namespace}reference")
-            ref_section.append(ref_element)
-
-        ref_element.clear()
-        ref_element.set("id", id)
-
-        p_list = re.split(r'\n', text)
-        for ref in p_list:
-            p = f"<p>{ref}</p>"
-            p_element = etree.fromstring(bytes(p, encoding="utf-8"))
-            for i in list(p_element.iter()):
-                i.tag = self._namespace + i.tag
-            ref_element.append(p_element)
-
-        if id not in self.references:
-            self.references[id] = {'_': ''}
-        self.references[id]['_'] = text
-
-    def remove_reference(self, id: str):
-        """Remove a reference by unique id.
-
-        Parameters
-        ----------
-        id : str
-            Reference id.
-        """
-        helpers.check_write(self)
-
-        ref_section = self._root.find(f"{self._namespace}references")
-
-        if ref_section is not None:
-            for i in ref_section.findall(f"{self._namespace}reference"):
-                if i.attrib["id"] == id:
-                    i.clear()
-                    ref_section.remove(i)
-                    break
-
-            if len(ref_section.findall(f"{self._namespace}reference")) == 0:
-                ref_section.getparent().remove(ref_section)
-
-            self.references.pop(id)
-
     def __repr__(self):
         if self.is_open:
             return object.__repr__(self).replace("libacbf.libacbf.ACBFBook", "libacbf.ACBFBook")
@@ -752,6 +721,379 @@ class ACBFBook:
 
     def __exit__(self, exception_type, exception_value, traceback):
         self.close()
+
+
+class BookInfo:
+    """Metadata about the book itself.
+
+    See Also
+    --------
+    `Book-Info section <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#Book-info_section>`_.
+
+    Attributes
+    ----------
+    book : ACBFBook
+        Book that the metadata belongs to.
+
+    authors : List[Author]
+        A list of :class:`Author <libacbf.metadata.Author>` objects.
+
+    book_title : Dict[str, str]
+        A dictionary with standard language codes as keys and titles as values. Key is ``'_'`` if no language is
+        defined. ::
+
+            {
+                "_": "book title without language",
+                "en": "English title",
+                "en_GB": "English (UK) title",
+                "en_US": "English (US) title"
+            }
+
+    genres : Dict[str, Genre]
+        A dictionary with keys being a string representation of :class:`constants.Genres <libacbf.constants.Genres>`
+        Enum and values being :class:`Genre <libacbf.metadata.Genre>` objects.
+
+    annotations : Dict[str, str]
+        A short summary describing the book.
+
+        It is a dictionary with keys being standard language codes or ``'_'`` if no language is defined and values
+        being multiline strings.
+
+    coverpage : Page
+        It is the same as :class:`body.Page <libacbf.body.Page>` except it does not have
+        :attr:`body.Page.title <libacbf.body.Page.title>`, :attr:`body.Page.bgcolor <libacbf.body.Page.bgcolor>`
+        and :attr:`body.Page.transition <libacbf.body.Page.transition>`.
+
+    languages : List[LanguageLayer], optional
+        It represents all :class:`body.TextLayer <libacbf.body.TextLayer>` objects of the book.
+
+        A list of :class:`LanguageLayer <libacbf.metadata.LanguageLayer>` objects.
+
+    characters : List[str], optional
+        List of (main) characters that appear in the book.
+
+    keywords: Dict[str, Set[str]], optional
+        For use by search engines.
+
+        A dictionary with keys as standard language codes or ``'_'`` if no language is defined. Values are a set of
+        lowercase keywords.
+
+    series: Dict[str, Series], optional
+        Contains the sequence and number if particular comic book is part of a series.
+
+        A dictionary with keys as the title of the series and values as :class:`Series <libacbf.metadata.Series>`
+        objects.
+
+    content_rating: Dict[str, str], optional
+        Content rating of the book based on age appropriateness and trigger warnings.
+
+        It is a dictionary with the keys being the rating system or ``'_'`` if not defined and values being the
+        rating. ::
+
+            {
+                "_": "16+",
+                "Age Rating": "15+",
+                "DC Comics rating system": "T+",
+                "Marvel Comics rating system": "PARENTAL ADVISORY"
+            }
+
+    database_ref : List[DBRef], optional
+        References to a record in a comic book database (eg: GCD, MAL).
+
+        A list of :class:`DBRef <libacbf.metadata.DBRef>` objects.
+    """
+
+    def __init__(self, book: ACBFBook):
+        self._book = book
+        self._nsmap = book._nsmap
+        info = book._root.find("meta-data/book-info", namespaces=self._nsmap)
+
+        self.authors: List[meta.Author] = []
+        self.book_title: Dict[str, str] = {}
+        self.genres: Dict[consts.Genres, Optional[int]] = {}
+        self.annotations: Dict[str, str] = {}
+        self.coverpage: Page = None  # TODO: After updating page Page()
+
+        # --- Optional ---
+        self.languages: List[meta.LanguageLayer] = []
+        self.characters: List[str] = []
+        self.keywords: Dict[str, Set[str]] = {}
+        self.series: Dict[str, meta.Series] = {}
+        self.content_rating: Dict[str, str] = {}
+        self.database_ref: List[meta.DBRef] = []
+
+        #region Fill values
+        # Author
+        self.authors.extend(_update_authors(info.findall("author", namespaces=self._nsmap), self._nsmap))
+
+        # Titles
+        book_items = info.findall("book-title", namespaces=self._nsmap)
+        for title in book_items:
+            lang = '_'
+            if "lang" in title.keys():
+                lang = langcodes.standardize_tag(title.attrib["lang"])
+
+            self.book_title[lang] = title.text
+
+        # Genres
+        genre_items = info.findall("genre", namespaces=self._nsmap)
+        for genre in genre_items:
+            gn = consts.Genres[genre.text]
+            self.genres[gn] = None
+            if "match" in genre.keys():
+                self.genres[gn] = int(genre.attrib["match"])
+
+        # Annotations
+        annotation_items = info.findall("annotation", namespaces=self._nsmap)
+
+        for an in annotation_items:
+            p = []
+            for i in an.findall('p', namespaces=self._nsmap):
+                p.append(i.text)
+            p = '\n'.join(p)
+
+            lang = '_'
+            if "lang" in an.keys():
+                lang = langcodes.standardize_tag(an.attrib["lang"])
+            self.annotations[lang] = p
+
+        # Cover Page
+        self.coverpage = Page(self._book, True)
+
+        # --- Optional ---
+
+        # Languages
+        if info.find("languages", namespaces=self._nsmap) is not None:
+            text_layers = info.findall("languages/text-layer", namespaces=self._nsmap)
+            for layer in text_layers:
+                lang = langcodes.standardize_tag(layer.attrib["lang"])
+                show = bool(distutils.util.strtobool(layer.attrib["show"]))
+                self.languages.append(meta.LanguageLayer(lang, show))
+
+        # Characters
+        if info.find("characters", namespaces=self._nsmap) is not None:
+            for c in info.findall("characters/name", namespaces=self._nsmap):
+                self.characters.append(c.text)
+
+        # Keywords
+        keyword_items = info.findall("keywords", namespaces=self._nsmap)
+        for k in keyword_items:
+            if k.text is not None:
+                lang = '_'
+                if "lang" in k.keys():
+                    lang = langcodes.standardize_tag(k.attrib["lang"])
+                self.keywords[lang] = {x.lower() for x in re.split(", |,", k.text)}
+
+        # Series
+        series_items = info.findall("sequence", namespaces=self._nsmap)
+        for se in series_items:
+            ser = meta.Series(se.text)
+            if "volume" in se.keys():
+                ser.volume = se.attrib["volume"]
+            self.series[se.attrib["title"]] = ser
+
+        # Content Rating
+        rating_items = info.findall("content-rating", namespaces=self._nsmap)
+        for rt in rating_items:
+            type = '_'
+            if "type" in rt.keys():
+                type = rt.attrib["type"]
+            self.content_rating[type] = rt.text
+
+        # Database Reference
+        db_items = info.findall("databaseref", namespaces=self._nsmap)
+        for db in db_items:
+            dbref = meta.DBRef(db.attrib["dbname"], db.text)
+            if "type" in db.keys():
+                dbref.type = db.attrib["type"]
+            self.database_ref.append(dbref)
+
+        #endregion
+
+    @helpers.check_book
+    def add_genre(self, genre: str, match: Optional[int] = None):
+        """Edit a genre. Add it if it doesn't exist.
+
+        Parameters
+        ----------
+        genre : str
+            See :class:`constants.Genres <libacbf.constants.Genres>` enum for a list of possible values.
+
+        match : int | None, optional
+            Set the match percentage of the genre. If ``None``, removes the match value.
+        """
+        if match < 0 or match > 100:
+            raise ValueError("`match` must be an integer from 0 to 100.")
+        self.genres[consts.Genres[genre]] = match
+
+
+class PublishInfo:
+    """Metadata about the book's publisher.
+
+    See Also
+    --------
+    `Publish-Info section <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#Publish-Info_Section>`_.
+
+    Attributes
+    ----------
+    book : ACBFBook
+        Book that the metadata belongs to.
+
+    publisher : str
+        Name of the publisher.
+
+    publish_date : str
+        Date when the book was published as a human readable string.
+
+    publish_date_value : datetime.date, optional
+        Date when the book was published.
+
+    publish_city : str, optional
+        City where the book was published.
+
+    isbn : str, optional
+        International Standard Book Number.
+
+    license : str, optional
+        The license that the book is under.
+    """
+
+    def __init__(self, book: ACBFBook):
+        self._book = book
+        self._nsmap = book._nsmap
+        info = book._root.find("meta-data/publish-info", namespaces=self._nsmap)
+
+        self.publisher: str = info.find("publisher", namespaces=self._nsmap).text
+        self.publish_date: str = info.find("publish-date", namespaces=self._nsmap).text
+
+        # --- Optional ---
+        self.publish_date_value: Optional[date] = None
+        self.publish_city: Optional[str] = None
+        self.isbn: Optional[str] = None
+        self.license: Optional[str] = None
+
+        # Date
+        if "value" in info.find("publish-date", namespaces=self._nsmap).keys():
+            self.publish_date_value = date.fromisoformat(
+                info.find("publish-date", namespaces=self._nsmap).attrib["value"])
+
+        # City
+        if info.find("city", namespaces=self._nsmap) is not None:
+            self.publish_city = info.find("city", namespaces=self._nsmap).text
+
+        # ISBN
+        if info.find("isbn", namespaces=self._nsmap) is not None:
+            self.isbn = info.find("isbn", namespaces=self._nsmap).text
+
+        # License
+        if info.find("license", namespaces=self._nsmap) is not None:
+            self.license = info.find("license", namespaces=self._nsmap).text
+
+    @helpers.check_book
+    def set_date(self, date: Union[str, date], include_date: bool = True):
+        """Edit the date the book was published.
+
+        Parameters
+        ----------
+        date : str | datetime.date
+            Date to set to.
+
+        include_date : bool, default=True
+            Whether to also write another date attribute in YYYY-MM-DD format.
+        """
+        _edit_date(self, "publish_date", "publish_date_value", date, include_date)
+
+
+class DocumentInfo:
+    """Metadata about the ACBF file itself.
+
+    See Also
+    --------
+    `Document-Info section <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#Document-Info_Section>`_.
+
+    Attributes
+    ----------
+    book : ACBFBook
+        Book that the metadata belongs to.
+
+    authors : List[Author]
+        Authors of the ACBF file as a list of :class:`Author <libacbf.metadata.Author>` objects.
+
+    creation_date : str
+        Date when the ACBF file was created as a human readable string.
+
+    creation_date_value : datetime.date, optional
+        Date when the ACBF file was created.
+
+    source : str, optional
+        A multiline string with information if this book is a derivative of another work. May
+        contain URL and other source descriptions.
+
+    document_id : str, optional
+        Unique Document ID. Used to distinctly define ACBF files for cataloguing.
+
+    document_version : str, optional
+        Version of ACBF file.
+
+    document_history : List[str], optional
+        Change history of the ACBF file with change information in a list of strings.
+    """
+
+    def __init__(self, book: ACBFBook):
+        self._book = book
+        self._nsmap = book._nsmap
+        info = book._root.find("meta-data/document-info", namespaces=self._nsmap)
+
+        self.authors: List[meta.Author] = []
+        self.creation_date: str = info.find("creation-date", namespaces=self._nsmap).text
+
+        # --- Optional ---
+        self.creation_date_value: Optional[date] = None
+        self.source: Optional[str] = None
+        self.document_id: Optional[str] = None
+        self.document_version: Optional[str] = None
+        self.document_history: List[str] = []
+
+        # Author
+        self.authors.extend(_update_authors(info.findall("author", namespaces=self._nsmap), self._nsmap))
+
+        # Date
+        if "value" in info.find("creation-date", namespaces=self._nsmap).keys():
+            self.creation_date_value = date.fromisoformat(
+                info.find("creation-date", namespaces=self._nsmap).attrib["value"])
+
+        # Source
+        if info.find("source", namespaces=self._nsmap) is not None:
+            p = []
+            for line in info.findall("source/p", namespaces=self._nsmap):
+                p.append(line.text)
+            self.source = '\n'.join(p)
+
+        # ID
+        if info.find("id", namespaces=self._nsmap) is not None:
+            self.document_id = info.find("id", namespaces=self._nsmap).text
+
+        # Version
+        if info.find("version", namespaces=self._nsmap) is not None:
+            self.document_version = info.find("version", namespaces=self._nsmap).text
+
+        # History
+        for item in info.findall("history/p", namespaces=self._nsmap):
+            self.document_history.append(item.text)
+
+    @helpers.check_book
+    def set_date(self, date: Union[str, date], include_date: bool = True):
+        """Edit the date the ACBF file was created.
+
+        Parameters
+        ----------
+        date : str | datetime.date
+            Date to set to.
+
+        include_date : bool, default=True
+            Whether to also write another date attribute in YYYY-MM-DD format.
+        """
+        _edit_date(self, "creation_date", "creation_date_value", date, include_date)
 
 
 class ACBFBody:

@@ -24,7 +24,7 @@ def check_book(func):
 
     @wraps(func)
     def wrapper(self, *args, **kwargs):
-        check_write(self.book)
+        check_write(self._book)
         func(self, *args, **kwargs)
 
     return wrapper
