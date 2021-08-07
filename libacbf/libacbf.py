@@ -19,7 +19,7 @@ import tarfile as tar
 import libacbf.helpers as helpers
 import libacbf.constants as consts
 import libacbf.metadata as meta
-from libacbf.body import Page
+import libacbf.body as body
 from libacbf.bookdata import BookData
 from libacbf.archivereader import ArchiveReader
 from libacbf.exceptions import InvalidBook, EditRARArchiveError
@@ -98,6 +98,53 @@ def _edit_date(section, attr_s: str, attr_d: str, dt: Union[str, date], include_
         if isinstance(dt, str):
             date_val = dateutil.parser.parse(dt, fuzzy=True).date()
     setattr(section, attr_d, date_val)
+
+
+def _fill_page(pg, page, nsmap):
+    for fr in pg.findall("frame", namespaces=nsmap):
+        frame = body.Frame(helpers.pts_to_vec(fr.attrib["points"]))
+        if "bgcolor" in fr.keys():
+            frame.bgcolor = fr.attrib["bgcolor"]
+        page.frames.append(frame)
+
+    for jp in pg.findall("jump", namespaces=nsmap):
+        jump = body.Jump(helpers.pts_to_vec(jp.attrib["points"]), int(jp.attrib["page"]))
+        page.jumps.append(jump)
+
+    # Text Layers
+    for tl in pg.findall("text-layer", namespaces=nsmap):
+        lang = langcodes.standardize_tag(tl.attrib["lang"])
+        layer = body.TextLayer()
+        page.text_layers[lang] = layer
+
+        if "bgcolor" in tl.keys():
+            layer.bgcolor = tl.attrib["bgcolor"]
+
+        # Text Areas
+        for ta in tl.findall("text-area", namespaces=nsmap):
+            text = helpers.tree_to_para(ta, nsmap[None])
+            pts = helpers.pts_to_vec(ta.attrib["points"])
+            area = body.TextArea(text, pts)
+            layer.text_areas.append(area)
+
+            if "bgcolor" in ta.keys():
+                area.bgcolor = ta.attrib["bgcolor"]
+
+            if "text-rotation" in ta.keys():
+                rot = int(ta.attrib["text-rotation"])
+                if 0 <= rot <= 360:
+                    area.rotation = rot
+                else:
+                    raise ValueError("Rotation must be an integer from 0 to 360.")
+
+            if "type" in ta.keys():
+                area.type = consts.TextAreas[ta.attrib["type"]]
+
+            if "inverted" in ta.keys():
+                area.inverted = bool(distutils.util.strtobool(ta.attrib["inverted"]))
+
+            if "transparent" in ta.keys():
+                area.transparent = bool(distutils.util.strtobool(ta.attrib["transparent"]))
 
 
 def get_root_template(nsmap: Dict):
@@ -597,7 +644,7 @@ class ACBFBook:
 
                 for tx_area in tx_layer.text_areas:
                     ta = etree.SubElement(tl, "text-area", points=helpers.vec_to_pts(tx_area.points))
-                    ta.extend(helpers.para_to_tree(tx_area.paragraph, ns))
+                    ta.extend(helpers.para_to_tree(tx_area.text, ns))
 
                     for i in ("bgcolor", "rotation"):
                         if getattr(tx_area, i) is not None:
@@ -805,14 +852,14 @@ class BookInfo:
 
     def __init__(self, book: ACBFBook):
         self._book = book
-        self._nsmap = book._nsmap
-        info = book._root.find("meta-data/book-info", namespaces=self._nsmap)
+        nsmap = book._nsmap
+        info = book._root.find("meta-data/book-info", namespaces=nsmap)
 
         self.authors: List[meta.Author] = []
         self.book_title: Dict[str, str] = {}
         self.genres: Dict[consts.Genres, Optional[int]] = {}
         self.annotations: Dict[str, str] = {}
-        self.coverpage: Page = None  # TODO: After updating page Page()
+        self.coverpage: body.Page = None
 
         # --- Optional ---
         self.languages: List[meta.LanguageLayer] = []
@@ -823,12 +870,17 @@ class BookInfo:
         self.database_ref: List[meta.DBRef] = []
 
         #region Fill values
+
         # Author
-        self.authors.extend(_update_authors(info.findall("author", namespaces=self._nsmap), self._nsmap))
+        self.authors.extend(
+            _update_authors(
+                info.findall("author", namespaces=nsmap),
+                nsmap
+                )
+            )
 
         # Titles
-        book_items = info.findall("book-title", namespaces=self._nsmap)
-        for title in book_items:
+        for title in info.findall("book-title", namespaces=nsmap):
             lang = '_'
             if "lang" in title.keys():
                 lang = langcodes.standardize_tag(title.attrib["lang"])
@@ -836,19 +888,16 @@ class BookInfo:
             self.book_title[lang] = title.text
 
         # Genres
-        genre_items = info.findall("genre", namespaces=self._nsmap)
-        for genre in genre_items:
+        for genre in info.findall("genre", namespaces=nsmap):
             gn = consts.Genres[genre.text]
             self.genres[gn] = None
             if "match" in genre.keys():
                 self.genres[gn] = int(genre.attrib["match"])
 
         # Annotations
-        annotation_items = info.findall("annotation", namespaces=self._nsmap)
-
-        for an in annotation_items:
+        for an in info.findall("annotation", namespaces=nsmap):
             p = []
-            for i in an.findall('p', namespaces=self._nsmap):
+            for i in an.findall('p', namespaces=nsmap):
                 p.append(i.text)
             p = '\n'.join(p)
 
@@ -858,26 +907,28 @@ class BookInfo:
             self.annotations[lang] = p
 
         # Cover Page
-        self.coverpage = Page(self._book, True)
+        cpage = info.find("coverpage", namespaces=nsmap)
+        image_ref = cpage.find("image", namespaces=nsmap).attrib["href"]
+        self.coverpage = body.Page(image_ref, book, coverpage=True)
+        _fill_page(cpage, self.coverpage, nsmap)
 
         # --- Optional ---
 
         # Languages
-        if info.find("languages", namespaces=self._nsmap) is not None:
-            text_layers = info.findall("languages/text-layer", namespaces=self._nsmap)
+        if info.find("languages", namespaces=nsmap) is not None:
+            text_layers = info.findall("languages/text-layer", namespaces=nsmap)
             for layer in text_layers:
                 lang = langcodes.standardize_tag(layer.attrib["lang"])
                 show = bool(distutils.util.strtobool(layer.attrib["show"]))
                 self.languages.append(meta.LanguageLayer(lang, show))
 
         # Characters
-        if info.find("characters", namespaces=self._nsmap) is not None:
-            for c in info.findall("characters/name", namespaces=self._nsmap):
+        if info.find("characters", namespaces=nsmap) is not None:
+            for c in info.findall("characters/name", namespaces=nsmap):
                 self.characters.append(c.text)
 
         # Keywords
-        keyword_items = info.findall("keywords", namespaces=self._nsmap)
-        for k in keyword_items:
+        for k in info.findall("keywords", namespaces=nsmap):
             if k.text is not None:
                 lang = '_'
                 if "lang" in k.keys():
@@ -885,24 +936,21 @@ class BookInfo:
                 self.keywords[lang] = {x.lower() for x in re.split(", |,", k.text)}
 
         # Series
-        series_items = info.findall("sequence", namespaces=self._nsmap)
-        for se in series_items:
+        for se in info.findall("sequence", namespaces=nsmap):
             ser = meta.Series(se.text)
             if "volume" in se.keys():
                 ser.volume = se.attrib["volume"]
             self.series[se.attrib["title"]] = ser
 
         # Content Rating
-        rating_items = info.findall("content-rating", namespaces=self._nsmap)
-        for rt in rating_items:
+        for rt in info.findall("content-rating", namespaces=nsmap):
             type = '_'
             if "type" in rt.keys():
                 type = rt.attrib["type"]
             self.content_rating[type] = rt.text
 
         # Database Reference
-        db_items = info.findall("databaseref", namespaces=self._nsmap)
-        for db in db_items:
+        for db in info.findall("databaseref", namespaces=nsmap):
             dbref = meta.DBRef(db.attrib["dbname"], db.text)
             if "type" in db.keys():
                 dbref.type = db.attrib["type"]
@@ -1122,10 +1170,12 @@ class ACBFBody:
         nsmap = book._nsmap
         body = book._root.find("body", namespaces=nsmap)
 
-        self.pages: List[Page] = []
+        self.pages: List[body.Page] = []
 
-        # Optional
+        # --- Optional ---
         self.bgcolor: Optional[str] = None
+
+        #region Fill values
 
         # Background Colour
         if "bgcolor" in body.keys():
@@ -1133,22 +1183,60 @@ class ACBFBody:
 
         # Pages
         for pg in body.findall("page", namespaces=nsmap):
-            page = Page(pg, book)
+            img_ref = pg.find("image", namespaces=nsmap).attrib["href"]
+            page = body.Page(img_ref, book)
+
+            if "bgcolor" in pg.keys():
+                page.bgcolor = pg.attrib["bgcolor"]
+
+            if "transition" in pg.keys():
+                page.transition = consts.PageTransitions[pg.attrib["transition"]]
+
+            for title in pg.findall("title", namespaces=nsmap):
+                lang = '_'
+                if "lang" in title.keys():
+                    lang = langcodes.standardize_tag(title.attrib["lang"])
+                page.title[lang] = title.text
+
+            _fill_page(pg, page, nsmap)
 
             self.pages.append(page)
 
+        #endregion
+
     @helpers.check_book
-    def add_page(self, image_ref: str) -> Page:
+    def insert_page(self, index: int, image_ref: str) -> body.Page:
         """
 
         Parameters
         ----------
-        image_ref
+        index : int
+
+        image_ref : str
 
         Returns
         -------
         Page
         """
+        self.pages.insert(index, body.Page(image_ref, self._book))
+        return self.pages[index]
+
+    @helpers.check_book
+    def append_page(self, image_ref: str) -> body.Page:
+        """
+
+        Parameters
+        ----------
+        image_ref : str
+
+        Returns
+        -------
+        Page
+        """
+        page = body.Page(image_ref, self._book)
+        self.pages.append(page)
+        return page
+
 
 class ACBFData:
     """Get any binary data embedded in the ACBF file or write data to archive or embed data in ACBF.

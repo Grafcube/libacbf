@@ -1,7 +1,6 @@
 from __future__ import annotations
 import re
 from typing import TYPE_CHECKING, List, Tuple
-from collections import namedtuple
 from functools import wraps
 from lxml import etree
 
@@ -14,8 +13,6 @@ from libacbf.exceptions import EditRARArchiveError
 namespaces = {
     "1.1": "http://www.acbf.info/xml/acbf/1.1"
     }
-
-Vec2 = namedtuple("Vector2", "x y")  # Not a real vector. Just a named tuple.
 
 url_pattern = re.compile(r'((ftp|http|https)://)(\w+:?\w*@)?(\S+)(:[0-9]+)?(/|/([\w#!:.?+=&%@\-/]))?', re.IGNORECASE)
 
@@ -49,8 +46,8 @@ def pts_to_vec(pts_str: str):
     pts = []
     pts_l = re.split(" ", pts_str)
     for pt in pts_l:
-        ls = re.split(",", pt)
-        pts.append(Vec2(int(ls[0]), int(ls[1])))
+        ls = map(int, re.split(",", pt))
+        pts.append(tuple(ls))
     return pts
 
 
