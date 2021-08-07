@@ -2,7 +2,7 @@ import os
 import shutil
 from io import UnsupportedOperation
 from pathlib import Path
-from typing import Dict, List, Tuple, Optional, Union, Literal, BinaryIO
+from typing import Dict, Tuple, Optional, Union, Literal, BinaryIO
 from tempfile import TemporaryDirectory
 from zipfile import ZipFile, is_zipfile
 from py7zr import SevenZipFile, is_7zfile
@@ -214,7 +214,7 @@ class ArchiveReader:
             Name of file in archive.
         """
         if self.mode == 'r':
-            raise UnsupportedOperation("File is not writeable.")
+            raise UnsupportedOperation("Book is not writeable.")
 
         if isinstance(target, str):
             target = Path(target)
@@ -234,7 +234,7 @@ class ArchiveReader:
             Path of file to delete relative to root of archive.
         """
         if self.mode == 'r':
-            UnsupportedOperation("File is not writeable.")
+            UnsupportedOperation("Book is not writeable.")
 
         if isinstance(target, str):
             target = Path(target)
@@ -254,7 +254,7 @@ class ArchiveReader:
             Path or file object to save the archive to.
         """
         if self.mode == 'r':
-            UnsupportedOperation("File is not writeable.")
+            UnsupportedOperation("Book is not writeable.")
 
         with TemporaryDirectory() as td:
             td = Path(td)

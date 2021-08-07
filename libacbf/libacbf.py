@@ -18,7 +18,7 @@ import tarfile as tar
 
 import libacbf.helpers as helpers
 import libacbf.constants as consts
-import libacbf.metadata as meta
+import libacbf.metadata as metadata
 import libacbf.body as body
 from libacbf.bookdata import BookData
 from libacbf.archivereader import ArchiveReader
@@ -47,7 +47,7 @@ def _validate_acbf(tree, ns: str):
         acbf_schema.assertValid(tree)
 
 
-def _update_authors(author_items, nsmap) -> List[meta.Author]:
+def _update_authors(author_items, nsmap) -> List[metadata.Author]:
     """Takes a list of etree elements and returns a list of Author objects.
     """
     authors = []
@@ -63,7 +63,7 @@ def _update_authors(author_items, nsmap) -> List[meta.Author]:
         if au.find("nickname", namespaces=nsmap) is not None:
             nickname = au.find("nickname", namespaces=nsmap).text
 
-        author: meta.Author = meta.Author(first_name, last_name, nickname)
+        author: metadata.Author = metadata.Author(first_name, last_name, nickname)
 
         if "activity" in au.keys():
             author.activity = au.attrib["activity"]
@@ -159,7 +159,7 @@ def get_root_template(nsmap: Dict):
     meta = etree.SubElement(root, "meta-data")
     root.append(etree.Element("body"))
 
-    book_info = etree.SubElement(meta, "book-info")
+    etree.SubElement(meta, "book-info")
 
     publish_info = etree.SubElement(meta, "publish-info")
     publish_info.append(etree.Element("publisher"))
@@ -428,7 +428,7 @@ class ACBFBook:
         if mode == 'r':
             _validate_acbf(self._root.getroottree(), self._nsmap[None])
 
-        self.styles: Styles = Styles(self, str(contents))
+        self.styles: Styles = Styles(self)
         self.book_info: BookInfo = BookInfo(self)
         self.publisher_info: PublishInfo = PublishInfo(self)
         self.document_info: DocumentInfo = DocumentInfo(self)
@@ -454,18 +454,18 @@ class ACBFBook:
             ACBF book's XML data.
         """
         if self.mode == 'r':
-            raise UnsupportedOperation("File is not writeable.")
+            raise UnsupportedOperation("Book is not writeable.")
 
-        ns = self._nsmap
-        root = get_root_template({None: re.sub(r'[{}]', '', ns)})
+        root = get_root_template(self._nsmap)
         meta = root.find("meta-data")
-        body = root.find("body")
+        bd = root.find("body")
 
         #region Styles
         for st in self.styles.list_styles():
             if st == '_':
                 style = etree.Element("style")
-                root.find("meta-data").addprevious(style)
+                meta.addprevious(style)
+                style.text = self.styles['_'].decode("utf-8")
                 if self.styles.types['_'] is not None:
                     style.set("type", self.styles.types['_'])
             else:
@@ -509,11 +509,14 @@ class ACBFBook:
             ti.text = title
 
         # Genres
-        for genre in self.book_info.genres.values():
+        for genre, match in self.book_info.genres.items():
             gn = etree.SubElement(b_info, "genre")
-            gn.text = genre.genre.name
-            if genre.match is not None:
-                gn.set("match", genre.match)
+            gn.text = genre.name
+            if match is not None:
+                if 0 <= match <= 100:
+                    gn.set("match", str(match))
+                else:
+                    raise ValueError(f"book_info.genre `match={match}`. Value must be from 0 to 100.")
 
         # Annotations
         for lang, annotation in self.book_info.annotations.items():
@@ -529,15 +532,17 @@ class ACBFBook:
 
         # --- Optional ---
         # Language Layers
-        ll = etree.SubElement(b_info, "languages")
-        for layer in self.book_info.languages:
-            tl = etree.SubElement(ll, "text-layer", lang=layer.lang, show=layer.show)
+        if len(self.book_info.languages) > 0:
+            ll = etree.SubElement(b_info, "languages")
+            for layer in self.book_info.languages:
+                etree.SubElement(ll, "text-layer", lang=layer.lang, show=layer.show)
 
         # Characters
-        ch = etree.SubElement(b_info, "characters")
-        for name in self.book_info.characters:
-            nm = etree.SubElement(ch, "name")
-            nm.text = name
+        if len(self.book_info.characters) > 0:
+            ch = etree.SubElement(b_info, "characters")
+            for name in self.book_info.characters:
+                nm = etree.SubElement(ch, "name")
+                nm.text = name
 
         # Keywords
         for lang, kwords in self.book_info.keywords.items():
@@ -547,8 +552,8 @@ class ACBFBook:
             kw.text = ", ".join(kwords)
 
         # Series
-        for series in self.book_info.series.values():
-            seq = etree.SubElement(b_info, "sequence", title=series.title)
+        for title, series in self.book_info.series.items():
+            seq = etree.SubElement(b_info, "sequence", title=title)
             seq.text = series.sequence
             if series.volume is not None:
                 seq.set("volume", series.volume)
@@ -578,14 +583,17 @@ class ACBFBook:
         if self.publisher_info.publish_date_value is not None:
             p_info.find("publish-date").set("value", self.publisher_info.publish_date_value.isoformat())
 
-        city = etree.SubElement(p_info, "city")
-        city.text = self.publisher_info.publish_city
+        if self.publisher_info.publish_city is not None:
+            city = etree.SubElement(p_info, "city")
+            city.text = self.publisher_info.publish_city
 
-        isbn = etree.SubElement(p_info, "isbn")
-        isbn.text = self.publisher_info.isbn
+        if self.publisher_info.isbn is not None:
+            isbn = etree.SubElement(p_info, "isbn")
+            isbn.text = self.publisher_info.isbn
 
-        license = etree.SubElement(p_info, "license")
-        license.text = self.publisher_info.license
+        if self.publisher_info.license is not None:
+            license = etree.SubElement(p_info, "license")
+            license.text = self.publisher_info.license
 
         #endregion
 
@@ -598,32 +606,35 @@ class ACBFBook:
         if self.document_info.creation_date_value is not None:
             d_info.find("creation-date").set("value", self.document_info.creation_date_value.isoformat())
 
-        source = etree.SubElement(d_info, "source")
-        source.text = self.document_info.source
+        if self.document_info.source is not None:
+            source = etree.SubElement(d_info, "source")
+            source.text = self.document_info.source
 
-        id = etree.SubElement(d_info, "id")
-        id.text = self.document_info.document_id
+        if self.document_info.document_id is not None:
+            id = etree.SubElement(d_info, "id")
+            id.text = self.document_info.document_id
 
-        version = etree.SubElement(d_info, "version")
-        version.text = self.document_info.document_version
+        if self.document_info.document_version is not None:
+            version = etree.SubElement(d_info, "version")
+            version.text = self.document_info.document_version
 
-        hst = etree.SubElement(d_info, "history")
-        for entry in self.document_info.document_history:
-            p = etree.SubElement(hst, 'p')
-            p.text = entry
+        if len(self.document_info.document_history) > 0:
+            hst = etree.SubElement(d_info, "history")
+            for entry in self.document_info.document_history:
+                p = etree.SubElement(hst, 'p')
+                p.text = entry
 
         #endregion
 
         #region Body
         if self.body.bgcolor is not None:
-            body.set("bgcolor", self.body.bgcolor)
+            bd.set("bgcolor", self.body.bgcolor)
 
         for page in self.body.pages.copy().insert(0, self.book_info.coverpage):
-            pg = None
             if page.is_coverpage:
                 pg = b_info.find("coverpage")
             else:
-                pg = etree.SubElement(body, "page")
+                pg = etree.SubElement(bd, "page")
                 if page.bgcolor is not None:
                     pg.set("bgcolor", page.bgcolor)
                 if page.transition is not None:
@@ -637,20 +648,16 @@ class ACBFBook:
 
             etree.SubElement(pg, "image", href=page.image_ref)
 
-            for tx_layer in page.text_layers.values():
-                tl = etree.SubElement(pg, "text-layer", lang=tx_layer.lang)
+            for lang, tx_layer in page.text_layers.items():
+                tl = etree.SubElement(pg, "text-layer", lang=lang)
                 if tx_layer.bgcolor is not None:
                     tl.set("bgcolor", tx_layer.bgcolor)
 
                 for tx_area in tx_layer.text_areas:
                     ta = etree.SubElement(tl, "text-area", points=helpers.vec_to_pts(tx_area.points))
-                    ta.extend(helpers.para_to_tree(tx_area.text, ns))
+                    ta.extend(helpers.para_to_tree(tx_area.text, self._nsmap))
 
-                    for i in ("bgcolor", "rotation"):
-                        if getattr(tx_area, i) is not None:
-                            ta.set(i, str(getattr(tx_area, i)))
-
-                    for i in ("inverted", "transparent"):
+                    for i in ("bgcolor", "rotation", "inverted", "transparent"):
                         if getattr(tx_area, i) is not None:
                             ta.set(i, str(getattr(tx_area, i)).lower())
 
@@ -663,7 +670,7 @@ class ACBFBook:
                     fr.set("bgcolor", frame.bgcolor)
 
             for jump in page.jumps:
-                jp = etree.SubElement(pg, "jump", page=jump.page, points=helpers.vec_to_pts(jump.points))
+                etree.SubElement(pg, "jump", page=jump.page, points=helpers.vec_to_pts(jump.points))
 
         #endregion
 
@@ -688,7 +695,7 @@ class ACBFBook:
                     p = f"<p>{r}</p>"
                     p_element = etree.fromstring(bytes(p, encoding="utf-8"))
                     for i in list(p_element.iter()):
-                        i.tag = ns + i.tag
+                        i.tag = '{' + self._nsmap[None] + '}' + i.tag
                     ref.append(p_element)
 
         #endregion
@@ -713,7 +720,7 @@ class ACBFBook:
             Whether to overwrite if file already exists at path. ``False`` by default.
         """
         if self.mode == 'r':
-            raise UnsupportedOperation("File is not writeable.")
+            raise UnsupportedOperation("Book is not writeable.")
 
         xml_data = self.get_acbf_xml()
 
@@ -855,19 +862,19 @@ class BookInfo:
         nsmap = book._nsmap
         info = book._root.find("meta-data/book-info", namespaces=nsmap)
 
-        self.authors: List[meta.Author] = []
+        self.authors: List[metadata.Author] = []
         self.book_title: Dict[str, str] = {}
         self.genres: Dict[consts.Genres, Optional[int]] = {}
         self.annotations: Dict[str, str] = {}
         self.coverpage: body.Page = None
 
         # --- Optional ---
-        self.languages: List[meta.LanguageLayer] = []
+        self.languages: List[metadata.LanguageLayer] = []
         self.characters: List[str] = []
         self.keywords: Dict[str, Set[str]] = {}
-        self.series: Dict[str, meta.Series] = {}
+        self.series: Dict[str, metadata.Series] = {}
         self.content_rating: Dict[str, str] = {}
-        self.database_ref: List[meta.DBRef] = []
+        self.database_ref: List[metadata.DBRef] = []
 
         #region Fill values
 
@@ -920,7 +927,7 @@ class BookInfo:
             for layer in text_layers:
                 lang = langcodes.standardize_tag(layer.attrib["lang"])
                 show = bool(distutils.util.strtobool(layer.attrib["show"]))
-                self.languages.append(meta.LanguageLayer(lang, show))
+                self.languages.append(metadata.LanguageLayer(lang, show))
 
         # Characters
         if info.find("characters", namespaces=nsmap) is not None:
@@ -937,7 +944,7 @@ class BookInfo:
 
         # Series
         for se in info.findall("sequence", namespaces=nsmap):
-            ser = meta.Series(se.text)
+            ser = metadata.Series(se.text)
             if "volume" in se.keys():
                 ser.volume = se.attrib["volume"]
             self.series[se.attrib["title"]] = ser
@@ -951,7 +958,7 @@ class BookInfo:
 
         # Database Reference
         for db in info.findall("databaseref", namespaces=nsmap):
-            dbref = meta.DBRef(db.attrib["dbname"], db.text)
+            dbref = metadata.DBRef(db.attrib["dbname"], db.text)
             if "type" in db.keys():
                 dbref.type = db.attrib["type"]
             self.database_ref.append(dbref)
@@ -959,14 +966,14 @@ class BookInfo:
         #endregion
 
     @helpers.check_book
-    def add_author(self, *names: str, first_name=None, last_name=None, nickname=None) -> meta.Author:
+    def add_author(self, *names: str, first_name=None, last_name=None, nickname=None) -> metadata.Author:
         """Add an Author to the book info. Usage is the same as :class:`Author <libacbf.metadata.Author>`.
 
         Returns
         -------
         Author
         """
-        author = meta.Author(*names, first_name, last_name, nickname)
+        author = metadata.Author(*names, first_name, last_name, nickname)
         self.authors.append(author)
         return author
 
@@ -991,20 +998,20 @@ class BookInfo:
         """Add a language layer to the book. Usage is the same as
         :class:`LanguageLayer <libacbf.metadata.LanguageLayer>`.
         """
-        self.languages.append(meta.LanguageLayer(lang, show))
+        self.languages.append(metadata.LanguageLayer(lang, show))
 
     @helpers.check_book
     def add_series(self, title: str, sequence: str, volume: Optional[str] = None):
         """Add a series that the book belongs to. ``title`` is the key and usage for value is the same as
         :class:`Series <libacbf.metadata.Series>`.
         """
-        self.languages[title] = meta.Series(sequence, volume)
+        self.languages[title] = metadata.Series(sequence, volume)
 
     @helpers.check_book
     def add_dbref(self, dbname: str, ref: str, type: Optional[str] = None):
         """Add a database reference to the book. Usage is the same as :class:`DBRef <libacbf.metadata.DBRef>`.
         """
-        self.languages.append(meta.DBRef(dbname, ref, type))
+        self.languages.append(metadata.DBRef(dbname, ref, type))
 
 
 class PublishInfo:
@@ -1128,7 +1135,7 @@ class DocumentInfo:
         nsmap = book._nsmap
         info = book._root.find("meta-data/document-info", namespaces=nsmap)
 
-        self.authors: List[meta.Author] = []
+        self.authors: List[metadata.Author] = []
         self.creation_date: str = info.find("creation-date", namespaces=nsmap).text
 
         # --- Optional ---
@@ -1175,14 +1182,14 @@ class DocumentInfo:
         #endregion
 
     @helpers.check_book
-    def add_author(self, *names: str, first_name=None, last_name=None, nickname=None) -> meta.Author:
+    def add_author(self, *names: str, first_name=None, last_name=None, nickname=None) -> metadata.Author:
         """Add an Author to the document info. Usage is the same as :class:`Author <libacbf.metadata.Author>`.
 
         Returns
         -------
         Author
         """
-        author = meta.Author(*names, first_name, last_name, nickname)
+        author = metadata.Author(*names, first_name, last_name, nickname)
         self.authors.append(author)
         return author
 
