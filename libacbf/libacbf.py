@@ -373,7 +373,7 @@ class ACBFBook:
                 else:
                     file.write(get_book_template())
 
-        if mode in ['r', 'a']:
+        if mode in ('r', 'a'):
             if self.book_path is not None and not self.book_path.is_file():
                 raise FileNotFoundError
             if mode == 'a' and not is_text:
@@ -1324,10 +1324,13 @@ class ACBFData:
     """
 
     def __init__(self, book: ACBFBook):
-        self._ns = book._nsmap
-        self.book: ACBFBook = book
-        self.files: Dict[str, Optional[BookData]] = {}
-        self.sync_data()
+        self._book = book
+        self._files: Dict[str, BookData] = {}
+        nsmap = book._nsmap
+
+        for i in book._root.findall("data/binary", namespaces=nsmap):
+            new_data = BookData(i.attrib["id"], i.attrib["content-type"], i.text)
+            self._files[i.attrib["id"]] = new_data
 
     def list_files(self) -> Set[str]:
         """Returns a list of all the names of the files embedded in the ACBF file. May be images, fonts etc.
@@ -1337,16 +1340,10 @@ class ACBFData:
         Set[str]
             A set of file names.
         """
-        return set(self.files.keys())
-
-    def sync_data(self):
-        self.files.clear()
-        data_elements = self.book._root.findall(f"{self._ns}data/{self._ns}binary")
-        for i in data_elements:
-            self.files[i.attrib["id"]] = None
+        return set(self._files.keys())
 
     @helpers.check_book
-    def add_data(self, target: Union[str, Path], name: str = '', embed: bool = False):
+    def add_data(self, target: Union[str, Path], name: str = None, embed: bool = False):
         """Add or embed file at target path into the book.
 
         Parameters
@@ -1360,39 +1357,23 @@ class ACBFData:
         embed : bool, default=False
             Whether to embed the file in the ACBF XML. Cannot be ``False`` if book is not an archive type.
         """
-        if self.book.archive is None and not embed:
+        if self._book.archive is None and not embed:
             raise AttributeError("Book is not an archive type. Write data with `embed = True`.")
 
         if isinstance(target, str):
             target = Path(target).resolve(True)
 
-        name = target.name if name == '' else name
+        name = target.name if name is None else name
 
         if embed:
-            base = self.book._root.find(f"{self._ns}data")
-            if base is None:
-                base = etree.SubElement(self.book._root, f"{self._ns}data")
-
-            bin_element = None
-            for i in base.findall(f"{self._ns}binary"):
-                if i.attrib["id"] == name:
-                    bin_element = i
-                    break
-
-            if bin_element is None:
-                bin_element = etree.SubElement(base, f"{self._ns}binary", {"id": name})
-
             with open(target, 'rb') as file:
                 contents = file.read()
             type = magic.from_buffer(contents, True)
             data = b64encode(contents).decode("utf-8")
 
-            bin_element.set("content-type", type)
-            bin_element.text = data
-
-            self.files[name] = BookData(name, type, data)
+            self._files[name] = BookData(name, type, data)
         else:
-            self.book.archive.write(target, name)
+            self._book.archive.write(target, name)
 
     @helpers.check_book
     def remove_data(self, target: Union[str, Path], embed: bool = False):
@@ -1406,42 +1387,25 @@ class ACBFData:
         embed : bool, default=False
             Whether to check for file in archive or embedded in ACBF XML. Must be true if book is plain ACBF XML.
         """
-        if self.book.archive is None and not embed:
+        if self._book.archive is None and not embed:
             raise AttributeError("Book is not an archive type. Write data with `embed = True`.")
-
-        if isinstance(target, str) and not embed:
-            target = Path(target)
 
         if embed:
             if not isinstance(target, str):
                 target = str(target)
-            data_elements = self.book._root.findall(f"{self._ns}data/{self._ns}binary")
-            for i in data_elements:
-                if i.attrib["id"] == target:
-                    i.clear()
-                    i.getparent().remove(i)
-            self.files.pop(target)
+            self._files.pop(target)
         else:
             if isinstance(target, str):
                 target = Path(target)
-            self.book.archive.delete(target)
+            self._book.archive.delete(target)
 
     def __len__(self):
-        return len(self.files.keys())
+        return len(self._files.keys())
 
     def __getitem__(self, key: str):
-        if key in self.files.keys():
-            if self.files[key] is not None:
-                return self.files[key]
-            else:
-                data_elements = self.book._root.findall(f"{self._ns}data/{self._ns}binary")
-                for i in data_elements:
-                    if i.attrib["id"] == key:
-                        new_data = BookData(key, i.attrib["content-type"], i.text)
-                        self.files[key] = new_data
-                        return new_data
-        else:
+        if key not in self.list_files():
             raise FileNotFoundError(f"`{key}` not found embedded in book.")
+        return self._files[key]
 
 
 class Styles:
@@ -1472,13 +1436,20 @@ class Styles:
         A dictionary with keys being the style name (or ``'_'``) and values being the type or ``None`` if not specified.
     """
 
-    def __init__(self, book: ACBFBook, contents: str):
-        self.book = book
-        self._contents = contents
+    def __init__(self, book: ACBFBook):
+        self._book = book
+        nsmap = book._nsmap
 
-        self.styles: Dict[str, Optional[str]] = {}
+        self._styles: Dict[str, Optional[bytes]] = {}
         self.types: Dict[str, Optional[str]] = {}
-        self.sync_styles()
+
+        for i in book._root.xpath("//processing-instruction('xml-stylesheet')"):
+            self.types[i.attrib["href"]] = i.attrib["type"] if "type" in i.attrib.keys() else None
+            self._styles[i.attrib["href"]] = None
+        embedded = book._root.find("style", namespaces=nsmap)
+        if embedded is not None:
+            self._styles['_'] = book._root.find("style", namespaces=nsmap).text.strip().encode("utf-8")
+            self.types['_'] = embedded.attrib["type"] if "type" in embedded.keys() else None
 
     def list_styles(self) -> Set[str]:
         """All the stylesheets referenced by the ACBF XML.
@@ -1490,19 +1461,8 @@ class Styles:
         """
         return set(self.types.keys())
 
-    def sync_styles(self):
-        self.styles.clear()
-        style_refs = self.book._root.xpath("//processing-instruction('xml-stylesheet')")
-        for i in style_refs:
-            self.styles[i.attrib["href"]] = None
-            self.types[i.attrib["href"]] = i.attrib["type"] if "type" in i.attrib.keys() else None
-        embedded = self.book._root.find(f"{self.book._nsmap}style")
-        if embedded is not None:
-            self.styles['_'] = None
-            self.types['_'] = embedded.attrib["type"] if "type" in embedded.keys() else None
-
     @helpers.check_book
-    def edit_style(self, stylesheet_ref: Union[str, Path], style_name: Optional[str] = None, type: str = "text/css"):
+    def edit_style(self, stylesheet_ref: Union[str, Path], style_name: str = None, type: str = "text/css"):
         """Writes or overwrites file in archive with referenced stylesheet.
 
         Parameters
@@ -1524,23 +1484,13 @@ class Styles:
             style_name = stylesheet_ref.name
 
         if style_name == '_':
-            style_element = self.book._root.find(f"{self.book._nsmap}style")
-            if style_element is None:
-                style_element = etree.SubElement(self.book._root, f"{self.book._nsmap}style", {"type": type})
-            with open(stylesheet_ref, 'r') as css:
-                style_element.text = css.read().strip()
-            self.styles['_'] = style_element.text
+            with open(stylesheet_ref, "rb") as css:
+                self._styles['_'] = css.read()
             self.types['_'] = type
         else:
-            style_refs = [x.attrib["href"] for x in self.book._root.xpath("//processing-instruction()") if
-                          x.target == "xml-stylesheet"]
-            if style_name not in style_refs:
-                sub = f'type="{type}" ' if type is not None else ''
-                style_element = etree.ProcessingInstruction("xml-stylesheet", f'{sub}href="{style_name}"')
-                self.book._root.addprevious(style_element)
-            if self.book.archive is not None:
-                self.book.archive.write(stylesheet_ref, style_name)
-            self.styles[style_name] = None
+            if self._book.archive is not None:
+                self._book.archive.write(stylesheet_ref, style_name)
+            self._styles[style_name] = None
             self.types[style_name] = type
 
     @helpers.check_book
@@ -1552,39 +1502,23 @@ class Styles:
         style_name : str
             Stylesheet to remove. If it is ``'_'``, remove embedded stylesheet.
         """
-        if style_name == '_':
-            st_element = self.book._root.find(f"{self.book._nsmap}style")
-            if st_element is not None:
-                st_element.clear()
-                self.book._root.remove(st_element)
-                self.styles.pop('_')
-        else:
-            style_refs = [x for x in self.book._root.xpath("//processing-instruction()") if
-                          x.target == "xml-stylesheet"]
-            for i in style_refs:
-                if i.attrib["href"] == style_name:
-                    self.book._root.append(i)
-                    self.book._root.remove(i)
-                    break
-            if self.book.archive is not None:
-                self.book.archive.delete(style_name)
+        self._styles.pop(style_name)
+        if self._book.archive is not None:
+            self._book.archive.delete(style_name)
 
     def __len__(self):
-        len(self.styles.keys())
+        len(self._styles.keys())
 
     def __getitem__(self, key: str):
-        if key in self.styles.keys():
-            if self.styles[key] is not None:
-                return self.styles[key]
-            elif key == '_':
-                self.styles['_'] = self.book._root.find(f"{self.book._nsmap}style").text.strip()
+        if key not in self.list_styles():
+            raise FileNotFoundError(f"`{key}` style could not be found.")
+
+        if self._styles[key] is None:
+            if self._book.archive is not None:
+                self._styles[key] = self._book.archive.read(key)
             else:
-                if self.book.archive is None:
-                    st_path = self.book.book_path.parent / Path(key)
-                    with open(str(st_path), 'r') as st:
-                        self.styles[key] = st.read()
-                else:
-                    self.styles[key] = self.book.archive.read(key).decode("utf-8")
-            return self.styles[key]
-        else:
-            raise FileNotFoundError
+                st_path = self._book.book_path.parent / Path(key)
+                with open(str(st_path), "rb") as st:
+                    self._styles[key] = st.read()
+
+        return self._styles[key]

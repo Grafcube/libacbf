@@ -2,7 +2,7 @@ import os
 import shutil
 from io import UnsupportedOperation
 from pathlib import Path
-from typing import Dict, List, Optional, Union, Literal, BinaryIO
+from typing import Dict, List, Tuple, Optional, Union, Literal, BinaryIO
 from tempfile import TemporaryDirectory
 from zipfile import ZipFile, is_zipfile
 from py7zr import SevenZipFile, is_7zfile
@@ -121,7 +121,7 @@ class ArchiveReader:
         """Name of the archive file. Returns ``None`` if it does not have a path.
         """
         name = None
-        if self.type in [ArchiveTypes.Zip, ArchiveTypes.SevenZip, ArchiveTypes.Rar]:
+        if self.type in (ArchiveTypes.Zip, ArchiveTypes.SevenZip, ArchiveTypes.Rar):
             name = self.archive.filename
         elif self.type == ArchiveTypes.Tar:
             name = self.archive.name
@@ -134,7 +134,7 @@ class ArchiveReader:
         """Returns the name of the first file with the ``.acbf`` extension at the root level of the archive.
         """
         acbf_file = None
-        if self.type in [ArchiveTypes.Zip, ArchiveTypes.Rar]:
+        if self.type in (ArchiveTypes.Zip, ArchiveTypes.Rar):
             for i in self.archive.infolist():
                 if not i.is_dir() and '/' not in i.filename and i.filename.endswith(".acbf"):
                     acbf_file = i.filename
@@ -151,27 +151,27 @@ class ArchiveReader:
                     break
         return acbf_file
 
-    def list_files(self) -> List[str]:
+    def list_files(self) -> Tuple[str]:
         """Returns a list of all the names of the files in the archive.
         """
-        if self.type in [ArchiveTypes.Zip, ArchiveTypes.Rar]:
-            return [x.filename for x in self.archive.infolist() if not x.is_dir()]
+        if self.type in (ArchiveTypes.Zip, ArchiveTypes.Rar):
+            return (x.filename for x in self.archive.infolist() if not x.is_dir())
         elif self.type == ArchiveTypes.Tar:
-            return [x.name for x in self.archive.getmembers() if x.isfile()]
+            return (x.name for x in self.archive.getmembers() if x.isfile())
         elif self.type == ArchiveTypes.SevenZip:
             self.archive.reset()
-            return [x.filename for x in self.archive.list() if not x.is_directory]
+            return (x.filename for x in self.archive.list() if not x.is_directory)
 
-    def list_dirs(self) -> List[str]:
+    def list_dirs(self) -> Tuple[str]:
         """Returns a list of all the directories in the archive.
         """
-        if self.type in [ArchiveTypes.Zip, ArchiveTypes.Rar]:
-            return [x.filename for x in self.archive.infolist() if x.is_dir()]
+        if self.type in (ArchiveTypes.Zip, ArchiveTypes.Rar):
+            return (x.filename for x in self.archive.infolist() if x.is_dir())
         elif self.type == ArchiveTypes.Tar:
-            return [x.name for x in self.archive.getmembers() if x.isdir()]
+            return (x.name for x in self.archive.getmembers() if x.isdir())
         elif self.type == ArchiveTypes.SevenZip:
             self.archive.reset()
-            return [x.filename for x in self.archive.list() if x.is_directory]
+            return (x.filename for x in self.archive.list() if x.is_directory)
 
     def read(self, target: str) -> Optional[bytes]:
         """Get file as bytes from archive.
@@ -188,7 +188,7 @@ class ArchiveReader:
         """
         contents = None
 
-        if self.type in [ArchiveTypes.Zip, ArchiveTypes.Rar]:
+        if self.type in (ArchiveTypes.Zip, ArchiveTypes.Rar):
             with self.archive.open(target, 'r') as file:
                 contents = file.read()
 
@@ -239,7 +239,7 @@ class ArchiveReader:
         if isinstance(target, str):
             target = Path(target)
 
-        files = [Path(x) for x in self.list_files() + self.list_dirs() + list(self.changes.keys())]
+        files = (Path(x) for x in self.list_files() + self.list_dirs() + list(self.changes.keys()))
         if not target.is_absolute() and target in files:
             self.changes[str(target)] = ''
         else:
@@ -278,7 +278,7 @@ class ArchiveReader:
                         shutil.rmtree(td / source)
 
             self.changes.clear()
-            files = [x.relative_to(td) for x in td.rglob('*') if x.is_file()]
+            files = (x.relative_to(td) for x in td.rglob('*') if x.is_file())
             self.archive.close()
 
             if self.type == ArchiveTypes.Zip:
