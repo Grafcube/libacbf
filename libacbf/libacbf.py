@@ -959,6 +959,18 @@ class BookInfo:
         #endregion
 
     @helpers.check_book
+    def add_author(self, *names: str, first_name=None, last_name=None, nickname=None) -> meta.Author:
+        """Add an Author to the book info. Usage is the same as :class:`Author <libacbf.metadata.Author>`.
+
+        Returns
+        -------
+        Author
+        """
+        author = meta.Author(*names, first_name, last_name, nickname)
+        self.authors.append(author)
+        return author
+
+    @helpers.check_book
     def add_genre(self, genre: str, match: Optional[int] = None):
         """Edit a genre. Add it if it doesn't exist.
 
@@ -973,6 +985,26 @@ class BookInfo:
         if match < 0 or match > 100:
             raise ValueError("`match` must be an integer from 0 to 100.")
         self.genres[consts.Genres[genre]] = match
+
+    @helpers.check_book
+    def add_language(self, lang: str, show: bool):
+        """Add a language layer to the book. Usage is the same as
+        :class:`LanguageLayer <libacbf.metadata.LanguageLayer>`.
+        """
+        self.languages.append(meta.LanguageLayer(lang, show))
+
+    @helpers.check_book
+    def add_series(self, title: str, sequence: str, volume: Optional[str] = None):
+        """Add a series that the book belongs to. ``title`` is the key and usage for value is the same as
+        :class:`Series <libacbf.metadata.Series>`.
+        """
+        self.languages[title] = meta.Series(sequence, volume)
+
+    @helpers.check_book
+    def add_dbref(self, dbname: str, ref: str, type: Optional[str] = None):
+        """Add a database reference to the book. Usage is the same as :class:`DBRef <libacbf.metadata.DBRef>`.
+        """
+        self.languages.append(meta.DBRef(dbname, ref, type))
 
 
 class PublishInfo:
@@ -1008,11 +1040,11 @@ class PublishInfo:
 
     def __init__(self, book: ACBFBook):
         self._book = book
-        self._nsmap = book._nsmap
-        info = book._root.find("meta-data/publish-info", namespaces=self._nsmap)
+        nsmap = book._nsmap
+        info = book._root.find("meta-data/publish-info", namespaces=nsmap)
 
-        self.publisher: str = info.find("publisher", namespaces=self._nsmap).text
-        self.publish_date: str = info.find("publish-date", namespaces=self._nsmap).text
+        self.publisher: str = info.find("publisher", namespaces=nsmap).text
+        self.publish_date: str = info.find("publish-date", namespaces=nsmap).text
 
         # --- Optional ---
         self.publish_date_value: Optional[date] = None
@@ -1020,22 +1052,26 @@ class PublishInfo:
         self.isbn: Optional[str] = None
         self.license: Optional[str] = None
 
+        #region Fill values
+
         # Date
-        if "value" in info.find("publish-date", namespaces=self._nsmap).keys():
+        if "value" in info.find("publish-date", namespaces=nsmap).keys():
             self.publish_date_value = date.fromisoformat(
-                info.find("publish-date", namespaces=self._nsmap).attrib["value"])
+                info.find("publish-date", namespaces=nsmap).attrib["value"])
 
         # City
-        if info.find("city", namespaces=self._nsmap) is not None:
-            self.publish_city = info.find("city", namespaces=self._nsmap).text
+        if info.find("city", namespaces=nsmap) is not None:
+            self.publish_city = info.find("city", namespaces=nsmap).text
 
         # ISBN
-        if info.find("isbn", namespaces=self._nsmap) is not None:
-            self.isbn = info.find("isbn", namespaces=self._nsmap).text
+        if info.find("isbn", namespaces=nsmap) is not None:
+            self.isbn = info.find("isbn", namespaces=nsmap).text
 
         # License
-        if info.find("license", namespaces=self._nsmap) is not None:
-            self.license = info.find("license", namespaces=self._nsmap).text
+        if info.find("license", namespaces=nsmap) is not None:
+            self.license = info.find("license", namespaces=nsmap).text
+
+        #endregion
 
     @helpers.check_book
     def set_date(self, date: Union[str, date], include_date: bool = True):
@@ -1047,7 +1083,7 @@ class PublishInfo:
             Date to set to.
 
         include_date : bool, default=True
-            Whether to also write another date attribute in YYYY-MM-DD format.
+            Whether to also set :attr:`publish_date_value`. Passing ``False`` will set it to ``None``.
         """
         _edit_date(self, "publish_date", "publish_date_value", date, include_date)
 
@@ -1089,11 +1125,11 @@ class DocumentInfo:
 
     def __init__(self, book: ACBFBook):
         self._book = book
-        self._nsmap = book._nsmap
-        info = book._root.find("meta-data/document-info", namespaces=self._nsmap)
+        nsmap = book._nsmap
+        info = book._root.find("meta-data/document-info", namespaces=nsmap)
 
         self.authors: List[meta.Author] = []
-        self.creation_date: str = info.find("creation-date", namespaces=self._nsmap).text
+        self.creation_date: str = info.find("creation-date", namespaces=nsmap).text
 
         # --- Optional ---
         self.creation_date_value: Optional[date] = None
@@ -1102,32 +1138,53 @@ class DocumentInfo:
         self.document_version: Optional[str] = None
         self.document_history: List[str] = []
 
+        #region Fill values
+
         # Author
-        self.authors.extend(_update_authors(info.findall("author", namespaces=self._nsmap), self._nsmap))
+        self.authors.extend(
+            _update_authors(
+                info.findall("author", namespaces=nsmap),
+                nsmap
+                )
+            )
 
         # Date
-        if "value" in info.find("creation-date", namespaces=self._nsmap).keys():
+        if "value" in info.find("creation-date", namespaces=nsmap).keys():
             self.creation_date_value = date.fromisoformat(
-                info.find("creation-date", namespaces=self._nsmap).attrib["value"])
+                info.find("creation-date", namespaces=nsmap).attrib["value"])
 
         # Source
-        if info.find("source", namespaces=self._nsmap) is not None:
+        if info.find("source", namespaces=nsmap) is not None:
             p = []
-            for line in info.findall("source/p", namespaces=self._nsmap):
+            for line in info.findall("source/p", namespaces=nsmap):
                 p.append(line.text)
             self.source = '\n'.join(p)
 
         # ID
-        if info.find("id", namespaces=self._nsmap) is not None:
-            self.document_id = info.find("id", namespaces=self._nsmap).text
+        if info.find("id", namespaces=nsmap) is not None:
+            self.document_id = info.find("id", namespaces=nsmap).text
 
         # Version
-        if info.find("version", namespaces=self._nsmap) is not None:
-            self.document_version = info.find("version", namespaces=self._nsmap).text
+        if info.find("version", namespaces=nsmap) is not None:
+            self.document_version = info.find("version", namespaces=nsmap).text
 
         # History
-        for item in info.findall("history/p", namespaces=self._nsmap):
+        for item in info.findall("history/p", namespaces=nsmap):
             self.document_history.append(item.text)
+
+        #endregion
+
+    @helpers.check_book
+    def add_author(self, *names: str, first_name=None, last_name=None, nickname=None) -> meta.Author:
+        """Add an Author to the document info. Usage is the same as :class:`Author <libacbf.metadata.Author>`.
+
+        Returns
+        -------
+        Author
+        """
+        author = meta.Author(*names, first_name, last_name, nickname)
+        self.authors.append(author)
+        return author
 
     @helpers.check_book
     def set_date(self, date: Union[str, date], include_date: bool = True):
@@ -1139,7 +1196,7 @@ class DocumentInfo:
             Date to set to.
 
         include_date : bool, default=True
-            Whether to also write another date attribute in YYYY-MM-DD format.
+            Whether to also set :attr:`creation_date_value`. Passing ``False`` will set it to ``None``.
         """
         _edit_date(self, "creation_date", "creation_date_value", date, include_date)
 
