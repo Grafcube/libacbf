@@ -994,6 +994,12 @@ class BookInfo:
         self.genres[consts.Genres[genre]] = match
 
     @helpers.check_book
+    def pop_genre(self, genre: str):
+        """Pop a genre by string.
+        """
+        return self.genres.pop(consts.Genres[genre])
+
+    @helpers.check_book
     def add_language(self, lang: str, show: bool):
         """Add a language layer to the book. Usage is the same as
         :class:`LanguageLayer <libacbf.metadata.LanguageLayer>`.

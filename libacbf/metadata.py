@@ -210,9 +210,6 @@ class Series:
 
     Attributes
     ----------
-    title : str
-        Title of the series that this book is a part of.
-
     sequence : str
         The book's position/entry in the series.
 
