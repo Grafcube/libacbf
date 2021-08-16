@@ -19,7 +19,7 @@ import tarfile as tar
 import libacbf.helpers as helpers
 import libacbf.constants as consts
 import libacbf.metadata as metadata
-import libacbf.body as body
+import libacbf.body
 from libacbf.bookdata import BookData
 from libacbf.archivereader import ArchiveReader
 from libacbf.exceptions import InvalidBook, EditRARArchiveError
@@ -102,19 +102,19 @@ def _edit_date(section, attr_s: str, attr_d: str, dt: Union[str, date], include_
 
 def _fill_page(pg, page, nsmap):
     for fr in pg.findall("frame", namespaces=nsmap):
-        frame = body.Frame(helpers.pts_to_vec(fr.attrib["points"]))
+        frame = libacbf.body.Frame(helpers.pts_to_vec(fr.attrib["points"]))
         if "bgcolor" in fr.keys():
             frame.bgcolor = fr.attrib["bgcolor"]
         page.frames.append(frame)
 
     for jp in pg.findall("jump", namespaces=nsmap):
-        jump = body.Jump(helpers.pts_to_vec(jp.attrib["points"]), int(jp.attrib["page"]))
+        jump = libacbf.body.Jump(helpers.pts_to_vec(jp.attrib["points"]), int(jp.attrib["page"]))
         page.jumps.append(jump)
 
     # Text Layers
     for tl in pg.findall("text-layer", namespaces=nsmap):
         lang = langcodes.standardize_tag(tl.attrib["lang"])
-        layer = body.TextLayer()
+        layer = libacbf.body.TextLayer()
         page.text_layers[lang] = layer
 
         if "bgcolor" in tl.keys():
@@ -122,9 +122,9 @@ def _fill_page(pg, page, nsmap):
 
         # Text Areas
         for ta in tl.findall("text-area", namespaces=nsmap):
-            text = helpers.tree_to_para(ta, nsmap[None])
+            text = helpers.tree_to_para(ta, nsmap)
             pts = helpers.pts_to_vec(ta.attrib["points"])
-            area = body.TextArea(text, pts)
+            area = libacbf.body.TextArea(text, pts)
             layer.text_areas.append(area)
 
             if "bgcolor" in ta.keys():
@@ -535,7 +535,7 @@ class ACBFBook:
         if len(self.book_info.languages) > 0:
             ll = etree.SubElement(b_info, "languages")
             for layer in self.book_info.languages:
-                etree.SubElement(ll, "text-layer", lang=layer.lang, show=layer.show)
+                etree.SubElement(ll, "text-layer", lang=layer.lang, show=str(layer.show))
 
         # Characters
         if len(self.book_info.characters) > 0:
@@ -630,7 +630,9 @@ class ACBFBook:
         if self.body.bgcolor is not None:
             bd.set("bgcolor", self.body.bgcolor)
 
-        for page in self.body.pages.copy().insert(0, self.book_info.coverpage):
+        pages = self.body.pages.copy()
+        pages.insert(0, self.book_info.coverpage)
+        for page in pages:
             if page.is_coverpage:
                 pg = b_info.find("coverpage")
             else:
@@ -866,7 +868,7 @@ class BookInfo:
         self.book_title: Dict[str, str] = {}
         self.genres: Dict[consts.Genres, Optional[int]] = {}
         self.annotations: Dict[str, str] = {}
-        self.coverpage: body.Page = None
+        self.coverpage: libacbf.body.Page = None
 
         # --- Optional ---
         self.languages: List[metadata.LanguageLayer] = []
@@ -916,7 +918,7 @@ class BookInfo:
         # Cover Page
         cpage = info.find("coverpage", namespaces=nsmap)
         image_ref = cpage.find("image", namespaces=nsmap).attrib["href"]
-        self.coverpage = body.Page(image_ref, book, coverpage=True)
+        self.coverpage = libacbf.body.Page(image_ref, book, coverpage=True)
         _fill_page(cpage, self.coverpage, nsmap)
 
         # --- Optional ---
@@ -1240,7 +1242,7 @@ class ACBFBody:
         nsmap = book._nsmap
         body = book._root.find("body", namespaces=nsmap)
 
-        self.pages: List[body.Page] = []
+        self.pages: List[libacbf.body.Page] = []
 
         # --- Optional ---
         self.bgcolor: Optional[str] = None
@@ -1254,7 +1256,7 @@ class ACBFBody:
         # Pages
         for pg in body.findall("page", namespaces=nsmap):
             img_ref = pg.find("image", namespaces=nsmap).attrib["href"]
-            page = body.Page(img_ref, book)
+            page = libacbf.body.Page(img_ref, book)
 
             if "bgcolor" in pg.keys():
                 page.bgcolor = pg.attrib["bgcolor"]
@@ -1275,7 +1277,7 @@ class ACBFBody:
         #endregion
 
     @helpers.check_book
-    def insert_page(self, index: int, image_ref: str) -> body.Page:
+    def insert_page(self, index: int, image_ref: str) -> libacbf.body.Page:
         """
 
         Parameters
@@ -1288,11 +1290,11 @@ class ACBFBody:
         -------
         Page
         """
-        self.pages.insert(index, body.Page(image_ref, self._book))
+        self.pages.insert(index, libacbf.body.Page(image_ref, self._book))
         return self.pages[index]
 
     @helpers.check_book
-    def append_page(self, image_ref: str) -> body.Page:
+    def append_page(self, image_ref: str) -> libacbf.body.Page:
         """
 
         Parameters
@@ -1303,7 +1305,7 @@ class ACBFBody:
         -------
         Page
         """
-        page = body.Page(image_ref, self._book)
+        page = libacbf.body.Page(image_ref, self._book)
         self.pages.append(page)
         return page
 

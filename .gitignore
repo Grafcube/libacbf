@@ -1,5 +1,5 @@
 temp/
-tests/samples/
+tests/samples/assets
 tests/results/
 
 # Byte-compiled / optimized / DLL files

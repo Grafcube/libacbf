@@ -57,25 +57,26 @@ def vec_to_pts(points: List[Tuple[int, int]]):
     return ' '.join([f"{x},{y}" for x, y in points])
 
 
-def tree_to_para(p_root, ns):
+def tree_to_para(p_root, nsmap):
     """Converts an XML tree with multiple 'p' tags to a multiline string.
     """
     pa = []
-    for p in p_root.findall(f"{ns}p"):
+    for p in p_root.findall("p", namespaces=nsmap):
         p_text = str(etree.tostring(p, encoding="utf-8")).strip()
         text = re.sub(r'</?p[^>]*>', '', p_text)
         pa.append(text)
     return '\n'.join(pa)
 
 
-def para_to_tree(paragraph: str, ns):
+def para_to_tree(paragraph: str, nsmap):
     """Reverse of :meth:`tree_to_para()`.
     """
+    ns = nsmap[None]
     p_elements = []
     for p in re.split(r'\n', paragraph):
         p = f"<p>{p}</p>"
         p_root = etree.fromstring(p)
         for i in p_root.iter():
-            i.tag = ns + i.tag
+            i.tag = f"{{{ns}}}" + i.tag
         p_elements.append(p_root)
     return p_elements
