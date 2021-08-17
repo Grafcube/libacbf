@@ -62,7 +62,7 @@ def tree_to_para(p_root, nsmap):
     """
     pa = []
     for p in p_root.findall("p", namespaces=nsmap):
-        p_text = str(etree.tostring(p, encoding="utf-8")).strip()
+        p_text = etree.tostring(p, encoding="utf-8").decode("utf-8").strip()
         text = re.sub(r'</?p[^>]*>', '', p_text)
         pa.append(text)
     return '\n'.join(pa)
