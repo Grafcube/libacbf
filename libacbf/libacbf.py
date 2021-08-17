@@ -155,18 +155,20 @@ def get_root_template(nsmap: Dict):
     nsmap : dict
         Namespaces
     """
-    root = etree.Element("ACBF", nsmap=nsmap)
-    meta = etree.SubElement(root, "meta-data")
-    root.append(etree.Element("body"))
+    ns = f"{{{nsmap[None]}}}"
 
-    etree.SubElement(meta, "book-info")
+    root = etree.Element(f"{ns}ACBF")
+    meta = etree.SubElement(root, f"{ns}meta-data")
+    etree.SubElement(root, f"{ns}body")
 
-    publish_info = etree.SubElement(meta, "publish-info")
-    publish_info.append(etree.Element("publisher"))
-    publish_info.append(etree.Element("publish-date"))
+    etree.SubElement(meta, f"{ns}book-info")
 
-    document_info = etree.SubElement(meta, "document-info")
-    document_info.append(etree.Element("creation-date"))
+    publish_info = etree.SubElement(meta, f"{ns}publish-info")
+    etree.SubElement(publish_info, f"{ns}publisher")
+    etree.SubElement(publish_info, f"{ns}publish-date")
+
+    document_info = etree.SubElement(meta, f"{ns}document-info")
+    etree.SubElement(document_info, f"{ns}creation-date")
 
     return root
 
@@ -456,31 +458,15 @@ class ACBFBook:
         if self.mode == 'r':
             raise UnsupportedOperation("Book is not writeable.")
 
+        ns = f"{{{self._nsmap[None]}}}"
+
         root = get_root_template(self._nsmap)
-        meta = root.find("meta-data")
-        bd = root.find("body")
-
-        #region Styles
-        for st in self.styles.list_styles():
-            if st == '_':
-                style = etree.Element("style")
-                meta.addprevious(style)
-                style.text = self.styles['_'].decode("utf-8")
-                if self.styles.types['_'] is not None:
-                    style.set("type", self.styles.types['_'])
-            else:
-                sub = f'type="{self.styles.types[st]}" ' if self.styles.types[st] is not None else ''
-                style = etree.ProcessingInstruction("xml-stylesheet", f'{sub}href="{st}"')
-                root.addprevious(style)
-
-        #endregion
-
-        #region Book Info
-        b_info = meta.find("book-info")
+        meta = root.find("meta-data", namespaces=self._nsmap)
+        bd = root.find("body", namespaces=self._nsmap)
 
         def add_authors(section, au_list):
             for author in au_list:
-                au = etree.SubElement(section, "author")
+                au = etree.SubElement(section, f"{ns}author")
                 props = {x.replace('_', '-'): getattr(author, x)
                          for x in ("first_name", "last_name", "nickname")
                          if getattr(author, x) is not None}
@@ -495,22 +481,40 @@ class ACBFBook:
                     au.set("lang", author.lang)
 
                 for k, v in props.items():
-                    pr = etree.SubElement(au, k)
-                    pr.text = str(v)
+                    pr = etree.SubElement(au, ns + k)
+                    pr.text = v
+
+        #region Styles
+        for st in self.styles.list_styles():
+            if st == '_':
+                style = etree.Element(f"{ns}style")
+                meta.addprevious(style)
+                style.text = self.styles['_'].decode("utf-8")
+                if self.styles.types['_'] is not None:
+                    style.set("type", self.styles.types['_'])
+            else:
+                sub = f'type="{self.styles.types[st]}" ' if self.styles.types[st] is not None else ''
+                style = etree.ProcessingInstruction("xml-stylesheet", f'{sub}href="{st}"')
+                root.addprevious(style)
+
+        #endregion
+
+        #region Book Info
+        b_info = meta.find("book-info", namespaces=self._nsmap)
 
         # Authors
         add_authors(b_info, self.book_info.authors)
 
         # Titles
         for lang, title in self.book_info.book_title.items():
-            ti = etree.SubElement(b_info, "book-title")
+            ti = etree.SubElement(b_info, f"{ns}book-title")
             if lang != '_':
                 ti.set("lang", lang)
             ti.text = title
 
         # Genres
         for genre, match in self.book_info.genres.items():
-            gn = etree.SubElement(b_info, "genre")
+            gn = etree.SubElement(b_info, f"{ns}genre")
             gn.text = genre.name
             if match is not None:
                 if 0 <= match <= 100:
@@ -520,54 +524,54 @@ class ACBFBook:
 
         # Annotations
         for lang, annotation in self.book_info.annotations.items():
-            an = etree.SubElement(b_info, "annotation")
+            an = etree.SubElement(b_info, f"{ns}annotation")
             if lang != '_':
                 an.set("lang", lang)
             for para in annotation.splitlines():
-                p = etree.SubElement(an, 'p')
+                p = etree.SubElement(an, f"{ns}p")
                 p.text = para
 
         # Cover Page (Filled in body section)
-        etree.SubElement(b_info, "coverpage")
+        etree.SubElement(b_info, f"{ns}coverpage")
 
         # --- Optional ---
         # Language Layers
         if len(self.book_info.languages) > 0:
-            ll = etree.SubElement(b_info, "languages")
+            ll = etree.SubElement(b_info, f"{ns}languages")
             for layer in self.book_info.languages:
-                etree.SubElement(ll, "text-layer", lang=layer.lang, show=str(layer.show))
+                etree.SubElement(ll, f"{ns}text-layer", lang=layer.lang, show=str(layer.show).lower())
 
         # Characters
         if len(self.book_info.characters) > 0:
-            ch = etree.SubElement(b_info, "characters")
+            ch = etree.SubElement(b_info, f"{ns}characters")
             for name in self.book_info.characters:
-                nm = etree.SubElement(ch, "name")
+                nm = etree.SubElement(ch, f"{ns}name")
                 nm.text = name
 
         # Keywords
         for lang, kwords in self.book_info.keywords.items():
-            kw = etree.SubElement(b_info, "keywords")
+            kw = etree.SubElement(b_info, f"{ns}keywords")
             if lang != '_':
                 kw.set("lang", lang)
             kw.text = ", ".join(kwords)
 
         # Series
         for title, series in self.book_info.series.items():
-            seq = etree.SubElement(b_info, "sequence", title=title)
+            seq = etree.SubElement(b_info, f"{ns}sequence", title=title)
             seq.text = series.sequence
             if series.volume is not None:
                 seq.set("volume", series.volume)
 
         # Content Rating
         for type, rating in self.book_info.content_rating.items():
-            cr = etree.SubElement(b_info, "content-rating")
+            cr = etree.SubElement(b_info, f"{ns}content-rating")
             cr.text = rating
             if type != '_':
                 cr.set("type", type)
 
         # Database Reference
         for dbref in self.book_info.database_ref:
-            db = etree.SubElement(b_info, "databaseref", dbname=dbref.dbname)
+            db = etree.SubElement(b_info, f"{ns}databaseref", dbname=dbref.dbname)
             db.text = dbref.reference
             if dbref.type is not None:
                 db.set(dbref.type)
@@ -575,53 +579,57 @@ class ACBFBook:
         #endregion
 
         #region Publisher Info
-        p_info = meta.find("publish-info")
+        p_info = meta.find("publish-info", namespaces=self._nsmap)
 
-        p_info.find("publisher").text = self.publisher_info.publisher
+        p_info.find("publisher", namespaces=self._nsmap).text = self.publisher_info.publisher
 
-        p_info.find("publish-date").text = self.publisher_info.publish_date
+        p_info.find("publish-date", namespaces=self._nsmap).text = self.publisher_info.publish_date
         if self.publisher_info.publish_date_value is not None:
-            p_info.find("publish-date").set("value", self.publisher_info.publish_date_value.isoformat())
+            p_info.find("publish-date", namespaces=self._nsmap).set("value",
+                                                                    self.publisher_info.publish_date_value.isoformat())
 
         if self.publisher_info.publish_city is not None:
-            city = etree.SubElement(p_info, "city")
+            city = etree.SubElement(p_info, f"{ns}city")
             city.text = self.publisher_info.publish_city
 
         if self.publisher_info.isbn is not None:
-            isbn = etree.SubElement(p_info, "isbn")
+            isbn = etree.SubElement(p_info, f"{ns}isbn")
             isbn.text = self.publisher_info.isbn
 
         if self.publisher_info.license is not None:
-            license = etree.SubElement(p_info, "license")
+            license = etree.SubElement(p_info, f"{ns}license")
             license.text = self.publisher_info.license
 
         #endregion
 
         #region Document Info
-        d_info = meta.find("document-info")
+        d_info = meta.find("document-info", namespaces=self._nsmap)
 
         add_authors(d_info, self.document_info.authors)
 
-        d_info.find("creation-date").text = self.document_info.creation_date
+        d_info.find("creation-date", namespaces=self._nsmap).text = self.document_info.creation_date
         if self.document_info.creation_date_value is not None:
-            d_info.find("creation-date").set("value", self.document_info.creation_date_value.isoformat())
+            d_info.find("creation-date", namespaces=self._nsmap).set("value",
+                                                                     self.document_info.creation_date_value.isoformat())
 
         if self.document_info.source is not None:
-            source = etree.SubElement(d_info, "source")
-            source.text = self.document_info.source
+            source = etree.SubElement(d_info, f"{ns}source")
+            for para in self.document_info.source.splitlines():
+                p = etree.SubElement(source, f"{ns}p")
+                p.text = para
 
         if self.document_info.document_id is not None:
-            id = etree.SubElement(d_info, "id")
+            id = etree.SubElement(d_info, f"{ns}id")
             id.text = self.document_info.document_id
 
         if self.document_info.document_version is not None:
-            version = etree.SubElement(d_info, "version")
+            version = etree.SubElement(d_info, f"{ns}version")
             version.text = self.document_info.document_version
 
         if len(self.document_info.document_history) > 0:
-            hst = etree.SubElement(d_info, "history")
+            hst = etree.SubElement(d_info, f"{ns}history")
             for entry in self.document_info.document_history:
-                p = etree.SubElement(hst, 'p')
+                p = etree.SubElement(hst, f"{ns}p")
                 p.text = entry
 
         #endregion
@@ -634,65 +642,68 @@ class ACBFBook:
         pages.insert(0, self.book_info.coverpage)
         for page in pages:
             if page.is_coverpage:
-                pg = b_info.find("coverpage")
+                pg = b_info.find("coverpage", namespaces=self._nsmap)
             else:
-                pg = etree.SubElement(bd, "page")
+                pg = etree.SubElement(bd, f"{ns}page")
                 if page.bgcolor is not None:
                     pg.set("bgcolor", page.bgcolor)
                 if page.transition is not None:
                     pg.set("transition", page.transition)
 
                 for lang, title in page.title.items():
-                    ti = etree.SubElement(pg, "title")
+                    ti = etree.SubElement(pg, f"{ns}title")
                     if lang != '_':
                         ti.set("lang", lang)
                     ti.text = title
 
-            etree.SubElement(pg, "image", href=page.image_ref)
+            etree.SubElement(pg, f"{ns}image", href=page.image_ref)
 
             for lang, tx_layer in page.text_layers.items():
-                tl = etree.SubElement(pg, "text-layer", lang=lang)
+                tl = etree.SubElement(pg, f"{ns}text-layer", lang=lang)
                 if tx_layer.bgcolor is not None:
                     tl.set("bgcolor", tx_layer.bgcolor)
 
                 for tx_area in tx_layer.text_areas:
-                    ta = etree.SubElement(tl, "text-area", points=helpers.vec_to_pts(tx_area.points))
+                    ta = etree.SubElement(tl, f"{ns}text-area", points=helpers.vec_to_pts(tx_area.points))
                     ta.extend(helpers.para_to_tree(tx_area.text, self._nsmap))
 
-                    for i in ("bgcolor", "rotation", "inverted", "transparent"):
+                    for i in ("bgcolor", "inverted", "transparent"):
                         if getattr(tx_area, i) is not None:
                             ta.set(i, str(getattr(tx_area, i)).lower())
+
+                    if tx_area.rotation is not None:
+                        ta.set("text-rotation", str(tx_area.rotation))
 
                     if tx_area.type is not None:
                         ta.set("type", tx_area.type.name)
 
             for frame in page.frames:
-                fr = etree.SubElement(pg, "frame", points=helpers.vec_to_pts(frame.points))
+                fr = etree.SubElement(pg, f"{ns}frame", points=helpers.vec_to_pts(frame.points))
                 if frame.bgcolor is not None:
                     fr.set("bgcolor", frame.bgcolor)
 
             for jump in page.jumps:
-                etree.SubElement(pg, "jump", page=jump.page, points=helpers.vec_to_pts(jump.points))
+                etree.SubElement(pg, f"{ns}jump", page=jump.page, points=helpers.vec_to_pts(jump.points))
 
         #endregion
 
         #region Data
         if len(self.data) > 0:
-            dt = etree.SubElement(root, "data")
+            dt = etree.SubElement(root, f"{ns}data")
 
             for file in self.data.list_files():
                 data = self.data[file]
-                bn = etree.SubElement(dt, "binary", attrib={"id": data.id, "content-type": data.type})
+                bn = etree.SubElement(dt, f"{ns}binary", attrib={"id": data.id, "content-type": data.type})
                 bn.text = data._base64data
         #endregion
 
         #region References
         if len(self.references) > 0:
-            refs = etree.SubElement(root, "references")
+            refs = etree.SubElement(root, f"{ns}references")
 
             for id, reference in self.references.items():
                 reference = reference['_']
-                ref = etree.SubElement(refs, "reference", id=id)
+                ref = etree.SubElement(refs, f"{ns}reference", id=id)
                 for r in reference.splitlines():
                     p = f"<p>{r}</p>"
                     p_element = etree.fromstring(bytes(p, encoding="utf-8"))
