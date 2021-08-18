@@ -6,7 +6,7 @@ import magic
 import distutils.util
 import dateutil.parser
 import langcodes
-from io import TextIOBase, UnsupportedOperation
+from io import UnsupportedOperation
 from pathlib import Path
 from datetime import date
 from typing import List, Dict, Optional, Set, Union, Literal, IO
@@ -21,8 +21,8 @@ import libacbf.constants as consts
 import libacbf.metadata as metadata
 import libacbf.body
 from libacbf.bookdata import BookData
-from libacbf.archivereader import ArchiveReader
-from libacbf.exceptions import InvalidBook, EditRARArchiveError
+from libacbf.archivereader import ArchiveReader, get_archive_type
+from libacbf.exceptions import InvalidBook, EditRARArchiveError, UnsupportedArchive
 
 
 def _validate_acbf(tree, ns: str):
@@ -224,13 +224,8 @@ class ACBFBook:
         The type of ACBF book that the file is. If ``None`` Then creates a plain XML book. Otherwise creates archive of
         format. Accepted string values are listed at :class:`ArchiveTypes <libacbf.constants.ArchiveTypes>`.
 
-        You do not have to specify the type of archive unless you are creating a new one or reading a plain text ACBF.
-        The correct type will be determined regardless of this parameter's value. Use this when you want to create a new
-        archive or if you are reading/writing/editing a plain ACBF book.
-
-        Warnings
-        --------
-        You can only write data by embedding when this is ``None``.
+        You do not have to specify the type of archive unless you are creating a new one. The correct type will be
+        determined regardless of this parameter's value. Use this when you want to create a new archive.
 
     Raises
     ------
@@ -333,11 +328,16 @@ class ACBFBook:
         if isinstance(file, Path):
             self.book_path = file.resolve()
 
-        archive_type = consts.ArchiveTypes[archive_type] if archive_type is not None else None
+        archive_type = consts.ArchiveTypes[archive_type] if archive_type is not None else archive_type
         is_text = archive_type is None
-        if isinstance(file, TextIOBase):
-            archive_type = None
-            is_text = True
+
+        if mode in ['r', 'a']:
+            try:
+                archive_type = get_archive_type(file)
+                is_text = False
+            except UnsupportedArchive:
+                archive_type = None
+                is_text = True
 
         if archive_type == consts.ArchiveTypes.Rar and mode != 'r':
             raise EditRARArchiveError
