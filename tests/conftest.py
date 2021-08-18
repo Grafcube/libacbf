@@ -1,50 +1,16 @@
-import os
 import pytest
 from pathlib import Path
-from libacbf import ACBFBook
-from tests.testres import samples
 
 dir = Path("tests/results/")
 
 
 def pytest_addoption(parser):
-    parser.addoption("--sample", action="store", default="cbz")
     parser.addoption("--abs", action="store", default=None)
 
 
 def pytest_runtest_logreport(report):
     if report.failed and report.when in ('setup', 'teardown'):
         raise pytest.UsageError("Errors during collection, aborting")
-
-
-@pytest.fixture(scope="session")
-def book_path(pytestconfig) -> str:
-    path = pytestconfig.getoption("sample")
-    if path in samples.keys():
-        path = samples[path]
-    return path
-
-
-@pytest.fixture(scope="session", autouse=True)
-def make_dir(book_path):
-    os.makedirs(dir / Path(book_path).name, exist_ok=True)
-
-
-@pytest.fixture(scope="session")
-def read_books(book_path):
-    if Path(book_path).suffix == ".acbf":
-        book = (dir / Path(book_path).name, ACBFBook(book_path, 'r', None))
-    else:
-        book = (dir / Path(book_path).name, ACBFBook(book_path, 'r'))
-    yield book
-    book[1].close()
-
-
-@pytest.fixture(scope="session")
-def edit_dir(book_path):
-    edit_dir = dir / Path(book_path).name / "editor"
-    os.makedirs(edit_dir, exist_ok=True)
-    return edit_dir
 
 
 @pytest.fixture(scope="session")
