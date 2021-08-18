@@ -18,15 +18,36 @@ ACBFBook
     :members:
     :show-inheritance:
 
-ACBFBody
-~~~~~~~~
+Book Info
+~~~~~~~~~
+
+.. autoclass:: libacbf.libacbf.BookInfo
+    :members:
+    :show-inheritance:
+
+Publisher Info
+~~~~~~~~~~~~~~
+
+.. autoclass:: libacbf.libacbf.PublishInfo
+    :members:
+    :show-inheritance:
+
+Document Info
+~~~~~~~~~~~~~
+
+.. autoclass:: libacbf.libacbf.DocumentInfo
+    :members:
+    :show-inheritance:
+
+Body
+~~~~
 
 .. autoclass:: libacbf.libacbf.ACBFBody
     :members:
     :show-inheritance:
 
-ACBFData
-~~~~~~~~
+Data
+~~~~
 
 .. autoclass:: libacbf.libacbf.ACBFData
     :members:
@@ -44,41 +65,10 @@ Metadata
 
 .. automodule:: libacbf.metadata
 
-Book Info
-~~~~~~~~~
-
-.. autoclass:: libacbf.metadata.BookInfo
-    :members:
-    :show-inheritance:
-
-Publisher Info
-~~~~~~~~~~~~~~
-
-.. autoclass:: libacbf.metadata.PublishInfo
-    :members:
-    :show-inheritance:
-
-Document Info
-~~~~~~~~~~~~~
-
-.. autoclass:: libacbf.metadata.DocumentInfo
-    :members:
-    :show-inheritance:
-
-Metadata Extras
----------------
-
 Author
 ~~~~~~
 
 .. autoclass:: libacbf.metadata.Author
-    :members:
-    :show-inheritance:
-
-Genre
-~~~~~
-
-.. autoclass:: libacbf.metadata.Genre
     :members:
     :show-inheritance:
 

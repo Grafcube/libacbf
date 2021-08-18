@@ -14,28 +14,28 @@ class Author:
     --------
     `Author specifications <https://acbf.fandom.com/wiki/Meta-data_Section_Definition#Author>`_.
 
-        Examples
-        --------
-        An ``Author`` object can be created with either a nickname, a first and last name or both. ::
+    Examples
+    --------
+    An ``Author`` object can be created with either a nickname, a first and last name or both. ::
 
-            from libacbf import ACBFBook
+        from libacbf import ACBFBook
 
-            with ACBFBook("path/to/book.cbz", 'w') as book:
-                au = Author("Hugh", "Mann")
-                # au.first_name == "Hugh"
-                # au.last_name == "Mann"
+        with ACBFBook("path/to/book.cbz", 'w') as book:
+            au = Author("Hugh", "Mann")
+            # au.first_name == "Hugh"
+            # au.last_name == "Mann"
 
-                au = Author("NotAPlatypus")
-                # au.nickname == "NotAPlatypus"
+            au = Author("NotAPlatypus")
+            # au.nickname == "NotAPlatypus"
 
-                au = Author("Hugh", "Mann", "NotAPlatypus")
-                # au.first_name == "Hugh"
-                # au.last_name == "Mann"
-                # au.nickname == "NotAPlatypus"
+            au = Author("Hugh", "Mann", "NotAPlatypus")
+            # au.first_name == "Hugh"
+            # au.last_name == "Mann"
+            # au.nickname == "NotAPlatypus"
 
-        This is also possible. ::
+    This is also possible. ::
 
-            au = Author(first_name="Hugh", last_name="Mann", nickname="NotAPlatypus")
+        au = Author(first_name="Hugh", last_name="Mann", nickname="NotAPlatypus")
 
     Attributes
     ----------

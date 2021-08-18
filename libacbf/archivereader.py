@@ -131,7 +131,8 @@ class ArchiveReader:
         return name
 
     def _get_acbf_file(self) -> Optional[str]:
-        """Returns the name of the first file with the ``.acbf`` extension at the root level of the archive.
+        """Returns the name of the first file with the ``.acbf`` extension at the root level of the archive or ``None``
+        if no file is found.
         """
         acbf_file = None
         if self.type in (ArchiveTypes.Zip, ArchiveTypes.Rar):

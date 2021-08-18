@@ -15,7 +15,7 @@ from enum import Enum, auto
 
 
 class AuthorActivities(Enum):
-    """List of accepted values for :attr:`Author.activity<libacbf.metadata.Author.activity>`.
+    """List of accepted values for :attr:`Author.activity <libacbf.metadata.Author.activity>`.
     """
     Writer = 0
     Adapter = auto()
@@ -29,11 +29,11 @@ class AuthorActivities(Enum):
     Editor = auto()
     AssistantEditor = auto()
     Translator = auto()
-    Other = 100
+    Other = auto()
 
 
 class Genres(Enum):
-    """List of accepted values for :attr:`Genre.genre <libacbf.metadata.Genre.genre>`.
+    """List of accepted values for keys of :attr:`book_info.genres <libacbf.libacbf.BookInfo.genres>`.
     """
     adult = 0
     adventure = auto()
@@ -60,7 +60,7 @@ class Genres(Enum):
     sports = auto()
     superhero = auto()
     western = auto()
-    other = 100
+    other = auto()
 
 
 class TextAreas(Enum):
@@ -84,7 +84,7 @@ class PageTransitions(Enum):
     blend = auto()
     scroll_right = auto()
     scroll_down = auto()
-    none = 100
+    none = auto()
 
 
 class ImageRefType(Enum):

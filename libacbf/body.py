@@ -23,9 +23,6 @@ class Page:
 
     Attributes
     ----------
-    book : ACBFBook
-        Book that this page belongs to.
-
     image_ref : str
         Reference to the image file. May be embedded in the ACBF file, in the ACBF archive, in an external archive,
         a local path or a URL. For information on how to format it,
@@ -37,7 +34,6 @@ class Page:
 
     title : Dict[str, str], optional
         It is used to define beginning of chapters, sections of the book and can be used to create a table of contents.
-
         Keys are standard language codes or ``'_'`` if not defined. Values are titles as string.
 
     bgcolor : str, optional
@@ -157,17 +153,18 @@ class Page:
         return self._image
 
     @helpers.check_book
-    def set_transition(self, tr: str):
-        """Set transition.
+    def set_transition(self, tr: Optional[str]):
+        """Set transition by string.
 
         Parameters
         ----------
-        tr
+        tr : str | None
+            Transition value to be set. Pass ``None`` to remove.
         """
         if self.is_coverpage:
             raise AttributeError("`coverpage` has no attribute `transition`.")
 
-        self.transition = consts.PageTransitions[tr]
+        self.transition = consts.PageTransitions[tr] if tr is not None else tr
 
 
 class TextLayer:
@@ -228,8 +225,7 @@ class TextArea:
             A link. Internal or external.
 
     bgcolor : str, optional
-        Defines the background colour of the text area or inherits from :attr:`TextLayer.bgcolor` if
-        ``None``.
+        Defines the background colour of the text area or inherits from :attr:`TextLayer.bgcolor` if ``None``.
 
     rotation : int, optional
         Defines the rotation of the text layer.
@@ -237,9 +233,8 @@ class TextArea:
         Can be an integer from 0 to 360.
 
     type : TextAreas(Enum), optional
-        The type of text area. Rendering can be changed based on type.
-
-        Allowed values are defined in :class:`TextAreas <libacbf.constants.TextAreas>`.
+        The type of text area. Rendering can be changed based on type. Allowed values are defined in
+        :class:`TextAreas <libacbf.constants.TextAreas>`.
 
     inverted : bool, optional
         Whether text is rendered with inverted colour.
@@ -259,6 +254,17 @@ class TextArea:
         self.inverted: Optional[bool] = None
         self.transparent: Optional[bool] = None
 
+    @helpers.check_book
+    def set_type(self, ty: Optional[str]):
+        """Set type by string.
+
+        Parameters
+        ----------
+        ty : str | None
+            Type to set or ``None`` to remove.
+        """
+        self.type = consts.TextAreas[ty] if ty is not None else ty
+
 
 class Frame:
     """A subsection of a page.
@@ -273,7 +279,7 @@ class Frame:
         A list of tuples as coordinates.
 
     bgcolor : str, optional
-        Defines the background colour for the page. Inherits from :attr:`Page.bgcolor <libacbf.body.Page.bgcolor>`if
+        Defines the background colour for the page. Inherits from :attr:`Page.bgcolor <libacbf.body.Page.bgcolor>` if
         ``None``.
     """
 

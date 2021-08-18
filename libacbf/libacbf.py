@@ -26,6 +26,8 @@ from libacbf.exceptions import InvalidBook, EditRARArchiveError
 
 
 def _validate_acbf(tree, ns: str):
+    """Validate XML tree with XSD.
+    """
     version = re.split(r'/', ns)[-1]
     xsd_path = f"libacbf/schema/acbf-{version}.xsd"
 
@@ -101,6 +103,8 @@ def _edit_date(section, attr_s: str, attr_d: str, dt: Union[str, date], include_
 
 
 def _fill_page(pg, page, nsmap):
+    """Fill Page data from XML tree.
+    """
     for fr in pg.findall("frame", namespaces=nsmap):
         frame = libacbf.body.Frame(helpers.pts_to_vec(fr.attrib["points"]))
         if "bgcolor" in fr.keys():
@@ -147,7 +151,7 @@ def _fill_page(pg, page, nsmap):
                 area.transparent = bool(distutils.util.strtobool(ta.attrib["transparent"]))
 
 
-def get_root_template(nsmap: Dict):
+def _get_root_template(nsmap: Dict):
     """Get the lxml root tree for a basic ACBF book.
 
     Parameters
@@ -188,7 +192,7 @@ def get_book_template(ns: str = None) -> str:
     if ns is None:
         ns = helpers.namespaces["1.1"]
 
-    return etree.tostring(get_root_template({None: ns}).getroottree(),
+    return etree.tostring(_get_root_template({None: ns}).getroottree(),
                           encoding="utf-8",
                           xml_declaration=True,
                           pretty_print=True
@@ -220,9 +224,9 @@ class ACBFBook:
         The type of ACBF book that the file is. If ``None`` Then creates a plain XML book. Otherwise creates archive of
         format. Accepted string values are listed at :class:`ArchiveTypes <libacbf.constants.ArchiveTypes>`.
 
-        You do not have to specify the type of archive unless you are creating a new one. The correct type will be
-        determined regardless of this parameter's value. Use this when you want to create a new archive or if you are
-        reading/writing/editing a plain ACBF book.
+        You do not have to specify the type of archive unless you are creating a new one or reading a plain text ACBF.
+        The correct type will be determined regardless of this parameter's value. Use this when you want to create a new
+        archive or if you are reading/writing/editing a plain ACBF book.
 
         Warnings
         --------
@@ -246,10 +250,6 @@ class ACBFBook:
     to change this. Image refs that are relative paths check within the archive if the book is an archive. Otherwise it
     checks relative to the '.acbf' file. So you can simply use a directory to manage the book and archive it with your
     own settings when you are done.
-
-    Warnings
-    --------
-    Never try to edit variables directly as you will not be editing the XML. Use the editing functions instead.
 
     Examples
     --------
@@ -281,19 +281,19 @@ class ACBFBook:
     Attributes
     ----------
     book_info : BookInfo
-        See :class:`BookInfo <libacbf.metadata.BookInfo>` for more information.
+        See :class:`BookInfo` for more information.
 
     publisher_info : PublishInfo
-        See :class:`PublishInfo <libacbf.metadata.PublishInfo>` for more information.
+        See :class:`PublishInfo` for more information.
 
     document_info : DocumentInfo
-        See :class:`DocumentInfo <libacbf.metadata.DocumentInfo>` for more information.
+        See :class:`DocumentInfo` for more information.
 
     body : ACBFBody
-        See :class:`ACBFBody <libacbf.libacbf.ACBFBody>` for more information.
+        See :class:`ACBFBody` for more information.
 
     data : ACBFData
-        See :class:`ACBFData <libacbf.libacbf.ACBFData>` for more information.
+        See :class:`ACBFData` for more information.
 
     references : dict
         A dictionary that contains a list of particular references that occur inside the
@@ -310,20 +310,14 @@ class ACBFBook:
             }
 
         ``'_'`` can contain special tags for formatting. For more information and a full list,
-        see :attr:`TextArea.paragraph <libacbf.body.TextArea.paragraph>`.
+        see :attr:`TextArea.text <libacbf.body.TextArea.text>`.
 
     styles : Styles
-        See :class:`Styles <libacbf.libacbf.Styles>` for more information.
-
-    book_path : pathlib.Path
-        Absolute path to source file.
+        See :class:`Styles` for more information.
 
     archive : ArchiveReader | None
         Can be used to read archive directly if file is not plain ACBF. Use this if you want to read exactly what
         files the book contains but try to avoid directly writing files through ``ArchiveReader``.
-
-        :attr:`ArchiveReader.archive <libacbf.archivereader.ArchiveReader.archive>` may be ``zipfile.ZipFile``,
-        ``py7zr.SevenZipFile``, ``tarfile.TarFile`` or ``rarfile.RarFile``.
     """
 
     def __init__(self, file: Union[str, Path, IO], mode: Literal['r', 'w', 'a', 'x'] = 'r',
@@ -447,8 +441,8 @@ class ACBFBook:
                     pa.append(text)
                 self.references[ref.attrib["id"]] = {'_': '\n'.join(pa)}
 
-    def get_acbf_xml(self) -> str:
-        """Converts the XML tree to a string.
+    def _get_acbf_tree(self) -> str:
+        """Converts the XML tree to a string with any modifications.
 
         Returns
         -------
@@ -460,7 +454,7 @@ class ACBFBook:
 
         ns = f"{{{self._nsmap[None]}}}"
 
-        root = get_root_template(self._nsmap)
+        root = _get_root_template(self._nsmap)
         meta = root.find("meta-data", namespaces=self._nsmap)
         bd = root.find("body", namespaces=self._nsmap)
 
@@ -719,11 +713,7 @@ class ACBFBook:
 
         _validate_acbf(root.getroottree(), self._nsmap[None])
 
-        return etree.tostring(root.getroottree(),
-                              encoding="utf-8",
-                              xml_declaration=True,
-                              pretty_print=True
-                              ).decode("utf-8")
+        return root.getroottree()
 
     def save(self, file: Union[str, Path, IO, None] = None, overwrite: bool = False):
         """Save to file.
@@ -739,7 +729,11 @@ class ACBFBook:
         if self.mode == 'r':
             raise UnsupportedOperation("Book is not writeable.")
 
-        xml_data = self.get_acbf_xml()
+        xml_data = etree.tostring(self._get_acbf_tree(),
+                                  encoding="utf-8",
+                                  xml_declaration=True,
+                                  pretty_print=True
+                                  ).decode("utf-8")
 
         if isinstance(file, str):
             file = Path(file)
@@ -803,9 +797,6 @@ class BookInfo:
 
     Attributes
     ----------
-    book : ACBFBook
-        Book that the metadata belongs to.
-
     authors : List[Author]
         A list of :class:`Author <libacbf.metadata.Author>` objects.
 
@@ -820,9 +811,9 @@ class BookInfo:
                 "en_US": "English (US) title"
             }
 
-    genres : Dict[str, Genre]
-        A dictionary with keys being a string representation of :class:`constants.Genres <libacbf.constants.Genres>`
-        Enum and values being :class:`Genre <libacbf.metadata.Genre>` objects.
+    genres : Dict[Genres, int | None]
+        A dictionary with keys being a value from :class:`constants.Genres <libacbf.constants.Genres>` Enum and values
+        being integers with the match value or ``None``. See :meth:`get_match()`.
 
     annotations : Dict[str, str]
         A short summary describing the book.
@@ -989,14 +980,20 @@ class BookInfo:
         Returns
         -------
         Author
+            The created Author object.
         """
         author = metadata.Author(*names, first_name, last_name, nickname)
         self.authors.append(author)
         return author
 
+    def get_match(self, genre: str) -> int:
+        """Get match value of genre by string.
+        """
+        return self.genres[consts.Genres[genre]]
+
     @helpers.check_book
-    def add_genre(self, genre: str, match: Optional[int] = None):
-        """Edit a genre. Add it if it doesn't exist.
+    def edit_genre(self, genre: str, match: Optional[int] = '_'):
+        """Edit a genre by string. Add it if it doesn't exist.
 
         Parameters
         ----------
@@ -1008,12 +1005,27 @@ class BookInfo:
         """
         if match < 0 or match > 100:
             raise ValueError("`match` must be an integer from 0 to 100.")
-        self.genres[consts.Genres[genre]] = match
+
+        genre = consts.Genres[genre]
+
+        if match == '_':
+            if genre in self.genres:
+                match = self.genres[genre]
+            else:
+                match = None
+
+        self.genres[genre] = match
 
     @helpers.check_book
-    def pop_genre(self, genre: str):
+    def pop_genre(self, genre: str) -> Optional[int]:
         """Pop a genre by string.
+
+        Returns
+        -------
+        int | None
+            The match value of the genre.
         """
+
         return self.genres.pop(consts.Genres[genre])
 
     @helpers.check_book
@@ -1046,9 +1058,6 @@ class PublishInfo:
 
     Attributes
     ----------
-    book : ACBFBook
-        Book that the metadata belongs to.
-
     publisher : str
         Name of the publisher.
 
@@ -1127,9 +1136,6 @@ class DocumentInfo:
 
     Attributes
     ----------
-    book : ACBFBook
-        Book that the metadata belongs to.
-
     authors : List[Author]
         Authors of the ACBF file as a list of :class:`Author <libacbf.metadata.Author>` objects.
 
@@ -1211,6 +1217,7 @@ class DocumentInfo:
         Returns
         -------
         Author
+            The created Author object.
         """
         author = metadata.Author(*names, first_name, last_name, nickname)
         self.authors.append(author)
@@ -1241,9 +1248,6 @@ class ACBFBody:
 
     Attributes
     ----------
-    book : ACBFBook
-        Book that this body section belongs to.
-
     pages : List[Page]
         A list of :class:`Page <libacbf.body.Page>` objects in the order they should be displayed in.
 
@@ -1293,32 +1297,39 @@ class ACBFBody:
 
     @helpers.check_book
     def insert_page(self, index: int, image_ref: str) -> libacbf.body.Page:
-        """
+        """Insert a new Page object at the index.
 
         Parameters
         ----------
         index : int
+            Index of new page.
 
         image_ref : str
+            Value to set for the image reference. See :attr:`Page.image_ref <libacbf.body.Page.image_ref>` for
+            information on how to format it.
 
         Returns
         -------
         Page
+            The created Page object.
         """
         self.pages.insert(index, libacbf.body.Page(image_ref, self._book))
         return self.pages[index]
 
     @helpers.check_book
     def append_page(self, image_ref: str) -> libacbf.body.Page:
-        """
+        """Append a new Page object to the body.
 
         Parameters
         ----------
         image_ref : str
+            Value to set for the image reference. See :attr:`Page.image_ref <libacbf.body.Page.image_ref>` for
+            information on how to format it.
 
         Returns
         -------
         Page
+            The created Page object.
         """
         page = libacbf.body.Page(image_ref, self._book)
         self.pages.append(page)
@@ -1493,7 +1504,7 @@ class Styles:
 
     @helpers.check_book
     def edit_style(self, stylesheet_ref: Union[str, Path], style_name: str = None, type: str = "text/css"):
-        """Writes or overwrites file in archive with referenced stylesheet.
+        """Writes or overwrites file in book with referenced stylesheet.
 
         Parameters
         ----------
