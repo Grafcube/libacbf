@@ -331,7 +331,7 @@ class ACBFBook:
         archive_type = consts.ArchiveTypes[archive_type] if archive_type is not None else archive_type
         is_text = archive_type is None
 
-        if mode in ['r', 'a']:
+        if mode in ('r', 'a'):
             try:
                 archive_type = get_archive_type(file)
                 is_text = False
@@ -441,7 +441,7 @@ class ACBFBook:
                     pa.append(text)
                 self.references[ref.attrib["id"]] = {'_': '\n'.join(pa)}
 
-    def _get_acbf_tree(self) -> str:
+    def _get_acbf_tree(self):
         """Converts the XML tree to a string with any modifications.
 
         Returns
