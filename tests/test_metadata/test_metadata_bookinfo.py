@@ -1,114 +1,80 @@
-import os
 import json
 from tests.conftest import get_au_op
 from libacbf import ACBFBook
 from tests.testres import samples
 
 
-def test_authors(results):
-    dir = results / "test_metadata/book_info"
-    os.makedirs(dir, exist_ok=True)
-
+def test_authors(results_bookinfo):
     with ACBFBook(samples["cbz"]) as book:
         op = [get_au_op(x) for x in book.book_info.authors]
-        with open(dir / "test_authors.json", 'w', encoding="utf-8", newline='\n') as result:
+        with open(results_bookinfo / "test_authors.json", 'w', encoding="utf-8", newline='\n') as result:
             result.write(json.dumps(op, ensure_ascii=False, indent='\t', separators=(', ', ': ')))
 
 
-def test_titles(results):
-    dir = results / "test_metadata/book_info"
-    os.makedirs(dir, exist_ok=True)
-
+def test_titles(results_bookinfo):
     with ACBFBook(samples["cbz"]) as book:
-        with open(dir / "test_titles.json", 'w', encoding="utf-8", newline='\n') as result:
+        with open(results_bookinfo / "test_titles.json", 'w', encoding="utf-8", newline='\n') as result:
             result.write(json.dumps(book.book_info.book_title, ensure_ascii=False, indent='\t',
                                     separators=(', ', ': ')))
 
 
-def test_genres(results):
-    dir = results / "test_metadata/book_info"
-    os.makedirs(dir, exist_ok=True)
-
+def test_genres(results_bookinfo):
     with ACBFBook(samples["cbz"]) as book:
         op = {k.name: v for k, v in book.book_info.genres.items()}
-        with open(dir / "test_genres.json", 'w', encoding="utf-8", newline='\n') as result:
+        with open(results_bookinfo / "test_genres.json", 'w', encoding="utf-8", newline='\n') as result:
             result.write(json.dumps(op, ensure_ascii=False, indent='\t', separators=(', ', ': ')))
 
 
-def test_annotations(results):
-    dir = results / "test_metadata/book_info"
-    os.makedirs(dir, exist_ok=True)
-
+def test_annotations(results_bookinfo):
     with ACBFBook(samples["cbz"]) as book:
-        with open(dir / "test_annotations.json", 'w', encoding="utf-8", newline='\n') as result:
+        with open(results_bookinfo / "test_annotations.json", 'w', encoding="utf-8", newline='\n') as result:
             result.write(json.dumps(book.book_info.annotations, ensure_ascii=False, indent='\t',
                                     separators=(', ', ': ')))
 
 
-def test_languages(results):
-    dir = results / "test_metadata/book_info"
-    os.makedirs(dir, exist_ok=True)
-
+def test_languages(results_bookinfo):
     with ACBFBook(samples["cbz"]) as book:
         op = [{x.lang: x.show} for x in book.book_info.languages]
-        with open(dir / "test_languages.json", 'w', encoding="utf-8", newline='\n') as result:
+        with open(results_bookinfo / "test_languages.json", 'w', encoding="utf-8", newline='\n') as result:
             result.write(json.dumps(op, ensure_ascii=False, indent='\t', separators=(', ', ': ')))
 
 
-def test_characters(results):
-    dir = results / "test_metadata/book_info"
-    os.makedirs(dir, exist_ok=True)
-
+def test_characters(results_bookinfo):
     with ACBFBook(samples["cbz"]) as book:
-        with open(dir / "test_characters.json", 'w', encoding="utf-8", newline='\n') as result:
+        with open(results_bookinfo / "test_characters.json", 'w', encoding="utf-8", newline='\n') as result:
             result.write(json.dumps(book.book_info.characters, ensure_ascii=False, indent='\t',
                                     separators=(', ', ': ')))
 
 
-def test_keywords(results):
-    dir = results / "test_metadata/book_info"
-    os.makedirs(dir, exist_ok=True)
-
+def test_keywords(results_bookinfo):
     with ACBFBook(samples["cbz"]) as book:
-        with open(dir / "test_keywords.json", 'w', encoding="utf-8", newline='\n') as result:
+        with open(results_bookinfo / "test_keywords.json", 'w', encoding="utf-8", newline='\n') as result:
             result.write(json.dumps(book.book_info.keywords, default=list, ensure_ascii=False, indent='\t',
                                     separators=(', ', ': ')))
 
 
-def test_series(results):
-    dir = results / "test_metadata/book_info"
-    os.makedirs(dir, exist_ok=True)
-
+def test_series(results_bookinfo):
     with ACBFBook(samples["cbz"]) as book:
         op = {k: {"sequence": v.sequence, "volume": v.volume} for k, v in book.book_info.series.items()}
-        with open(dir / "test_series.json", 'w', encoding="utf-8", newline='\n') as result:
+        with open(results_bookinfo / "test_series.json", 'w', encoding="utf-8", newline='\n') as result:
             result.write(json.dumps(op, ensure_ascii=False, indent='\t', separators=(', ', ': ')))
 
 
-def test_content_rating(results):
-    dir = results / "test_metadata/book_info"
-    os.makedirs(dir, exist_ok=True)
-
+def test_content_rating(results_bookinfo):
     with ACBFBook(samples["cbz"]) as book:
-        with open(dir / "test_content_rating.json", 'w', encoding="utf-8", newline='\n') as result:
+        with open(results_bookinfo / "test_content_rating.json", 'w', encoding="utf-8", newline='\n') as result:
             result.write(json.dumps(book.book_info.content_rating, ensure_ascii=False, indent='\t',
                                     separators=(', ', ': ')))
 
 
-def test_database_ref(results):
-    dir = results / "test_metadata/book_info"
-    os.makedirs(dir, exist_ok=True)
-
+def test_database_ref(results_bookinfo):
     with ACBFBook(samples["cbz"]) as book:
         op = [{"dbname": x.dbname, "ref": x.reference, "type": x.type} for x in book.book_info.database_ref]
-        with open(dir / "test_database_ref.json", 'w', encoding="utf-8", newline='\n') as result:
+        with open(results_bookinfo / "test_database_ref.json", 'w', encoding="utf-8", newline='\n') as result:
             result.write(json.dumps(op, ensure_ascii=False, indent='\t', separators=(', ', ': ')))
 
 
-def test_coverpage(results):
-    dir = results / "test_metadata/book_info"
-    os.makedirs(dir, exist_ok=True)
-
+def test_coverpage(results_bookinfo):
     page_output = {}
     textlayer_output = {}
     fr_jm_output = {"frames": {}, "jumps": {}}
@@ -151,9 +117,9 @@ def test_coverpage(results):
                 new_tl["text_areas"].append(new_ta)
             textlayer_output[pg.image_ref].append(new_tl)
 
-    with open(dir / "test_cover_pages.json", 'w', encoding="utf-8", newline='\n') as result:
+    with open(results_bookinfo / "test_cover_pages.json", 'w', encoding="utf-8", newline='\n') as result:
         result.write(json.dumps(page_output, ensure_ascii=False, indent='\t', separators=(', ', ': ')))
-    with open(dir / "test_cover_textlayers.json", 'w', encoding="utf-8", newline='\n') as result:
+    with open(results_bookinfo / "test_cover_textlayers.json", 'w', encoding="utf-8", newline='\n') as result:
         result.write(json.dumps(textlayer_output, ensure_ascii=False, indent='\t', separators=(', ', ': ')))
-    with open(dir / "test_cover_frames_jumps.json", 'w', encoding="utf-8", newline='\n') as result:
+    with open(results_bookinfo / "test_cover_frames_jumps.json", 'w', encoding="utf-8", newline='\n') as result:
         result.write(json.dumps(fr_jm_output, ensure_ascii=False, indent='\t', separators=(', ', ': ')))

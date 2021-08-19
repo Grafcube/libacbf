@@ -7,9 +7,9 @@ from tests.testres import samples
 
 
 @pytest.mark.parametrize("dir", samples.values())
-def test_body_info(dir, results):
+def test_body_info(dir, results_body):
     dir = Path(dir)
-    op_path = results / "test_body" / dir.name
+    op_path = results_body / dir.name
     os.makedirs(op_path, exist_ok=True)
     with ACBFBook(dir) as book:
         with open(op_path / "test_body_info.json", 'w', encoding="utf-8", newline='\n') as result:
@@ -20,9 +20,9 @@ def test_body_info(dir, results):
 
 
 @pytest.mark.parametrize("dir", samples.values())
-def test_body_pages(dir, results):
+def test_body_pages(dir, results_body):
     dir = Path(dir)
-    op_path = results / "test_body" / dir.name
+    op_path = results_body / dir.name
     os.makedirs(op_path, exist_ok=True)
 
     page_output = {}
@@ -79,9 +79,9 @@ def test_body_pages(dir, results):
 
 
 @pytest.mark.parametrize("dir", samples.values())
-def test_body_images(dir, results):
+def test_body_images(dir, results_body):
     dir = Path(dir)
-    op_path = results / "test_body" / dir.name
+    op_path = results_body / dir.name
     os.makedirs(op_path, exist_ok=True)
 
     op = {}

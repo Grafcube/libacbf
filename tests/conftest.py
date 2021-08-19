@@ -24,6 +24,34 @@ def results():
     return res
 
 
+@pytest.fixture(scope="session")
+def results_body(results):
+    res = results / "test_body"
+    os.makedirs(res, exist_ok=True)
+    return res
+
+
+@pytest.fixture(scope="session")
+def results_bookinfo(results):
+    res = results / "test_metadata/book_info"
+    os.makedirs(res, exist_ok=True)
+    return res
+
+
+@pytest.fixture(scope="session")
+def results_publishinfo(results):
+    res = results / "test_metadata/publish_info"
+    os.makedirs(res, exist_ok=True)
+    return res
+
+
+@pytest.fixture(scope="session")
+def results_documentinfo(results):
+    res = results / "test_metadata/document_info"
+    os.makedirs(res, exist_ok=True)
+    return res
+
+
 def get_au_op(i):
     new_op = i.__dict__.copy()
     new_op["activity"] = new_op["_activity"].name if new_op["_activity"] is not None else None
