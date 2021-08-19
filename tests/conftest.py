@@ -1,7 +1,6 @@
+import os
 import pytest
 from pathlib import Path
-
-dir = Path("tests/results/")
 
 
 def pytest_addoption(parser):
@@ -16,6 +15,13 @@ def pytest_runtest_logreport(report):
 @pytest.fixture(scope="session")
 def abspath(pytestconfig):
     return pytestconfig.getoption("abs")
+
+
+@pytest.fixture(scope="session")
+def results():
+    res = Path("tests/results")
+    os.makedirs(res, exist_ok=True)
+    return res
 
 
 def get_au_op(i):
