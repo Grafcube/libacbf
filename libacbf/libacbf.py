@@ -1556,7 +1556,7 @@ class Styles:
 
         if self._styles[key] is None:
             if key in self._book.data.list_files():
-                self._styles[key] = self._book.data[key]
+                self._styles[key] = self._book.data[key].data
             elif self._book.archive is not None:
                 self._styles[key] = self._book.archive.read(key)
             else:
