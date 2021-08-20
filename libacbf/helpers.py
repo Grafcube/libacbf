@@ -14,7 +14,7 @@ namespaces = {
     "1.1": "http://www.acbf.info/xml/acbf/1.1"
     }
 
-url_pattern = re.compile(r'((ftp|http|https)://)(\w+:?\w*@)?(\S+)(:[0-9]+)?(/|/([\w#!:.?+=&%@\-/]))?', re.IGNORECASE)
+url_pattern = re.compile(r'([\w-]+://)(\w+:?\w*@)?(\S+)(:[0-9]+)?(/|/([\w#!:.?+=&%@\-/]))?', re.IGNORECASE)
 
 
 def check_book(func):
