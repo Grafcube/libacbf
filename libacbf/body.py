@@ -166,6 +166,82 @@ class Page:
 
         self.transition = consts.PageTransitions[tr] if tr is not None else tr
 
+    @helpers.check_book
+    def add_textlayer(self, lang: str, *areas: TextArea) -> TextLayer:
+        """Add a text layer to the page.
+
+        Parameters
+        ----------
+        lang : str
+            The language of the text layer.
+
+        *areas : TextArea, optional
+            TextArea objects to fill the layer with.
+
+        Returns
+        -------
+        TextLayer
+            The newly created text layer.
+        """
+        tl = TextLayer()
+        self.text_layers[lang] = tl
+        return tl
+
+    @helpers.check_book
+    def insert_frame(self, index: int, points: List[Tuple[int, int]]) -> Frame:
+        """Insert a frame at the index.
+
+        Parameters
+        ----------
+        index : int
+            Index to insert at.
+
+        points : List[Tuple[int, int]]
+            The points defining the frame.
+
+        Returns
+        -------
+        Frame
+            The newly created frame.
+        """
+        fr = Frame(points)
+        self.frames.insert(index, fr)
+        return fr
+
+    @helpers.check_book
+    def append_frame(self, points: List[Tuple[int, int]]) -> Frame:
+        """Append a frame to the page.
+
+        Returns
+        -------
+        Frame
+            The newly created frame.
+        """
+        fr = Frame(points)
+        self.frames.append(fr)
+        return fr
+
+    @helpers.check_book
+    def add_jump(self, points: List[Tuple[int, int]], page: int) -> Jump:
+        """Add a jump to the page.
+
+        Parameters
+        ----------
+        points : List[Tuple[int, int]]
+            The points defining the jump.
+
+        page : int
+            The target page. ``0`` is the cover page, ``1`` is the first page, ``2`` is the second page etc.
+
+        Returns
+        -------
+        Jump
+            The newly created jump.
+        """
+        jp = Jump(points, page, self._book)
+        self.jumps.append(jp)
+        return jp
+
 
 class TextLayer:
     """Defines a text layer drawn on a page.
@@ -189,6 +265,49 @@ class TextLayer:
     def __init__(self, *areas: TextArea):
         self.text_areas: List[TextArea] = list(areas)
         self.bgcolor: Optional[str] = None
+
+    @helpers.check_book
+    def insert_textarea(self, index: int, text: str, points: List[Tuple[int, int]]) -> TextArea:
+        """Insert a text area at the index.
+
+        Parameters
+        ----------
+        index : int
+            Index to insert at.
+
+        text : str
+            Multiline text of the text area.
+
+        points : List[Tuple[int, int]]
+            The points that define the text area.
+
+        Returns
+        -------
+            The newly created text area.
+        """
+        ta = TextArea(text, points)
+        self.text_areas.insert(index, ta)
+        return ta
+
+    @helpers.check_book
+    def append_textarea(self, text: str, points: List[Tuple[int, int]]) -> TextArea:
+        """Append a text area to the layer.
+
+        Parameters
+        ----------
+        text : str
+            Multiline text of the text area.
+
+        points : List[Tuple[int, int]]
+            The points that define the text area.
+
+        Returns
+        -------
+            The newly created text area.
+        """
+        ta = TextArea(text, points)
+        self.text_areas.append(ta)
+        return ta
 
 
 class TextArea:
