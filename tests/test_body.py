@@ -45,7 +45,7 @@ def test_body_pages(dir, results_body):
 
             for jm in pg.jumps:
                 pts = [f"({x[0]},{x[1]})" for x in jm.points]
-                fr_jm_output["jumps"][pg.image_ref] = {"page": jm.page, "points": pts}
+                fr_jm_output["jumps"][pg.image_ref] = {"page": jm.page, "target": jm.target, "points": pts}
 
             textlayer_output[pg.image_ref] = []
             for lang, tl in pg.text_layers.items():
