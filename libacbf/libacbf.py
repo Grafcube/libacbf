@@ -102,7 +102,7 @@ def _edit_date(section, attr_s: str, attr_d: str, dt: Union[str, date], include_
     setattr(section, attr_d, date_val)
 
 
-def _fill_page(pg, page, nsmap):
+def _fill_page(pg, page, nsmap, book):
     """Fill Page data from XML tree.
     """
     for fr in pg.findall("frame", namespaces=nsmap):
@@ -112,7 +112,7 @@ def _fill_page(pg, page, nsmap):
         page.frames.append(frame)
 
     for jp in pg.findall("jump", namespaces=nsmap):
-        jump = libacbf.body.Jump(helpers.pts_to_vec(jp.attrib["points"]), int(jp.attrib["page"]))
+        jump = libacbf.body.Jump(helpers.pts_to_vec(jp.attrib["points"]), int(jp.attrib["page"]), book)
         page.jumps.append(jump)
 
     # Text Layers
@@ -679,7 +679,7 @@ class ACBFBook:
                     fr.set("bgcolor", frame.bgcolor)
 
             for jump in page.jumps:
-                etree.SubElement(pg, f"{ns}jump", page=jump.page, points=helpers.vec_to_pts(jump.points),
+                etree.SubElement(pg, f"{ns}jump", page=jump.target, points=helpers.vec_to_pts(jump.points),
                                  nsmap=self._nsmap)
 
         #endregion
@@ -925,7 +925,7 @@ class BookInfo:
         cpage = info.find("coverpage", namespaces=nsmap)
         image_ref = cpage.find("image", namespaces=nsmap).attrib["href"]
         self.coverpage = libacbf.body.Page(image_ref, book, coverpage=True)
-        _fill_page(cpage, self.coverpage, nsmap)
+        _fill_page(cpage, self.coverpage, nsmap, self._book)
 
         # --- Optional ---
 
@@ -1289,7 +1289,7 @@ class ACBFBody:
                     lang = langcodes.standardize_tag(title.attrib["lang"])
                 page.title[lang] = title.text
 
-            _fill_page(pg, page, nsmap)
+            _fill_page(pg, page, nsmap, self._book)
 
             self.pages.append(page)
 

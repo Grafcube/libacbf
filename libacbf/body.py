@@ -299,11 +299,31 @@ class Jump:
     ----------
     points : List[Tuple[int, int]]
         A list of tuples as coordinates.
-
-    page : int
-        Target page to go to when clicked. Cover page is ``0``, first page is ``1``, second page is ``2`` and so on.
     """
 
-    def __init__(self, points: List[Tuple[int, int]], page: int):
-        self.page: int = page
+    def __init__(self, points: List[Tuple[int, int]], page: int, book: ACBFBook):
+        self._book = book
+
+        self.page: Page = page
         self.points: List[Tuple[int, int]] = points
+
+    @property
+    def page(self) -> Page:
+        """Target page to go to when clicked. Set with integer where cover page is ``0``, first page is ``1``, second
+        page is ``2`` and so on.
+        """
+        return self._page
+
+    @page.setter
+    def page(self, target):
+        if target == 0:
+            self._page = self._book.book_info.coverpage
+        else:
+            self._page = self._book.body.pages[target]
+        self._target = target
+
+    @property
+    def target(self) -> int:
+        """The target page index. Cover page is ``0``, first page is ``1``, second page is ``2`` and so on.
+        """
+        return self._target
