@@ -53,8 +53,29 @@ def results_documentinfo(results):
 
 
 @pytest.fixture(scope="session")
-def results_edit_create(results):
-    res = results / "test_edit/test_create"
+def results_edit(results):
+    res = results / "test_edit"
+    os.makedirs(res, exist_ok=True)
+    return res
+
+
+@pytest.fixture(scope="session")
+def results_edit_create(results_edit):
+    res = results_edit / "test_create"
+    os.makedirs(res, exist_ok=True)
+    return res
+
+
+@pytest.fixture(scope="session")
+def results_edit_convert(results_edit):
+    res = results_edit / "test_convert"
+    os.makedirs(res, exist_ok=True)
+    return res
+
+
+@pytest.fixture(scope="session")
+def results_edit_data(results_edit):
+    res = results_edit / "test_data"
     os.makedirs(res, exist_ok=True)
     return res
 

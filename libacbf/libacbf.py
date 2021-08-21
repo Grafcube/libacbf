@@ -1595,6 +1595,7 @@ class Styles:
             ACBF XML.
         """
         self._styles.pop(style_name)
+        self.types.pop(style_name)
         if style_name != '_':
             self._book.data.remove_data(style_name, embedded)
 

@@ -2,8 +2,6 @@ import os
 from pathlib import Path
 from libacbf import ACBFBook
 
-edit_dir = Path("tests/results/edit_book")
-os.makedirs(edit_dir, exist_ok=True)
 
 
 def test_references():
@@ -40,12 +38,17 @@ def test_data():
             book.data.remove_data("to_be_removed2.jpg", embed=True)
 
 
-def test_styles():
-    with ACBFBook(edit_dir / "test_styles.cbz", 'w') as book:
-        book.book_info.edit_title("Test Edit styles")
+def test_styles(results_edit):
+    with ACBFBook(results_edit / "test_styles.cbz", 'w') as book:
+        book.book_info.book_title['_'] = "Test Edit styles"
 
-        book.styles.edit_style("tests/samples/assets/styles/default.css", '_')
-        book.styles.edit_style("tests/samples/assets/styles/styles.css", "styles/to_be_removed.css")
-        book.styles.edit_style("tests/samples/assets/styles/sample.scss", type="text/x-scss")
+        book.styles.edit_style("tests/samples/assets/test.css", '_')
+        book.styles.edit_style("tests/samples/assets/test.css", "embedded_test.css", embed=True)
+        book.styles.edit_style("tests/samples/assets/test.css", "REMOVE_ME.css", embed=True)
+        book.styles.edit_style("tests/samples/assets/test.css", "styles/REMOVE_ME.css")
+        book.styles.edit_style("tests/samples/assets/styles/test.scss", type="text/x-scss")
         book.styles.edit_style("tests/samples/assets/styles/test.scss", "styles/style.scss", "text/x-scss")
-        book.styles.remove_style("styles/to_be_removed.css")
+        book.styles.remove_style("styles/REMOVE_ME.css")
+        book.styles.remove_style("REMOVE_ME.css", embedded=True)
+
+        book.create_placeholders()
