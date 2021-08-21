@@ -1406,8 +1406,8 @@ class ACBFData:
         return set(self._files.keys())
 
     @helpers.check_book
-    def add_data(self, target: Union[str, Path], name: str = None, embed: bool = False):
-        """Add or embed file at target path into the book.
+    def add_data(self, target: Union[str, Path, bytes], name: str = None, embed: bool = False):
+        """Add or embed data into the book.
 
         Parameters
         ----------
@@ -1421,16 +1421,23 @@ class ACBFData:
             Whether to embed the file in the ACBF XML. Cannot be ``False`` if book is not an archive type.
         """
         if self._book.archive is None and not embed:
-            raise AttributeError("Book is not an archive type. Write data with `embed = True`.")
+            raise AttributeError("Book is not an archive type. Write data with `embed = True` or use "
+                                 "`ACBFBook.make_archive(...)` to convert the book to an archive.")
 
         if isinstance(target, str):
             target = Path(target).resolve(True)
 
+        if isinstance(target, bytes) and name is None:
+            raise ValueError("`name` is required if `target` is bytes.")
+
         name = target.name if name is None else name
 
         if embed:
-            with open(target, 'rb') as file:
-                contents = file.read()
+            if isinstance(target, bytes):
+                contents = target
+            else:
+                with open(target, 'rb') as file:
+                    contents = file.read()
             type = magic.from_buffer(contents, True)
             data = b64encode(contents).decode("utf-8")
 
@@ -1451,7 +1458,8 @@ class ACBFData:
             Whether to check for file in archive or embedded in ACBF XML. Must be true if book is plain ACBF XML.
         """
         if self._book.archive is None and not embed:
-            raise AttributeError("Book is not an archive type. Write data with `embed = True`.")
+            raise AttributeError("Book is not an archive type. Write data with `embed = True` or use "
+                                 "`ACBFBook.make_archive(...)` to convert the book to an archive.")
 
         if embed:
             if not isinstance(target, str):
@@ -1525,7 +1533,8 @@ class Styles:
         return set(self.types.keys())
 
     @helpers.check_book
-    def edit_style(self, stylesheet_ref: Union[str, Path], style_name: str = None, type: str = "text/css"):
+    def edit_style(self, stylesheet: Union[str, Path, bytes], style_name: str = None, type: str = "text/css",
+                   embed: bool = False):
         """Writes or overwrites file in book with referenced stylesheet.
 
         Parameters
@@ -1540,24 +1549,29 @@ class Styles:
         type : str, default="text/css"
             Mime Type of stylesheet. Defaults to CSS but can be others (like SASS).
         """
-        if isinstance(stylesheet_ref, str):
-            stylesheet_ref = Path(stylesheet_ref)
+        if isinstance(stylesheet, str):
+            stylesheet = Path(stylesheet)
+
+        if isinstance(stylesheet, bytes) and style_name is None:
+            raise ValueError("`style_name` is required if `stylesheet` is bytes.")
 
         if style_name is None:
-            style_name = stylesheet_ref.name
+            style_name = stylesheet.name
 
         if style_name == '_':
-            with open(stylesheet_ref, "rb") as css:
-                self._styles['_'] = css.read()
+            if isinstance(stylesheet, bytes):
+                self._styles['_'] = stylesheet
+            else:
+                with open(stylesheet, "rb") as css:
+                    self._styles['_'] = css.read()
             self.types['_'] = type
         else:
-            if self._book.archive is not None:
-                self._book.archive.write(stylesheet_ref, style_name)
+            self._book.data.add_data(stylesheet, style_name, embed)
             self._styles[style_name] = None
             self.types[style_name] = type
 
     @helpers.check_book
-    def remove_style(self, style_name: str):
+    def remove_style(self, style_name: str, embedded: bool = False):
         """Remove stylesheet from book.
 
         Parameters
@@ -1566,8 +1580,8 @@ class Styles:
             Stylesheet to remove. If it is ``'_'``, remove embedded stylesheet.
         """
         self._styles.pop(style_name)
-        if self._book.archive is not None:
-            self._book.archive.delete(style_name)
+        if style_name != '_':
+            self._book.data.remove_data(style_name, embedded)
 
     def __len__(self):
         len(self._styles.keys())

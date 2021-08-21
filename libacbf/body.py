@@ -183,7 +183,7 @@ class Page:
         TextLayer
             The newly created text layer.
         """
-        tl = TextLayer()
+        tl = TextLayer(*areas)
         self.text_layers[lang] = tl
         return tl
 
