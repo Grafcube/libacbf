@@ -2,7 +2,7 @@ import os
 import shutil
 from io import UnsupportedOperation
 from pathlib import Path
-from typing import Dict, Tuple, Optional, Union, Literal, BinaryIO
+from typing import Set, Optional, Union, Literal, BinaryIO
 from tempfile import TemporaryDirectory
 from zipfile import ZipFile, is_zipfile
 from py7zr import SevenZipFile, is_7zfile
@@ -18,7 +18,7 @@ def get_archive_type(file: Union[str, Path, BinaryIO]) -> ArchiveTypes:
 
     Parameters
     ----------
-    file : str | Path | BinaryIO
+    file : str | pathlib.Path | BinaryIO
         File to check.
 
     Returns
@@ -62,7 +62,7 @@ class ArchiveReader:
 
     Parameters
     ----------
-    file : str | Path | BinaryIO
+    file : str | pathlib.Path | BinaryIO
         Archive file to be used.
 
     mode : 'r' | 'w'
@@ -76,13 +76,25 @@ class ArchiveReader:
     type : ArchiveTypes
         The type of archive. See enum for possible types.
 
-    changes : Dict[str, str]
-        Changes to be applied on save. Writing and deleting files in the archive are not done immediately. They keys
-        are the names of the files in the archive and the values are the target files to be written or ``''`` if it is
-        to be deleted.
+    mode : 'r' | 'w'
+        Mode to open file in. Can be ``'r'`` for read-only or ``'w'`` for read-write. Nothing is overwritten.
+
+    _extract : tempfile.TemporaryDirectory | None
+        The contents of the archive are extracted to a temporary directory in write mode only and this is used for
+        listing, reading and writing. It is created in the same directory as the archive or, if the path is not found,
+        it is created in the system temp directory.
+
+    _arc_path : pathlib.Path | None
+        The path to the temporary directory the archive is extracted to in write mode.
+
+    _source : str | Path | BinaryIO
+        The file passed in.
     """
 
     def __init__(self, file: Union[str, Path, BinaryIO], mode: Literal['r', 'w'] = 'r'):
+        self._extract = None
+        self._arc_path = None
+        self._source = file
         self.mode: Literal['r', 'w'] = mode
         self.type: ArchiveTypes = get_archive_type(file)
 
@@ -96,10 +108,9 @@ class ArchiveReader:
         if hasattr(file, "seek"):
             file.seek(0)
 
-        self.changes: Dict[str, str] = {}
-
-        if mode == 'w' and self.type == ArchiveTypes.Rar:
-            raise EditRARArchiveError
+        if mode == 'w':
+            if self.type == ArchiveTypes.Rar:
+                raise EditRARArchiveError
 
         if arc is None:
             if self.type == ArchiveTypes.Zip:
@@ -116,9 +127,18 @@ class ArchiveReader:
 
         self.archive: Union[ZipFile, SevenZipFile, tar.TarFile, RarFile] = arc
 
+        if mode == 'w':
+            if self.filepath is not None:
+                self._extract = TemporaryDirectory(dir=self.filepath.parent)
+            else:
+                self._extract = TemporaryDirectory()
+
+            self._arc_path = Path(self._extract.name)
+            self.archive.extractall(self._arc_path)
+
     @property
-    def filename(self) -> Optional[str]:
-        """Name of the archive file. Returns ``None`` if it does not have a path.
+    def filepath(self) -> Optional[Path]:
+        """Path to the archive file. Returns ``None`` if it does not have a path.
         """
         name = None
         if self.type in (ArchiveTypes.Zip, ArchiveTypes.SevenZip, ArchiveTypes.Rar):
@@ -127,52 +147,73 @@ class ArchiveReader:
             name = self.archive.name
 
         if name is not None:
-            name = Path(name).name
+            name = Path(name)
         return name
+
+    @property
+    def filename(self) -> Optional[str]:
+        """Name of the archive file. Returns ``None`` if it does not have a path.
+        """
+        return self.filepath.name
 
     def _get_acbf_file(self) -> Optional[str]:
         """Returns the name of the first file with the ``.acbf`` extension at the root level of the archive or ``None``
         if no file is found.
         """
         acbf_file = None
-        if self.type in (ArchiveTypes.Zip, ArchiveTypes.Rar):
-            for i in self.archive.infolist():
-                if not i.is_dir() and '/' not in i.filename and i.filename.endswith(".acbf"):
-                    acbf_file = i.filename
+
+        if self._arc_path is not None:
+            for i in self._arc_path.glob('*.acbf'):
+                if i.is_file():
+                    acbf_file = str(i)
                     break
-        elif self.type == ArchiveTypes.SevenZip:
-            for i in self.archive.list():
-                if not i.is_directory and '/' not in i.filename and i.filename.endswith(".acbf"):
-                    acbf_file = i.filename
-                    break
-        elif self.type == ArchiveTypes.Tar:
-            for i in self.archive.getmembers():
-                if i.isfile() and '/' not in i.name and i.name.endswith(".acbf"):
-                    acbf_file = i.name
-                    break
+        else:
+            if self.type in (ArchiveTypes.Zip, ArchiveTypes.Rar):
+                for i in self.archive.infolist():
+                    if not i.is_dir() and '/' not in i.filename and i.filename.endswith(".acbf"):
+                        acbf_file = i.filename
+                        break
+            elif self.type == ArchiveTypes.SevenZip:
+                self.archive.reset()
+                for i in self.archive.list():
+                    if not i.is_directory and '/' not in i.filename and i.filename.endswith(".acbf"):
+                        acbf_file = i.filename
+                        break
+            elif self.type == ArchiveTypes.Tar:
+                for i in self.archive.getmembers():
+                    if i.isfile() and '/' not in i.name and i.name.endswith(".acbf"):
+                        acbf_file = i.name
+                        break
+
         return acbf_file
 
-    def list_files(self) -> Tuple[str]:
+    def list_files(self) -> Set[str]:
         """Returns a list of all the names of the files in the archive.
         """
-        if self.type in (ArchiveTypes.Zip, ArchiveTypes.Rar):
-            return (x.filename for x in self.archive.infolist() if not x.is_dir())
-        elif self.type == ArchiveTypes.Tar:
-            return (x.name for x in self.archive.getmembers() if x.isfile())
-        elif self.type == ArchiveTypes.SevenZip:
-            self.archive.reset()
-            return (x.filename for x in self.archive.list() if not x.is_directory)
+        if self._arc_path is not None:
+            return {str(x.relative_to(self._arc_path)) for x in self._arc_path.rglob('*') if x.is_file()}
+        else:
+            if self.type in (ArchiveTypes.Zip, ArchiveTypes.Rar):
+                return {x.filename for x in self.archive.infolist() if not x.is_dir()}
+            elif self.type == ArchiveTypes.Tar:
+                return {x.name for x in self.archive.getmembers() if x.isfile()}
+            elif self.type == ArchiveTypes.SevenZip:
+                self.archive.reset()
+                return {x.filename for x in self.archive.list() if not x.is_directory}
 
-    def list_dirs(self) -> Tuple[str]:
+    def list_dirs(self) -> Set[str]:
         """Returns a list of all the directories in the archive.
         """
-        if self.type in (ArchiveTypes.Zip, ArchiveTypes.Rar):
-            return (x.filename for x in self.archive.infolist() if x.is_dir())
-        elif self.type == ArchiveTypes.Tar:
-            return (x.name for x in self.archive.getmembers() if x.isdir())
-        elif self.type == ArchiveTypes.SevenZip:
-            self.archive.reset()
-            return (x.filename for x in self.archive.list() if x.is_directory)
+        if self._arc_path is not None:
+            return {str(x.relative_to(self._arc_path)) for x in self._arc_path.rglob('*') if x.is_dir()}
+        else:
+            if self.type in (ArchiveTypes.Zip, ArchiveTypes.Rar):
+                return {x.filename for x in self.archive.infolist() if x.is_dir()}
+            elif self.type == ArchiveTypes.Tar:
+                return {x.name for x in self.archive.getmembers() if x.isdir()}
+            elif self.type == ArchiveTypes.SevenZip:
+                self.archive.reset()
+                return {x.filename for x in self.archive.list() if x.is_directory}
 
     def read(self, target: str) -> Optional[bytes]:
         """Get file as bytes from archive.
@@ -189,120 +230,124 @@ class ArchiveReader:
         """
         contents = None
 
-        if self.type in (ArchiveTypes.Zip, ArchiveTypes.Rar):
-            with self.archive.open(target, 'r') as file:
+        if self._arc_path is not None:
+            with open(self._arc_path / target, 'rb') as file:
                 contents = file.read()
-
-        elif self.type == ArchiveTypes.SevenZip:
-            self.archive.reset()
-            with self.archive.read([target])[target] as file:
-                contents = file.read()
-
-        elif self.type == ArchiveTypes.Tar:
-            with self.archive.extractfile(target) as file:
-                contents = file.read()
+        else:
+            if self.type in (ArchiveTypes.Zip, ArchiveTypes.Rar):
+                with self.archive.open(target, 'r') as file:
+                    contents = file.read()
+            elif self.type == ArchiveTypes.SevenZip:
+                self.archive.reset()
+                with self.archive.read([target])[target] as file:
+                    contents = file.read()
+            elif self.type == ArchiveTypes.Tar:
+                with self.archive.extractfile(target) as file:
+                    contents = file.read()
 
         return contents
 
-    def write(self, target: Union[str, Path], arcname: Optional[str] = None):
-        """Write file to archive. Call :meth:`save()` to apply changes.
+    def write(self, target: Union[str, Path, bytes], arcname: Optional[str] = None):
+        """Write file to archive.
 
         Parameters
         ----------
-        target : str | Path
-            Path of file to be written.
+        target : str | Path | bytes
+            File to be written. Reads a file on disk if string or path is passed. Writes data directly if bytes is
+            passed.
+
         arcname : str, default=Name of target file
             Name of file in archive.
         """
         if self.mode == 'r':
-            raise UnsupportedOperation("Book is not writeable.")
+            raise UnsupportedOperation("Archive is not writeable.")
 
         if isinstance(target, str):
             target = Path(target)
-        target = target.resolve(True)
+
+        contents = None
+
+        if isinstance(target, Path):
+            target = target.resolve(True)
+            with open(target, 'rb') as src:
+                contents = src.read()
+
+        if isinstance(target, bytes):
+            contents = target
 
         if arcname is None:
+            if isinstance(target, bytes):
+                raise AttributeError("`arcname` is required if `target` is bytes.")
             arcname = target.name
 
-        self.changes[arcname] = str(target)
+        if not (self._arc_path / arcname).resolve().is_relative_to(self._arc_path):
+            raise ValueError("`arcname` does not resolve to a file inside the archive.")
 
-    def delete(self, target: Union[str, Path]):
-        """File to delete from archive. Call :meth:`save()` to apply changes. Always recursive for directories.
+        os.makedirs(self._arc_path / Path(arcname).parent, exist_ok=True)
+
+        with open(self._arc_path / arcname, 'wb') as file:
+            file.write(contents)
+
+    def delete(self, target: Union[str, Path], recursive: bool = False):
+        """File to delete from archive.
 
         Parameters
         ----------
         target : str | Path
             Path of file to delete relative to root of archive.
+
+        recursive : bool, default=False
+            Whether to remove directories recursively.
         """
         if self.mode == 'r':
-            UnsupportedOperation("Book is not writeable.")
+            UnsupportedOperation("Archive is not writeable.")
 
         if isinstance(target, str):
             target = Path(target)
 
-        files = (Path(x) for x in self.list_files() + self.list_dirs() + list(self.changes.keys()))
-        if not target.is_absolute() and target in files:
-            self.changes[str(target)] = ''
+        if isinstance(target, Path):
+            target = target.resolve(True)
+
+        if not (self._arc_path / target).resolve().is_relative_to(self._arc_path):
+            raise ValueError("`target` does not resolve to a file inside the archive.")
+
+        if target.is_file():
+            try:
+                os.remove(self._arc_path / target)
+            except FileNotFoundError:
+                pass
         else:
-            raise FileNotFoundError("File not in archive.")
-
-    def save(self, file: Union[str, BinaryIO]):
-        """Saves all changes.
-
-        Parameters
-        ----------
-        file : str | BinaryIO
-            Path or file object to save the archive to.
-        """
-        if self.mode == 'r':
-            UnsupportedOperation("Book is not writeable.")
-
-        with TemporaryDirectory() as td:
-            td = Path(td)
-
-            if len(self.list_files() + self.list_dirs()) > 0:
-                self.archive.extractall(td)
-
-            for action, source in self.changes.items():
-                action = Path(action)
-                action.resolve()
-                os.makedirs(td / action.parent, exist_ok=True)
-                if source != '':
-                    shutil.copy(source, td / action)
-                else:
-                    if source in self.list_files():
-                        try:
-                            os.remove(td / source)
-                        except FileNotFoundError:
-                            pass
-                    elif source in self.list_dirs():
-                        shutil.rmtree(td / source)
-
-            self.changes.clear()
-            files = (x.relative_to(td) for x in td.rglob('*') if x.is_file())
-            self.archive.close()
-
-            if self.type == ArchiveTypes.Zip:
-                with ZipFile(file, 'w') as arc:
-                    for i in files:
-                        arc.write(str(td / i), str(i))
-                self.archive = ZipFile(file, 'r')
-            elif self.type == ArchiveTypes.SevenZip:
-                with SevenZipFile(file, 'w') as arc:
-                    for i in files:
-                        arc.write(td / i, str(i))
-                self.archive = SevenZipFile(file, 'r')
-            elif self.type == ArchiveTypes.Tar:
-                with tar.open(file, 'w') as arc:
-                    for i in files:
-                        arc.add(str(td / i), str(i))
-                self.archive = tar.open(file, 'r')
+            if recursive:
+                shutil.rmtree(self._arc_path / target)
+            else:
+                try:
+                    os.rmdir(self._arc_path / target)
+                except FileNotFoundError:
+                    pass
 
     def close(self):
-        """Discard changes and close archive file.
+        """Close archive file. Save changes if writeable.
         """
-        self.changes.clear()
         self.archive.close()
+
+        if self._arc_path is not None:
+
+            if self.type == ArchiveTypes.Zip:
+                with ZipFile(self._source, 'w') as arc:
+                    for i in self.list_files():
+                        arc.write(i)
+
+            elif self.type == ArchiveTypes.SevenZip:
+                with SevenZipFile(self._source, 'w') as arc:
+                    for i in self.list_files():
+                        arc.write(i)
+
+            elif self.type == ArchiveTypes.Tar:
+                with tar.open(self._source, 'w') as arc:
+                    for i in self.list_files():
+                        arc.add(i)
+
+            self._extract.cleanup()
 
     def __enter__(self):
         return self

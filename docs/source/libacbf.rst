@@ -207,4 +207,6 @@ libacbf.archivereader module
 .. automodule:: libacbf.archivereader
     :members:
     :undoc-members:
+    :private-members:
+    :special-members:
     :show-inheritance:

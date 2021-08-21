@@ -1,7 +1,5 @@
-import os
 import re
 import warnings
-import tempfile
 import magic
 import distutils.util
 import dateutil.parser
@@ -224,8 +222,10 @@ class ACBFBook:
         The type of ACBF book that the file is. If ``None`` Then creates a plain XML book. Otherwise creates archive of
         format. Accepted string values are listed at :class:`ArchiveTypes <libacbf.constants.ArchiveTypes>`.
 
+        Warning
+        -------
         You do not have to specify the type of archive unless you are creating a new one. The correct type will be
-        determined regardless of this parameter's value. Use this when you want to create a new archive.
+        determined regardless of this parameter's value. Use this when you want to create a new book.
 
     Raises
     ------
@@ -342,8 +342,6 @@ class ACBFBook:
         if archive_type == consts.ArchiveTypes.Rar and mode != 'r':
             raise EditRARArchiveError
 
-        arc_mode = mode
-
         def create_file():
             if not is_text:
                 arc = None
@@ -354,14 +352,9 @@ class ACBFBook:
                 elif archive_type == consts.ArchiveTypes.Tar:
                     arc = tar.open(file, 'w')
 
+                self.archive = ArchiveReader(arc, 'w')
                 name = self.book_path.stem + ".acbf" if self.book_path is not None else "book.acbf"
-                self.archive = ArchiveReader(arc, arc_mode)
-                acbf_path = Path(tempfile.gettempdir()) / name
-                with open(acbf_path, 'w') as xml:
-                    xml.write(get_book_template())
-                self.archive.write(acbf_path)
-                self.archive.save(file)
-                os.remove(acbf_path)
+                self.archive.write(get_book_template().encode("utf-8"), name)
             else:
                 if self.book_path is not None:
                     with open(str(self.book_path), 'w') as book:
@@ -372,21 +365,15 @@ class ACBFBook:
         if mode in ('r', 'a'):
             if self.book_path is not None and not self.book_path.is_file():
                 raise FileNotFoundError
+
             if mode == 'a' and not is_text:
-                arc_mode = 'w'
-                self.archive = ArchiveReader(file, arc_mode)
+                self.archive = ArchiveReader(file, 'w')
                 if self.archive._get_acbf_file() is None:
-                    name = "book.acbf"
-                    if self.archive.filename is not None:
-                        name = Path(self.archive.filename).with_suffix(".acbf")
-                    acbf_path = Path(tempfile.gettempdir()) / name
+                    name = Path(self.archive.filename).stem + ".acbf" \
+                        if self.archive.filename is not None \
+                        else "book.acbf"
 
-                    with open(acbf_path, 'w') as xml:
-                        xml.write(get_book_template())
-
-                    self.archive.write(acbf_path)
-                    self.archive.save(file)
-                    os.remove(acbf_path)
+                    self.archive.write(get_book_template().encode("utf-8"), name)
 
         elif mode == 'x':
             if self.book_path is not None:
@@ -396,10 +383,11 @@ class ACBFBook:
                     create_file()
             else:
                 raise FileExistsError
-            arc_mode = 'w'
 
         elif mode == 'w':
             create_file()
+
+        arc_mode = 'w' if mode in ('w', 'a', 'x') else 'r'
 
         if not is_text:
             if self.archive is None:
@@ -412,7 +400,7 @@ class ACBFBook:
             if self.book_path is None:
                 contents = file.read()
             else:
-                with open(str(file), 'r') as book:
+                with open(file, 'r') as book:
                     contents = book.read()
 
         if isinstance(contents, bytes):
@@ -421,7 +409,7 @@ class ACBFBook:
         self._root = etree.fromstring(bytes(contents, "utf-8"))
         self._nsmap: str = self._root.nsmap
 
-        if mode == 'r':
+        if mode in ('r', 'a'):
             _validate_acbf(self._root.getroottree(), self._nsmap[None])
 
         self.styles: Styles = Styles(self)
@@ -715,59 +703,64 @@ class ACBFBook:
 
         return root.getroottree()
 
-    def save(self, file: Union[str, Path, IO, None] = None, overwrite: bool = False):
-        """Save to file.
+    def get_acbf_xml(self) -> str:
+        """Get the XML tree of the ACBF book.
+
+        Returns
+        -------
+        str
+            The XML content of the ACBF book.
+        """
+        return etree.tostring(self._get_acbf_tree(),
+                              encoding="utf-8",
+                              xml_declaration=True,
+                              pretty_print=True
+                              ).decode("utf-8")
+
+    def make_archive(self, archive_type: str = "Zip"):
+        """Convert a plain ACBF XML book to an archive format.
 
         Parameters
         ----------
-        file : str | Path | IO, optional
-            Path to save to. Defaults to the original path/file.
-
-        overwrite : bool, default=False
-            Whether to overwrite if file already exists at path. ``False`` by default.
+        archive_type : str, default="Zip"
+            The type of archive to create. Allowed values are listed at
+            :class:`ArchiveTypes <libacbf.constants.ArchiveTypes>`.
         """
-        if self.mode == 'r':
-            raise UnsupportedOperation("Book is not writeable.")
+        archive_type = consts.ArchiveTypes[archive_type]
 
-        xml_data = etree.tostring(self._get_acbf_tree(),
-                                  encoding="utf-8",
-                                  xml_declaration=True,
-                                  pretty_print=True
-                                  ).decode("utf-8")
+        if self.archive is not None:
+            raise AttributeError(f"Book is already an archive of type `{self.archive.type.name}`.")
 
-        if isinstance(file, str):
-            file = Path(file)
+        helpers.check_write(self)
 
-        if file is None:
-            if self.book_path is not None:
-                file = self.book_path
-            else:
-                file = self._source
-        elif isinstance(file, Path):
-            if file.is_file() and not overwrite:
-                raise FileExistsError
-            self.book_path = file.absolute()
+        if archive_type == consts.ArchiveTypes.Rar:
+            raise EditRARArchiveError
 
-        if self.archive is None:
-            if isinstance(file, Path):
-                with open(str(file), 'w') as book:
-                    book.write(xml_data)
-            else:
-                file.write(xml_data)
-        else:
-            acbf_path = Path(tempfile.gettempdir()) / self.archive._get_acbf_file()
-            with open(acbf_path, 'w') as xml:
-                xml.write(xml_data)
-            self.archive.write(acbf_path)
-            self.archive.save(file)
-            os.remove(acbf_path)
+        arc = None
+        if archive_type == consts.ArchiveTypes.Zip:
+            arc = ZipFile(self._source, 'w')
+        elif archive_type == consts.ArchiveTypes.SevenZip:
+            arc = SevenZipFile(self._source, 'w')
+        elif archive_type == consts.ArchiveTypes.Tar:
+            arc = tar.open(self._source, 'w')
+
+        self.archive = ArchiveReader(arc, 'w')
+        name = self.book_path.stem + ".acbf" if self.book_path is not None else "book.acbf"
+        self.archive.write(self.get_acbf_xml().encode("utf-8"), name)
 
     def close(self):
-        """Saves the book and closes the archive if it exists. Metadata and embedded data can still be read. Use
-        ``ACBFBook.is_open`` to check if file is open.
+        """Saves and closes the book and closes the archive if it exists. Metadata and embedded data can still be read.
+        Use ``ACBFBook.is_open`` to check if file is open.
         """
         if self.mode != 'r':
-            self.save(overwrite=True)
+            if self.archive is None:
+                if self.book_path is not None:
+                    with open(self._source, 'w') as book:
+                        book.write(self.get_acbf_xml())
+                else:
+                    self._source.write(self.get_acbf_xml())
+            else:
+                self.archive.write(self.get_acbf_xml().encode("utf-8"), self.archive._get_acbf_file())
 
         self.mode = 'r'
         self.is_open = False
