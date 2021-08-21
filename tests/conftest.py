@@ -80,6 +80,13 @@ def results_edit_data(results_edit):
     return res
 
 
+@pytest.fixture(scope="session")
+def results_edit_body(results_edit):
+    res = results_edit / "test_body"
+    os.makedirs(res, exist_ok=True)
+    return res
+
+
 def get_au_op(i):
     new_op = i.__dict__.copy()
     new_op["activity"] = new_op["_activity"].name if new_op["_activity"] is not None else None

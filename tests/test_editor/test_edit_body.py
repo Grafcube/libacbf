@@ -1,199 +1,152 @@
-import os
 import json
-import pytest
-from pathlib import Path
 from libacbf import ACBFBook
 
-edit_dir = Path("tests/results/edit_body/")
-os.makedirs(edit_dir, exist_ok=True)
 
-
-def test_images(abspath):
-    with ACBFBook(edit_dir / "test_images.cbz", 'w') as book:
-        book.book_info.edit_title("Test Image Ref")
+def test_images(results_edit_body, abspath):
+    with ACBFBook(results_edit_body / "test_images.cbz", 'w') as book:
+        book.book_info.book_title['_'] = "Test Image Ref"
 
         book.data.add_data("tests/samples/assets/cover.jpg")
         book.data.add_data("tests/samples/assets/page1.jpg")
         book.data.add_data("tests/samples/assets/page2.jpg", "img/page2.jpg")
         book.data.add_data("tests/samples/assets/page3.jpg", embed=True)
-        book.save()
 
         arcref = r"zip:tests/samples/Doctorow, Cory - Craphound - NoACBF.cbz!page4.jpg"
         url = r"https://upload.wikimedia.org/wikipedia/commons/c/cf/Afgretygh.png"
 
-        book.book_info.cover_page.set_image_ref("cover.jpg")
-        book.body.pages[0].set_image_ref("page1.jpg")
-        book.body.insert_new_page(1, "img/page2.jpg")
-        book.body.insert_new_page(2, "#page3.jpg")
-        book.body.insert_new_page(3, arcref)
-        book.body.insert_new_page(4, url)
+        book.book_info.coverpage.image_ref = "cover.jpg"
+        book.body.append_page("page1.jpg")
+        book.body.append_page("img/page2.jpg")
+        book.body.append_page("#page3.jpg")
+        book.body.append_page(arcref)
+        book.body.append_page(url)
 
         if abspath is not None:
-            book.body.insert_new_page(4, abspath)
+            book.body.append_page(abspath)
 
         ops = {}
-        cover = book.book_info.cover_page.image
+        cover = book.book_info.coverpage.image
         ops[cover.id] = len(cover.data)
         for pg in book.body.pages:
             ops[pg.image.id] = len(pg.image.data)
 
-        with open(edit_dir / "test_images.json", 'w', encoding="utf-8") as op:
+        with open(results_edit_body / "test_images.json", 'w', encoding="utf-8") as op:
             op.write(json.dumps(ops, ensure_ascii=False, indent='\t', separators=(', ', ': ')))
 
 
-def test_textlayers():
-    with ACBFBook(edit_dir / "test_textlayers.acbf", 'w', archive_type=None) as book:
-        book.book_info.edit_title("Test Text Layers")
+def test_textlayers(results_edit_body):
+    with ACBFBook(results_edit_body / "test_textlayers.acbf", 'w', archive_type=None) as book:
+        book.book_info.book_title['_'] = "Test Text Layers"
 
-        pg = book.body.pages[0]
+        book.body.append_page('')
+        pg = book.body.pages[-1]
 
         pg.add_textlayer("en")
-        pg.text_layers["en"].insert_new_textarea(0, [(0, 0), (0, 1), (1, 1), (1, 0)], "English Layer")
+        pg.text_layers["en"].append_textarea("English Layer", [(0, 0), (0, 1), (1, 1), (1, 0)])
 
         pg.add_textlayer("kn")
-        pg.text_layers["kn"].insert_new_textarea(0, [(0, 0), (0, 1), (1, 1), (1, 0)], "ಕನ್ನಡದ ಲೆಯರ್")
+        pg.text_layers["kn"].append_textarea("ಕನ್ನಡದ ಲೆಯರ್", [(0, 0), (0, 1), (1, 1), (1, 0)])
 
-        pg.add_textlayer("sk")
-        pg.text_layers["sk"].insert_new_textarea(0, [(0, 0), (0, 1), (1, 1), (1, 0)], "தமிழ் லெயர்")
+        pg.add_textlayer("ta")
+        pg.text_layers["ta"].append_textarea("தமிழ் லெயர்", [(0, 0), (0, 1), (1, 1), (1, 0)])
 
         pg.add_textlayer("ja")
-        pg.text_layers["ja"].insert_new_textarea(0, [(0, 0), (0, 1), (1, 1), (1, 0)], "日本語のレイヤー")
+        pg.text_layers["ja"].append_textarea("日本語のレイヤー", [(0, 0), (0, 1), (1, 1), (1, 0)])
 
-        pg.remove_textlayer("ja")
-        pg.change_textlayer_lang("sk", "ta")
-
-
-def test_textareas():
-    with ACBFBook(edit_dir / "test_textareas.acbf", 'w', archive_type=None) as book:
-        book.book_info.edit_title("Test Text Areas")
-
-        book.body.pages[0].add_textlayer("en")
-        tl = book.body.pages[0].text_layers["en"]
-
-        tl.insert_new_textarea(0, [(0, 0), (0, 1), (1, 1), (1, 0)], "Area 1.")
-        tl.insert_new_textarea(1, [(0, 0), (0, 1), (1, 1), (1, 0)], "SWAP 5.")
-        tl.insert_new_textarea(2, [(0, 0), (0, 1), (1, 1), (1, 0)], "Area 3.")
-        tl.insert_new_textarea(3, [(0, 0), (0, 1), (1, 1), (1, 0)], "Area 4.")
-        tl.insert_new_textarea(4, [(0, 0), (0, 1), (1, 1), (1, 0)], "REMOVE ME.")
-        tl.insert_new_textarea(5, [(0, 0), (0, 1), (1, 1), (1, 0)], "SWAP 2.")
-        tl.insert_new_textarea(6, [(0, 0), (0, 1), (1, 1), (1, 0)], "Area 6.")
-
-        tl.remove_textarea(4)
-        tl.reorder_textarea(4, 1)
-        tl.reorder_textarea(2, 4)
+        pg.text_layers.pop("ja")
 
 
-def test_textarea_props():
-    with ACBFBook(edit_dir / "test_textarea_props.acbf", 'w', archive_type=None) as book:
-        book.book_info.edit_title("Test Text Area Properties")
+def test_textareas(results_edit_body):
+    with ACBFBook(results_edit_body / "test_textareas.acbf", 'w', archive_type=None) as book:
+        book.book_info.book_title['_'] = "Test Text Areas"
 
-        book.body.pages[0].add_textlayer("en")
-        book.body.pages[0].text_layers["en"].insert_new_textarea(0, [(0, 0), (0, 1), (1, 1), (1, 0)], "A new area.")
-        ta = book.body.pages[0].text_layers["en"].text_areas[0]
+        book.body.append_page('')
+        pg = book.body.pages[-1]
 
-        ta.set_paragraph("An edited area.")
-        ta.set_paragraph("An edited area\n...with a new line!!!")
-        ta.set_paragraph("An edited area\n...with a new line!!!\nAnd fancy formatting: "
-                         "<strong>strong</strong>, <emphasis>emphasis</emphasis>, "
-                         "<strikethrough>strikethrough</strikethrough>, <sub>sub</sub>, "
-                         '<sup>sup</sup>, <a href="a_reference_001" />')
+        pg.add_textlayer("en")
+        tl = pg.text_layers["en"]
 
-        ta.append_point(2, 2)
-        ta.insert_point(2, 3, 3)
-        ta.set_point(1, 1, 0)
-        ta.remove_point(4)
+        tl.append_textarea("Area 1.", [(0, 0), (0, 1), (1, 1), (1, 0)])
+        tl.append_textarea("Area 3.", [(0, 0), (0, 1), (1, 1), (1, 0)])
+        tl.append_textarea("REMOVE ME.", [(0, 0), (0, 1), (1, 1), (1, 0)])
+        tl.append_textarea("Area 4.", [(0, 0), (0, 1), (1, 1), (1, 0)])
+        tl.insert_textarea(1, "Area 2.", [(0, 0), (0, 1), (1, 1), (1, 0)])
 
-        ta.set_rotation(45)
-        ta.set_rotation(None)
-        ta.set_rotation(90)
-        with pytest.raises(ValueError, match="Rotation must be an integer from 0 to 360."):
-            ta.set_rotation(-1)
-        with pytest.raises(ValueError, match="Rotation must be an integer from 0 to 360."):
-            ta.set_rotation(361)
+        tl.text_areas.pop(3)
 
-        ta.set_type("code")
-        ta.set_type(None)
+
+def test_textarea_props(results_edit_body):
+    with ACBFBook(results_edit_body / "test_textarea_props.acbf", 'w', archive_type=None) as book:
+        book.book_info.book_title['_'] = "Test Text Area Properties"
+
+        book.body.append_page('')
+        pg = book.body.pages[-1]
+
+        pg.add_textlayer("en")
+        pg.text_layers["en"].append_textarea("A new area.", [(0, 0), (0, 1), (1, 1), (1, 0)])
+        ta = pg.text_layers["en"].text_areas[0]
+
+        ta.text = "An area\n...with a new line!!!\nAnd fancy formatting: " \
+                  "<strong>strong</strong>, <emphasis>emphasis</emphasis>, " \
+                  "<strikethrough>strikethrough</strikethrough>, <sub>sub</sub>, " \
+                  '<sup>sup</sup>, <a href="a_reference_001" />'
+
+        ta.points.append((5, 5))
+        ta.rotation = 45
         ta.set_type("speech")
-
-        ta.set_inverted(False)
-        ta.set_inverted(None)
-        ta.set_inverted(True)
-
-        ta.set_transparent(False)
-        ta.set_transparent(None)
-        ta.set_transparent(True)
+        ta.inverted = True
+        ta.transparent = True
 
 
-def test_frames():
-    with ACBFBook(edit_dir / "test_frames.acbf", 'w', archive_type=None) as book:
-        book.book_info.edit_title("Test Frames")
+def test_frames(results_edit_body):
+    with ACBFBook(results_edit_body / "test_frames.acbf", 'w', archive_type=None) as book:
+        book.book_info.book_title['_'] = "Test Frames"
 
-        book.body.pages[0].insert_new_frame(0, [(0, 0), (0, 1), (1, 1), (1, 0)])  # Keep as is
-        book.body.pages[0].insert_new_frame(1, [(0, 0), (0, 1), (1, 1), (1, 0)])  # Edit to 2
-        book.body.pages[0].insert_new_frame(2, [(1, 1), (-1, 1), (-1, -1), (1, -1)])  # Reorder
-        book.body.pages[0].insert_new_frame(1, [(0, 0), (0, 1)])  # Insert
-        book.body.pages[0].insert_new_frame(-1, [(0, 0)])  # Remove me
+        book.body.append_page('')
+        pg = book.body.pages[-1]
 
-        book.body.pages[0].remove_frame(-2)
+        pg.append_frame([(0, 0), (0, 1), (1, 1), (1, 0)])
+        pg.append_frame([(1, 1), (-1, 1), (-1, -1), (1, -1)])
+        pg.insert_frame(1, [(0, 0), (0, 1)])
+        pg.append_frame([(0, 0)])
 
-        book.body.pages[0].reorder_frame(3, 1)
-
-        book.body.pages[0].frames[3].set_point(1, 0, 2)
-        book.body.pages[0].frames[3].set_point(2, 2, 2)
-        book.body.pages[0].frames[3].set_point(3, 2, 0)
-
-        book.body.pages[0].frames[3].insert_point(1, -2, -2)
-        book.body.pages[0].frames[3].insert_point(-1, 0, 0)
-
-        book.body.pages[0].frames[3].remove_point(-2)
+        pg.frames.pop(-1)
 
 
-def test_jumps():
-    with ACBFBook(edit_dir / "test_jumps.acbf", 'w', archive_type=None) as book:
-        book.book_info.edit_title("Test Jumps")
+def test_jumps(results_edit_body):
+    with ACBFBook(results_edit_body / "test_jumps.acbf", 'w', archive_type=None) as book:
+        book.book_info.book_title['_'] = "Test Jumps"
 
-        book.body.pages[0].add_jump(0, [(0, 0), (0, 1), (1, 1), (1, 0)])
-        book.body.pages[0].add_jump(1, [(0, 0), (0, 1), (1, 1), (1, 0)])
-        book.body.pages[0].add_jump(2, [(0, 0), (0, 1), (1, 1), (1, 0)])
-        book.body.pages[0].add_jump(1, [(0, 0)])
+        book.body.append_page('')
+        pg = book.body.pages[-1]
 
-        book.body.pages[0].remove_jump(-1)
+        pg.add_jump(0, [(0, 0), (0, 1), (1, 1), (1, 0)])
+        pg.add_jump(1, [(0, 0), (0, 1), (1, 1), (1, 0)])
+        pg.add_jump(2, [(0, 0), (0, 1), (1, 1), (1, 0)])
+        pg.add_jump(1, [(0, 0)])
 
-        book.body.pages[0].jumps[2].set_target_page(5)
+        pg.jumps.pop(-1)
 
-        book.body.pages[0].jumps[1].set_point(1, 0, 2)
-        book.body.pages[0].jumps[1].set_point(2, 2, 2)
-        book.body.pages[0].jumps[1].set_point(3, 2, 0)
-
-        book.body.pages[0].jumps[1].insert_point(-1, 3, 3)
-        book.body.pages[0].jumps[1].insert_point(-1, 0, 0)
-
-        book.body.pages[0].jumps[1].remove_point(-2)
+        pg.jumps[2].target = 5
 
 
-def test_bgcolor():
-    with ACBFBook(edit_dir / "test_bgcolor.acbf", 'w', archive_type=None) as book:
-        book.book_info.edit_title("Test Background Colours")
+def test_bgcolor(results_edit_body):
+    with ACBFBook(results_edit_body / "test_bgcolor.acbf", 'w', archive_type=None) as book:
+        book.book_info.book_title['_'] = "Test Background Colours"
 
-        book.body.set_bgcolor("#000000")
-        book.body.set_bgcolor(None)
-        book.body.set_bgcolor("#0000ff")
+        book.body.bgcolor = "#000000"
 
-        book.body.pages[0].set_bgcolor("#000000")
-        book.body.pages[0].set_bgcolor(None)
-        book.body.pages[0].set_bgcolor("#00ff00")
+        book.body.append_page('')
+        pg = book.body.pages[-1]
+        pg.bgcolor = "#0000ff"
 
-        book.body.pages[0].add_textlayer("en")
-        book.body.pages[0].text_layers["en"].set_bgcolor("#000000")
-        book.body.pages[0].text_layers["en"].set_bgcolor(None)
-        book.body.pages[0].text_layers["en"].set_bgcolor("#00ffff")
+        pg.add_textlayer("en")
+        tl = pg.text_layers["en"]
+        tl.bgcolor = "#00ff00"
 
-        book.body.pages[0].text_layers["en"].insert_new_textarea(0, [(0, 0)], "Testing background colour.")
-        book.body.pages[0].text_layers["en"].text_areas[0].set_bgcolor("#000000")
-        book.body.pages[0].text_layers["en"].text_areas[0].set_bgcolor(None)
-        book.body.pages[0].text_layers["en"].text_areas[0].set_bgcolor("#ff0000")
+        tl.append_textarea("Testing background colour.", [(0, 0)])
+        ta = tl.text_areas[-1]
+        ta.bgcolor = "#00ffff"
 
-        book.body.pages[0].insert_new_frame(0, [(0, 0)])
-        book.body.pages[0].frames[0].set_bgcolor("#000000")
-        book.body.pages[0].frames[0].set_bgcolor(None)
-        book.body.pages[0].frames[0].set_bgcolor("#ff00ff")
+        pg.append_frame([(0, 0)])
+        pg.frames[0].bgcolor = "#ff0000"

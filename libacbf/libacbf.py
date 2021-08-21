@@ -669,7 +669,7 @@ class ACBFBook:
                     fr.set("bgcolor", frame.bgcolor)
 
             for jump in page.jumps:
-                etree.SubElement(pg, f"{ns}jump", page=jump.target, points=helpers.vec_to_pts(jump.points),
+                etree.SubElement(pg, f"{ns}jump", page=str(jump.target), points=helpers.vec_to_pts(jump.points),
                                  nsmap=self._nsmap)
 
         #endregion

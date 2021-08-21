@@ -258,23 +258,23 @@ class Page:
         return fr
 
     @helpers.check_book
-    def add_jump(self, points: List[Tuple[int, int]], page: int) -> Jump:
+    def add_jump(self, target: int, points: List[Tuple[int, int]]) -> Jump:
         """Add a jump to the page.
 
         Parameters
         ----------
+        target : int
+            The target page. ``0`` is the cover page, ``1`` is the first page, ``2`` is the second page etc.
+
         points : List[Tuple[int, int]]
             The points defining the jump.
-
-        page : int
-            The target page. ``0`` is the cover page, ``1`` is the first page, ``2`` is the second page etc.
 
         Returns
         -------
         Jump
             The newly created jump.
         """
-        jp = Jump(points, page, self._book)
+        jp = Jump(target, points, self._book)
         self.jumps.append(jp)
         return jp
 
@@ -299,7 +299,6 @@ class TextLayer:
         self.text_areas: List[TextArea] = list(areas)
         self.bgcolor: Optional[str] = None
 
-    @helpers.check_book
     def insert_textarea(self, index: int, text: str, points: List[Tuple[int, int]]) -> TextArea:
         """Insert a text area at the index.
 
@@ -322,7 +321,6 @@ class TextLayer:
         self.text_areas.insert(index, ta)
         return ta
 
-    @helpers.check_book
     def append_textarea(self, text: str, points: List[Tuple[int, int]]) -> TextArea:
         """Append a text area to the layer.
 
@@ -406,7 +404,6 @@ class TextArea:
         self.inverted: Optional[bool] = None
         self.transparent: Optional[bool] = None
 
-    @helpers.check_book
     def set_type(self, ty: Optional[str]):
         """Set type by string.
 
@@ -449,33 +446,24 @@ class Jump:
 
     Attributes
     ----------
+    target : int
+        The target page index. Cover page is ``0``, first page is ``1``, second page is ``2`` and so on.
+
     points : List[Tuple[int, int]]
         A list of tuples as coordinates.
     """
 
-    def __init__(self, points: List[Tuple[int, int]], page: int, book: ACBFBook):
+    def __init__(self, target: int, points: List[Tuple[int, int]], book: ACBFBook):
         self._book = book
 
-        self.page: Page = page
+        self.target = target
         self.points: List[Tuple[int, int]] = points
 
     @property
     def page(self) -> Page:
-        """Target page to go to when clicked. Set with integer where cover page is ``0``, first page is ``1``, second
-        page is ``2`` and so on.
+        """Target page to go to when clicked.
         """
-        return self._page
-
-    @page.setter
-    def page(self, target):
-        if target == 0:
-            self._page = self._book.book_info.coverpage
+        if self.target == 0:
+            return self._book.book_info.coverpage
         else:
-            self._page = self._book.body.pages[target]
-        self._target = target
-
-    @property
-    def target(self) -> int:
-        """The target page index. Cover page is ``0``, first page is ``1``, second page is ``2`` and so on.
-        """
-        return self._target
+            return self._book.body.pages[self.target]
