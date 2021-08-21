@@ -98,10 +98,6 @@ class ArchiveReader:
         self.mode: Literal['r', 'w'] = mode
         self.type: ArchiveTypes = get_archive_type(file)
 
-        arc = None
-        if isinstance(file, (ZipFile, SevenZipFile, tar.TarFile, RarFile)):
-            arc = file
-
         if isinstance(file, str):
             file = Path(file).resolve(True)
 
@@ -112,18 +108,18 @@ class ArchiveReader:
             if self.type == ArchiveTypes.Rar:
                 raise EditRARArchiveError
 
-        if arc is None:
-            if self.type == ArchiveTypes.Zip:
-                arc = ZipFile(file, 'r')
-            elif self.type == ArchiveTypes.SevenZip:
-                arc = SevenZipFile(file, 'r')
-            elif self.type == ArchiveTypes.Tar:
-                if isinstance(file, (str, Path)):
-                    arc = tar.open(file, mode='r')
-                else:
-                    arc = tar.open(fileobj=file, mode='r')
-            elif self.type == ArchiveTypes.Rar:
-                arc = RarFile(file)
+        arc = None
+        if self.type == ArchiveTypes.Zip:
+            arc = ZipFile(file, 'r')
+        elif self.type == ArchiveTypes.SevenZip:
+            arc = SevenZipFile(file, 'r')
+        elif self.type == ArchiveTypes.Tar:
+            if isinstance(file, (str, Path)):
+                arc = tar.open(file, mode='r')
+            else:
+                arc = tar.open(fileobj=file, mode='r')
+        elif self.type == ArchiveTypes.Rar:
+            arc = RarFile(file)
 
         self.archive: Union[ZipFile, SevenZipFile, tar.TarFile, RarFile] = arc
 
@@ -163,9 +159,9 @@ class ArchiveReader:
         acbf_file = None
 
         if self._arc_path is not None:
-            for i in self._arc_path.glob('*.acbf'):
+            for i in self._arc_path.glob("*.acbf"):
                 if i.is_file():
-                    acbf_file = str(i)
+                    acbf_file = i.relative_to(self._arc_path)
                     break
         else:
             if self.type in (ArchiveTypes.Zip, ArchiveTypes.Rar):
@@ -280,7 +276,7 @@ class ArchiveReader:
                 raise AttributeError("`arcname` is required if `target` is bytes.")
             arcname = target.name
 
-        if not (self._arc_path / arcname).resolve().is_relative_to(self._arc_path):
+        if not (self._arc_path / arcname).resolve().is_relative_to(self._arc_path.resolve()):
             raise ValueError("`arcname` does not resolve to a file inside the archive.")
 
         os.makedirs(self._arc_path / Path(arcname).parent, exist_ok=True)
@@ -308,7 +304,7 @@ class ArchiveReader:
         if isinstance(target, Path):
             target = target.resolve(True)
 
-        if not (self._arc_path / target).resolve().is_relative_to(self._arc_path):
+        if not (self._arc_path / target).resolve().is_relative_to(self._arc_path.resolve()):
             raise ValueError("`target` does not resolve to a file inside the archive.")
 
         if target.is_file():
@@ -335,17 +331,17 @@ class ArchiveReader:
             if self.type == ArchiveTypes.Zip:
                 with ZipFile(self._source, 'w') as arc:
                     for i in self.list_files():
-                        arc.write(i)
+                        arc.write(self._arc_path / i, i)
 
             elif self.type == ArchiveTypes.SevenZip:
                 with SevenZipFile(self._source, 'w') as arc:
                     for i in self.list_files():
-                        arc.write(i)
+                        arc.write(self._arc_path / i, i)
 
             elif self.type == ArchiveTypes.Tar:
                 with tar.open(self._source, 'w') as arc:
                     for i in self.list_files():
-                        arc.add(i)
+                        arc.add(self._arc_path / i, i)
 
             self._extract.cleanup()
 

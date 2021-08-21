@@ -344,15 +344,17 @@ class ACBFBook:
 
         def create_file():
             if not is_text:
-                arc = None
                 if archive_type == consts.ArchiveTypes.Zip:
-                    arc = ZipFile(file, 'w')
+                    with ZipFile(file, 'w') as _:
+                        pass
                 elif archive_type == consts.ArchiveTypes.SevenZip:
-                    arc = SevenZipFile(file, 'w')
+                    with SevenZipFile(file, 'w') as _:
+                        pass
                 elif archive_type == consts.ArchiveTypes.Tar:
-                    arc = tar.open(file, 'w')
+                    with tar.open(file, 'w') as _:
+                        pass
 
-                self.archive = ArchiveReader(arc, 'w')
+                self.archive = ArchiveReader(file, 'w')
                 name = self.book_path.stem + ".acbf" if self.book_path is not None else "book.acbf"
                 self.archive.write(get_book_template().encode("utf-8"), name)
             else:
@@ -758,15 +760,17 @@ class ACBFBook:
         if archive_type == consts.ArchiveTypes.Rar:
             raise EditRARArchiveError
 
-        arc = None
         if archive_type == consts.ArchiveTypes.Zip:
-            arc = ZipFile(self._source, 'w')
+            with ZipFile(self._source, 'w') as _:
+                pass
         elif archive_type == consts.ArchiveTypes.SevenZip:
-            arc = SevenZipFile(self._source, 'w')
+            with SevenZipFile(self._source, 'w') as _:
+                pass
         elif archive_type == consts.ArchiveTypes.Tar:
-            arc = tar.open(self._source, 'w')
+            with tar.open(self._source, 'w') as _:
+                pass
 
-        self.archive = ArchiveReader(arc, 'w')
+        self.archive = ArchiveReader(self._source, 'w')
         name = self.book_path.stem + ".acbf" if self.book_path is not None else "book.acbf"
         self.archive.write(self.get_acbf_xml().encode("utf-8"), name)
 
@@ -1000,7 +1004,7 @@ class BookInfo:
         Author
             The created Author object.
         """
-        author = metadata.Author(*names, first_name, last_name, nickname)
+        author = metadata.Author(*names, first_name=first_name, last_name=last_name, nickname=nickname)
         self.authors.append(author)
         return author
 
@@ -1021,7 +1025,7 @@ class BookInfo:
         match : int | None, optional
             Set the match percentage of the genre. If ``None``, removes the match value.
         """
-        if match < 0 or match > 100:
+        if match != '_' and (match < 0 or match > 100):
             raise ValueError("`match` must be an integer from 0 to 100.")
 
         genre = consts.Genres[genre]
@@ -1237,7 +1241,7 @@ class DocumentInfo:
         Author
             The created Author object.
         """
-        author = metadata.Author(*names, first_name, last_name, nickname)
+        author = metadata.Author(*names, first_name=first_name, last_name=last_name, nickname=nickname)
         self.authors.append(author)
         return author
 

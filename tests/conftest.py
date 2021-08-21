@@ -54,7 +54,7 @@ def results_documentinfo(results):
 
 @pytest.fixture(scope="session")
 def results_edit_create(results):
-    res = results / "test_edit/create"
+    res = results / "test_edit/test_create"
     os.makedirs(res, exist_ok=True)
     return res
 
