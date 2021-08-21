@@ -52,6 +52,13 @@ def results_documentinfo(results):
     return res
 
 
+@pytest.fixture(scope="session")
+def results_edit_create(results):
+    res = results / "test_edit/create"
+    os.makedirs(res, exist_ok=True)
+    return res
+
+
 def get_au_op(i):
     new_op = i.__dict__.copy()
     new_op["activity"] = new_op["_activity"].name if new_op["_activity"] is not None else None
