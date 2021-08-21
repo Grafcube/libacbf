@@ -15,7 +15,7 @@ from libacbf.bookdata import BookData
 
 
 class Page:
-    """A page in the book.
+    r"""A page in the book.
 
     See Also
     --------
@@ -25,13 +25,49 @@ class Page:
     ----------
     image_ref : str
         Reference to the image file. May be embedded in the ACBF file, in the ACBF archive, in an external archive,
-        a local path or a URL. For information on how to format it,
-        see `<https://acbf.fandom.com/wiki/Body_Section_Definition#Image>`_.
+        a local path or a URL.
+
+        There are several ways to format it to read data:
+
+        Reference to a file embedded in :class:`ACBFBook.data <libacbf.libacbf.ACBFData>`:
+            - ``“#page1.jpg“``
+
+        Reference to a file on disk:
+            - ``“/path/to/file/page1.jpg“``
+            - ``"C:\path\to\file\page1.jpg"``
+            - ``“file:///path/to/file/page1.jpg“``
+            - ``“file://C:\path\to\file\page1.jpg“``
+
+        Path to a file in the book's archive or relative path to file on disk if book is a plain ACBF XML:
+            - ``“page1.jpg“``
+            - ``“images/page1.jpg“``
+
+        Reference to file in an archive:
+            - ``“zip:path/to/archive.zip!/path/to/file/page1.jpg“``
+
+        URL address containing the image:
+            - ``“https://example.com/book1/images/page1.jpg“``
 
     ref_type : ImageRefType(Enum)
         A value from :class:`ImageRefType <libacbf.constants.ImageRefType>` indicating the type of reference in
         :attr:`Page.image_ref`.
 
+    text_layers: Dict[str, TextLayer]
+        A dictionary with keys being the language of the text layer and values being :class:`TextLayer` objects.
+
+    frames: List[Frame]
+        A list of :class:`Frame` objects in order of appearance.
+
+    jumps: List[Jump]
+        A list of :class:`Jump` objects.
+
+    Warnings
+    --------
+    The attributes ``title``, ``bgcolor`` and ``transition`` are not available on
+    :attr:`ACBFBook.book_info.coverpage <libacbf.libacbf.BookInfo.coverpage>`.
+
+    Attributes
+    ----------
     title : Dict[str, str], optional
         It is used to define beginning of chapters, sections of the book and can be used to create a table of contents.
         Keys are standard language codes or ``'_'`` if not defined. Values are titles as string.
@@ -252,9 +288,6 @@ class TextLayer:
 
     Attributes
     ----------
-    lang : str
-        A standard language code that defines the language of the text in this layer.
-
     text_areas : List[TextArea]
         A list of :class:`TextArea` objects in order (order matters for text-to-speech).
 

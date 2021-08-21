@@ -209,4 +209,5 @@ libacbf.archivereader module
     :undoc-members:
     :private-members:
     :special-members:
+    :exclude-members: __dict__
     :show-inheritance:

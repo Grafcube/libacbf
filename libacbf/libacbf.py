@@ -749,6 +749,11 @@ class ACBFBook:
         archive_type : str, default="Zip"
             The type of archive to create. Allowed values are listed at
             :class:`ArchiveTypes <libacbf.constants.ArchiveTypes>`.
+
+        Raises
+        ------
+        AttributeError (Book is already an archive of type ``{archive.type}``.)
+            Raised when book is already an archive.
         """
         archive_type = consts.ArchiveTypes[archive_type]
 
@@ -1411,14 +1416,15 @@ class ACBFData:
 
         Parameters
         ----------
-        target : str | Path
-            Path to file to be added. Cannot directly write data, target must be a path.
+        target : str | Path | bytes
+            Path to file to be added or data as bytes.
 
         name : str, optional
-            Name to assign to file after writing. Defaults to name part of target.
+            Name to assign to file after writing. Defaults to name part of target. Required if ``target`` is bytes.
 
         embed : bool, default=False
-            Whether to embed the file in the ACBF XML. Cannot be ``False`` if book is not an archive type.
+            Whether to embed the file in the ACBF XML. Cannot be ``False`` if book is not an archive type. Use
+            :meth:`ACBFBook.make_archive(...) <libacbf.ACBFBook.make_archive()>` to convert the book to an archive.
         """
         if self._book.archive is None and not embed:
             raise AttributeError("Book is not an archive type. Write data with `embed = True` or use "
@@ -1488,8 +1494,8 @@ class Styles:
 
     Returns
     -------
-    str
-        Stylesheet as a string.
+    bytes
+        Stylesheet data.
 
     Examples
     --------
@@ -1498,8 +1504,8 @@ class Styles:
         from libacbf import ACBFBook
 
         with ACBFBook("path/to/book.cbz") as book:
-            style1 = book.styles["style1.css"]  # Style referenced at the top of the ACBF XML as a string.
-            embedded_style = book.styles['_']  # Returns the stylesheet embedded in ACBF XML style tag as a string.
+            style1 = book.styles["style1.css"]  # Style referenced at the top of the ACBF XML.
+            embedded_style = book.styles['_']  # Returns the stylesheet embedded in ACBF XML.
 
     Attributes
     ----------
@@ -1539,15 +1545,20 @@ class Styles:
 
         Parameters
         ----------
-        stylesheet_ref : str | Path
-            Path to stylesheet. Cannot directly write data.
+        stylesheet : str | Path | bytes
+            Path to stylesheet or stylesheet as bytes.
 
         style_name : str, optional
             Name of stylesheet after being written. Defaults to name part of ``stylesheet_ref``. If it is ``'_'``,
-            writes stylesheet to style tag of ACBF XML.
+            writes stylesheet to style tag of ACBF XML. Required if ``stylesheet`` is bytes.
 
         type : str, default="text/css"
             Mime Type of stylesheet. Defaults to CSS but can be others (like SASS).
+
+        embed : bool, default=False
+            Whether to embed stylesheet in the data section of the book. This is ignored if ``style_name`` is ``'_'``.
+            Must be True if book is plain ACBF XML.
+            Use :meth:`ACBFBook.make_archive(...) <libacbf.ACBFBook.make_archive()>` to convert the book to an archive.
         """
         if isinstance(stylesheet, str):
             stylesheet = Path(stylesheet)
@@ -1578,6 +1589,10 @@ class Styles:
         ----------
         style_name : str
             Stylesheet to remove. If it is ``'_'``, remove embedded stylesheet.
+
+        embedded : bool, default=False
+            Remove style from embedded data of book. Ignored if style_name is ``'_'``. Must be False if book is plain
+            ACBF XML.
         """
         self._styles.pop(style_name)
         if style_name != '_':

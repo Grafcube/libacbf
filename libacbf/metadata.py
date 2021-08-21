@@ -170,7 +170,7 @@ class Author:
 
 
 class LanguageLayer:
-    """Used by :attr:`BookInfo.languages <libacbf.metadata.BookInfo.languages>`.
+    """Used by :attr:`ACBFBook.book_info.languages <libacbf.libacbf.BookInfo.languages>`.
 
     See Also
     --------
@@ -202,7 +202,7 @@ class LanguageLayer:
 
 
 class Series:
-    """Used by :attr:`BookInfo.series <libacbf.metadata.BookInfo.series>`.
+    """Used by :attr:`ACBFBook.book_info.series <libacbf.libacbf.BookInfo.series>`.
 
     See Also
     --------
@@ -226,7 +226,7 @@ class Series:
 
 
 class DBRef:
-    """Used by :attr:`BookInfo.database_ref <libacbf.metadata.BookInfo.database_ref>`.
+    """Used by :attr:`ACBFBook.book_info.database_ref <libacbf.libacbf.BookInfo.database_ref>`.
 
     See Also
     --------
