@@ -8,7 +8,7 @@ setup(name="libacbf",
       author="Grafcube",
       license="BSD-3-Clause License",
       url="https://github.com/Grafcube/libacbf",
-      packages=find_packages(),
+      packages=find_packages(include=["libacbf"]),
       download_url="",  # TODO: After docs
       keywords=[],
       install_requires=[
