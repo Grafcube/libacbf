@@ -1,41 +1,44 @@
-import os
-from pathlib import Path
+import pytest
 from libacbf import ACBFBook
 
 
+def test_references(results_edit):
+    with ACBFBook(results_edit / "test_references.acbf", 'w', archive_type=None) as book:
+        book.book_info.book_title['_'] = "Test Edit references"
 
-def test_references():
-    with ACBFBook(edit_dir / "test_references.acbf", 'w', archive_type=None) as book:
-        book.book_info.edit_title("Test Edit references")
+        book.references["test_ref"] = {'_': "This is a new test reference."}
+        book.references["electric_boogaloo"] = {'_': "This is another test reference.\nWith another line."}
+        book.references["fancy"] = {
+            '_': "This <strong>reference</strong> has <emphasis>fancy</emphasis> "
+                 "<strikethrough>formatting</strikethrough>!\n"
+                 "Here's <sub>some</sub> more <sup>formatting</sup>."
+            }
+        book.create_placeholders()
 
-        book.edit_reference("test_ref", "This is a new test reference.")
-        book.edit_reference("electric_boogaloo", "This is another test reference.\nWith another line.")
-        book.edit_reference("tb_deleted", "This one will be deleted.")
-        book.edit_reference("test_ref", "This is an edited test reference.")
-        book.remove_reference("tb_deleted")
 
+@pytest.mark.parametrize("ext, type", (("cbz", "Zip"), ("cb7", "SevenZip"), ("cbt", "Tar")))
+def test_data(ext, type, results_edit_data):
+    with ACBFBook(results_edit_data / f"{type}.{ext}", 'w', type) as book:
+        book.book_info.book_title['_'] = "Test Edit data"
 
-def test_data():
-    for ext, type in (("cbz", "Zip"), ("cb7", "SevenZip"), ("cbt", "Tar")):
-        with ACBFBook(edit_dir / f"test_data.{ext}", 'w', type) as book:
-            book.book_info.edit_title("Test Edit data")
+        book.data.add_data("tests/samples/assets/cover.jpg")
+        book.book_info.coverpage.image_ref = "cover.jpg"
 
-            book.data.add_data("tests/samples/assets/cover.jpg")
-            book.book_info.cover_page.set_image_ref("cover.jpg")
+        book.data.add_data("tests/samples/assets/page1.jpg")
+        book.body.append_page("page1.jpg")
 
-            book.data.add_data("tests/samples/assets/page1.jpg")
-            book.body.pages[0].set_image_ref("page1")
+        book.data.add_data("tests/samples/assets/page2.jpg", embed=True)
+        book.body.append_page("#page2.jpg")
 
-            book.data.add_data("tests/samples/assets/page2.jpg", embed=True)
-            book.body.insert_new_page(1, "#page2.jpg")
+        book.data.add_data("tests/samples/assets/page3.jpg", "003.jpg")
+        book.body.append_page("003.jpg")
 
-            book.data.add_data("tests/samples/assets/page3.jpg", "003.jpg")
-            book.body.insert_new_page(2, "003.jpg")
+        book.data.add_data("tests/samples/assets/page4.jpg", "REMOVE_ME.jpg")
+        book.data.add_data("tests/samples/assets/page4.jpg", "REMOVE_ME2.jpg", True)
+        book.data.remove_data("REMOVE_ME.jpg")
+        book.data.remove_data("REMOVE_ME2.jpg", embed=True)
 
-            book.data.add_data("tests/samples/assets/page4.jpg", "to_be_removed.jpg")
-            book.data.add_data("tests/samples/assets/page4.jpg", "to_be_removed2.jpg", True)
-            book.data.remove_data("to_be_removed.jpg")
-            book.data.remove_data("to_be_removed2.jpg", embed=True)
+        book.create_placeholders()
 
 
 def test_styles(results_edit):

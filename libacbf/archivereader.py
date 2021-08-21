@@ -302,9 +302,9 @@ class ArchiveReader:
             target = Path(target)
 
         if isinstance(target, Path):
-            target = target.resolve(True)
+            target = (self._arc_path / target).resolve(True)
 
-        if not (self._arc_path / target).resolve().is_relative_to(self._arc_path.resolve()):
+        if not target.resolve().is_relative_to(self._arc_path.resolve()):
             raise ValueError("`target` does not resolve to a file inside the archive.")
 
         if target.is_file():
@@ -349,4 +349,8 @@ class ArchiveReader:
         return self
 
     def __exit__(self, exception_type, exception_value, traceback):
-        self.close()
+        if exception_type is not None:
+            self.archive.close()
+            self._extract.cleanup()
+        else:
+            self.close()

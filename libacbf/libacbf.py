@@ -362,7 +362,7 @@ class ACBFBook:
                     with open(str(self.book_path), 'w') as book:
                         book.write(get_book_template())
                 else:
-                    file.write(get_book_template())
+                    file.write(get_book_template().encode("utf-8"))
 
         if mode in ('r', 'a'):
             if self.book_path is not None and not self.book_path.is_file():
@@ -701,8 +701,6 @@ class ACBFBook:
 
         #endregion
 
-        _validate_acbf(root.getroottree(), self._nsmap[None])
-
         return root.getroottree()
 
     def create_placeholders(self):
@@ -784,6 +782,8 @@ class ACBFBook:
         Use ``ACBFBook.is_open`` to check if file is open.
         """
         if self.mode != 'r':
+            _validate_acbf(self._get_acbf_tree(), self._nsmap[None])
+
             if self.archive is None:
                 if self.book_path is not None:
                     with open(self._source, 'w') as book:
@@ -809,7 +809,14 @@ class ACBFBook:
         return self
 
     def __exit__(self, exception_type, exception_value, traceback):
-        self.close()
+        if exception_type is not None:
+            self.mode = 'r'
+            self.is_open = False
+
+            if self.archive is not None:
+                self.archive.close()
+        else:
+            self.close()
 
 
 class BookInfo:
