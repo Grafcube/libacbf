@@ -25,10 +25,10 @@ def test_images(results_edit_body, abspath):
             book.body.append_page(abspath)
 
         ops = {}
-        cover = book.book_info.coverpage.image
-        ops[cover.id] = len(cover.data)
+        cover = book.book_info.coverpage
+        ops[cover.image_ref] = {"type": cover.ref_type.name, "data": len(cover.image.data)}
         for pg in book.body.pages:
-            ops[pg.image.id] = len(pg.image.data)
+            ops[pg.image_ref] = {"type": pg.ref_type.name, "data": len(pg.image.data)}
 
         with open(results_edit_body / "test_images.json", 'w', encoding="utf-8") as op:
             op.write(json.dumps(ops, ensure_ascii=False, indent='\t', separators=(', ', ': ')))
