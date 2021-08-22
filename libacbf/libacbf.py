@@ -543,23 +543,21 @@ class ACBFBook:
         # Series
         for title, series in self.book_info.series.items():
             seq = etree.SubElement(b_info, f"{ns}sequence", title=title, nsmap=self._nsmap)
-            seq.text = series.sequence
+            seq.text = str(series.sequence)
             if series.volume is not None:
-                seq.set("volume", series.volume)
+                seq.set("volume", str(series.volume))
 
         # Content Rating
         for type, rating in self.book_info.content_rating.items():
-            cr = etree.SubElement(b_info, f"{ns}content-rating", nsmap=self._nsmap)
+            cr = etree.SubElement(b_info, f"{ns}content-rating", type=type, nsmap=self._nsmap)
             cr.text = rating
-            if type != '_':
-                cr.set("type", type)
 
         # Database Reference
         for dbref in self.book_info.database_ref:
             db = etree.SubElement(b_info, f"{ns}databaseref", dbname=dbref.dbname, nsmap=self._nsmap)
             db.text = dbref.reference
             if dbref.type is not None:
-                db.set(dbref.type)
+                db.set("type", dbref.type)
 
         #endregion
 
@@ -865,12 +863,10 @@ class BookInfo:
     content_rating: Dict[str, str], optional
         Content rating of the book based on age appropriateness and trigger warnings.
 
-        It is a dictionary with the keys being the rating system or ``'_'`` if not defined and values being the
-        rating. ::
+        It is a dictionary with the keys being the rating system and values being the rating. ::
 
             {
-                "_": "16+",
-                "Age Rating": "15+",
+                "Age Rating": "16+",
                 "DC Comics rating system": "T+",
                 "Marvel Comics rating system": "PARENTAL ADVISORY"
             }
@@ -978,10 +974,7 @@ class BookInfo:
 
         # Content Rating
         for rt in info.findall("content-rating", namespaces=nsmap):
-            type = '_'
-            if "type" in rt.keys():
-                type = rt.attrib["type"]
-            self.content_rating[type] = rt.text
+            self.content_rating[rt.attrib["type"]] = rt.text
 
         # Database Reference
         for db in info.findall("databaseref", namespaces=nsmap):
@@ -1059,13 +1052,13 @@ class BookInfo:
         """Add a series that the book belongs to. ``title`` is the key and usage for value is the same as
         :class:`Series <libacbf.metadata.Series>`.
         """
-        self.languages[title] = metadata.Series(sequence, volume)
+        self.series[title] = metadata.Series(sequence, volume)
 
     @helpers.check_book
     def add_dbref(self, dbname: str, ref: str, type: Optional[str] = None):
         """Add a database reference to the book. Usage is the same as :class:`DBRef <libacbf.metadata.DBRef>`.
         """
-        self.languages.append(metadata.DBRef(dbname, ref, type))
+        self.database_ref.append(metadata.DBRef(dbname, ref, type))
 
 
 class PublishInfo:
