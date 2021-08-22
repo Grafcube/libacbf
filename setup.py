@@ -3,7 +3,7 @@
 from setuptools import setup, find_packages
 
 setup(name="libacbf",
-      version='1.0.2',
+      version='1.0.0',
       description="A library to read and edit ACBF formatted comic book files and archives.",
       author="Grafcube",
       license="BSD-3-Clause License",

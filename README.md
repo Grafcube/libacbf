@@ -10,13 +10,15 @@ XML Specifications here: https://acbf.fandom.com/wiki/Advanced_Comic_Book_Format
 pip install libacbf
 ```
 
-See (LINK TO DEPENDENCIES) for more information.
+See [Installation and Dependencies](https://libacbf.readthedocs.io/en/stable/install.html) for moreinformation.
 
 [PyPI Link]().
 
 ### Documentation
 
 Read the documentation here.
-(LINK TO DOCS)
+https://libacbf.readthedocs.io/en/stable/
 
-[Usage]()
+[Quick Tutorial](https://libacbf.readthedocs.io/en/stable/tutorial.html)
+
+[API Reference](https://libacbf.readthedocs.io/en/stable/libacbf.html)
