@@ -633,7 +633,7 @@ class ACBFBook:
                 if page.bgcolor is not None:
                     pg.set("bgcolor", page.bgcolor)
                 if page.transition is not None:
-                    pg.set("transition", page.transition)
+                    pg.set("transition", page.transition.name)
 
                 for lang, title in page.title.items():
                     ti = etree.SubElement(pg, f"{ns}title", nsmap=self._nsmap)
@@ -704,24 +704,9 @@ class ACBFBook:
         return root.getroottree()
 
     def create_placeholders(self):
-        """Creates the minimum required values for the book to follow the schema. This means creating a blank Author
-        object, a default genre, an empty annotation and an empty page if any of these don't already exist.
+        """Creates the minimum required values for the book to follow the schema. This means creating an empty page if
+        there are no pages.
         """
-        if len(self.book_info.authors) == 0:
-            self.book_info.add_author("PLACEHOLDER")
-
-        if len(self.document_info.authors) == 0:
-            self.document_info.add_author("PLACEHOLDER")
-
-        if len(self.book_info.genres) == 0:
-            self.book_info.edit_genre("other")
-
-        if len(self.book_info.book_title) == 0:
-            self.book_info.book_title['_'] = "PLACEHOLDER"
-
-        if len(self.book_info.annotations) == 0:
-            self.book_info.annotations['_'] = "PLACEHOLDER"
-
         if len(self.body.pages) == 0:
             self.body.append_page('')
 

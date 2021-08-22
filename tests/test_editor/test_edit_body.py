@@ -21,14 +21,21 @@ def test_images(results_edit_body, abspath):
         book.body.append_page(arcref)
         book.body.append_page(url)
 
+        assert all([x.ref_type.name == "SelfArchived"
+                    for x in [book.book_info.coverpage] + book.body.pages[:1]])
+        assert book.body.pages[2].ref_type.name == "Embedded"
+        assert book.body.pages[3].ref_type.name == "Archived"
+        assert book.body.pages[4].ref_type.name == "URL"
+
         if abspath is not None:
             book.body.append_page(abspath)
+            assert book.body.pages[5].ref_type.name == "Local"
 
         ops = {}
         cover = book.book_info.coverpage
-        ops[cover.image_ref] = {"type": cover.ref_type.name, "data": len(cover.image.data)}
+        ops[cover.image_ref] = len(cover.image.data)
         for pg in book.body.pages:
-            ops[pg.image_ref] = {"type": pg.ref_type.name, "data": len(pg.image.data)}
+            ops[pg.image_ref] = len(pg.image.data)
 
         with open(results_edit_body / "test_images.json", 'w', encoding="utf-8") as op:
             op.write(json.dumps(ops, ensure_ascii=False, indent='\t', separators=(', ', ': ')))

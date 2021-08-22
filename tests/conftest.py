@@ -74,6 +74,13 @@ def results_edit_convert(results_edit):
 
 
 @pytest.fixture(scope="session")
+def results_edit_body(results_edit):
+    res = results_edit / "test_body"
+    os.makedirs(res, exist_ok=True)
+    return res
+
+
+@pytest.fixture(scope="session")
 def results_edit_data(results_edit):
     res = results_edit / "test_data"
     os.makedirs(res, exist_ok=True)
@@ -81,8 +88,15 @@ def results_edit_data(results_edit):
 
 
 @pytest.fixture(scope="session")
-def results_edit_body(results_edit):
-    res = results_edit / "test_body"
+def results_edit_data(results_edit):
+    res = results_edit / "test_data"
+    os.makedirs(res, exist_ok=True)
+    return res
+
+
+@pytest.fixture(scope="session")
+def results_edit_bookinfo(results_edit):
+    res = results_edit / "test_meta/test_bookinfo"
     os.makedirs(res, exist_ok=True)
     return res
 

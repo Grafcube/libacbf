@@ -96,7 +96,9 @@ class Author:
 
     @first_name.setter
     def first_name(self, val: Optional[str]):
-        if self.last_name is not None or self.nickname is not None:
+        if val is not None:
+            self._first_name = val
+        elif self.nickname is not None:
             self._first_name = val
         else:
             raise ValueError("Author must have either First Name and Last Name or Nickname.")
@@ -107,7 +109,9 @@ class Author:
 
     @last_name.setter
     def last_name(self, val: Optional[str]):
-        if self.first_name is not None or self.nickname is not None:
+        if val is not None:
+            self._last_name = val
+        elif self.nickname is not None:
             self._last_name = val
         else:
             raise ValueError("Author must have either First Name and Last Name or Nickname.")
