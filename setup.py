@@ -9,8 +9,21 @@ setup(name="libacbf",
       license="BSD-3-Clause License",
       url="https://github.com/Grafcube/libacbf",
       packages=find_packages(include=["libacbf"]),
+      setup_requires=["pytest-runner"],
+      tests_require=["pytest"],
+      test_suite="tests",
       download_url="",  # TODO: After docs
-      keywords=[],
+      keywords=[
+          "python",
+          "library",
+          "book",
+          "comic",
+          "ebook",
+          "comics",
+          "python3",
+          "ebooks",
+          "acbf"
+          ],
       install_requires=[
           "wheel",
           "lxml",
