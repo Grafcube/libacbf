@@ -998,7 +998,7 @@ class BookInfo:
         self.authors.append(author)
         return author
 
-    def get_match(self, genre: str) -> int:
+    def get_genre_match(self, genre: str) -> int:
         """Get match value of genre by string.
         """
         return self.genres[consts.Genres[genre]]

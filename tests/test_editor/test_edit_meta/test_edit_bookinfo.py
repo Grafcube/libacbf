@@ -57,7 +57,7 @@ def test_genres(results_edit_bookinfo):
         book.book_info.edit_genre("manga", 11)
         book.book_info.pop_genre("horror")
 
-        assert book.book_info.get_match("manga") == 11
+        assert book.book_info.get_genre_match("manga") == 11
 
         with pytest.raises(ValueError, match="`match` must be an integer from 0 to 100."):
             book.book_info.edit_genre("other", -1)
