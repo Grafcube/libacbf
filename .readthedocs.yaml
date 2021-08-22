@@ -5,6 +5,20 @@
 # Required
 version: 2
 
+# Optionally build your docs in additional formats such as PDF
+formats:
+  - htmlzip
+  - epub
+  - pdf
+
 # Optionally set the version of Python and requirements required to build your docs
 python:
-   version: "3.8"
+  version: "3.8"
+  install:
+    - requirements: requirements.txt
+    - method: pip
+      path: .
+      extra_requirements:
+      - docs
+    - method: setuptools
+      path: package
