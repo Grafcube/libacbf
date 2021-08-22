@@ -1,8 +1,9 @@
 import json
+from pathlib import Path
 from libacbf import ACBFBook
 
 
-def test_images(results_edit_body, abspath):
+def test_images(results_edit_body):
     with ACBFBook(results_edit_body / "test_images.cbz", 'w') as book:
         book.book_info.book_title['_'] = "Test Image Ref"
 
@@ -13,6 +14,7 @@ def test_images(results_edit_body, abspath):
 
         arcref = r"zip:tests/samples/Doctorow, Cory - Craphound - NoACBF.cbz!page4.jpg"
         url = r"https://upload.wikimedia.org/wikipedia/commons/c/cf/Afgretygh.png"
+        abspath = str(Path("tests/samples/assets/page5.jpg").resolve(True))
 
         book.book_info.coverpage.image_ref = "cover.jpg"
         book.body.append_page("page1.jpg")
@@ -20,16 +22,14 @@ def test_images(results_edit_body, abspath):
         book.body.append_page("#page3.jpg")
         book.body.append_page(arcref)
         book.body.append_page(url)
+        book.body.append_page(abspath)
 
         assert all([x.ref_type.name == "SelfArchived"
                     for x in [book.book_info.coverpage] + book.body.pages[:1]])
         assert book.body.pages[2].ref_type.name == "Embedded"
         assert book.body.pages[3].ref_type.name == "Archived"
         assert book.body.pages[4].ref_type.name == "URL"
-
-        if abspath is not None:
-            book.body.append_page(abspath)
-            assert book.body.pages[5].ref_type.name == "Local"
+        assert book.body.pages[5].ref_type.name == "Local"
 
         ops = {}
         cover = book.book_info.coverpage

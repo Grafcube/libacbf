@@ -3,18 +3,9 @@ import pytest
 from pathlib import Path
 
 
-def pytest_addoption(parser):
-    parser.addoption("--abs", action="store", default=None)
-
-
 def pytest_runtest_logreport(report):
     if report.failed and report.when in ('setup', 'teardown'):
         raise pytest.UsageError("Errors during collection, aborting")
-
-
-@pytest.fixture(scope="session")
-def abspath(pytestconfig):
-    return pytestconfig.getoption("abs")
 
 
 @pytest.fixture(scope="session")
@@ -97,6 +88,20 @@ def results_edit_data(results_edit):
 @pytest.fixture(scope="session")
 def results_edit_bookinfo(results_edit):
     res = results_edit / "test_meta/test_bookinfo"
+    os.makedirs(res, exist_ok=True)
+    return res
+
+
+@pytest.fixture(scope="session")
+def results_edit_publishinfo(results_edit):
+    res = results_edit / "test_meta/test_publishinfo"
+    os.makedirs(res, exist_ok=True)
+    return res
+
+
+@pytest.fixture(scope="session")
+def results_edit_documentinfo(results_edit):
+    res = results_edit / "test_meta/test_documentinfo"
     os.makedirs(res, exist_ok=True)
     return res
 

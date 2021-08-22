@@ -39,7 +39,7 @@ def test_create_cbr(results_edit_create):
 
 @pytest.mark.parametrize("ext, type", (("cbz", "Zip"), ("cb7", "SevenZip"), ("cbt", "Tar")))
 def test_acbf_to_cbz(ext, type, results_edit_convert):
-    with ACBFBook(results_edit_convert / f"test_acbf_to_cbz.{ext}", 'w', None) as book:
-        book.book_info.book_title['_'] = "Test Convert to archive"
+    with ACBFBook(results_edit_convert / f"test_acbf_to_archive.{ext}", 'w', None) as book:
+        book.book_info.book_title['_'] = f"Test Convert to {type}"
         book.make_archive(type)
         book.create_placeholders()
