@@ -1,13 +1,21 @@
 #!/usr/bin/env python
 
+import sys
 from setuptools import setup, find_packages
-from setuptools_git_versioning import version_from_git
+
+version = "1.0.0"
+version_config = {"version_config": True}
+if sys.argv[1] == "version":
+    version += sys.argv[2]
+    version_config.clear()
+    del sys.argv[2]
+    del sys.argv[1]
 
 with open("README.md", 'r', encoding="utf-8") as readme:
     long_description = readme.read().strip()
 
 setup(name="libacbf",
-      version=version_from_git(),
+      version=version,
       description="A library to read and edit ACBF formatted comic book files and archives.",
       long_description=long_description,
       long_description_content_type='text/markdown',
@@ -50,5 +58,6 @@ setup(name="libacbf",
           "Programming Language :: Python :: 3.9",
           "Topic :: Software Development :: Libraries",
           "Typing :: Typed"
-          ]
+          ],
+      **version_config
       )

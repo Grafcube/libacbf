@@ -18,6 +18,7 @@
 # -- Project information -----------------------------------------------------
 
 project = 'libacbf'
+version = '1.0.0'
 copyright = '2021, Grafcube'
 author = 'Grafcube'
 
