@@ -6,6 +6,7 @@ with open("README.md", 'r', encoding="utf-8") as readme:
     long_description = readme.read().strip()
 
 setup(name="libacbf",
+      version="1.0.0",
       version_config=True,
       description="A library to read and edit ACBF formatted comic book files and archives.",
       long_description=long_description,
