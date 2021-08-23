@@ -18,7 +18,6 @@ setup(name="libacbf",
       tests_require=["pytest"],
       test_suite="tests",
       download_url="",  # TODO: After PyPI
-      documentation_url="https://libacbf.readthedocs.io/en/stable/index.html",
       keywords=[
           "python",
           "library",
