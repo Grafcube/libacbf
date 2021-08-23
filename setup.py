@@ -2,17 +2,23 @@
 
 from setuptools import setup, find_packages
 
+with open("README.md", 'r', encoding="utf-8") as readme:
+    long_description = readme.read().strip()
+
 setup(name="libacbf",
-      version='1.0.0',
+      version_config=True,
       description="A library to read and edit ACBF formatted comic book files and archives.",
+      long_description=long_description,
+      long_description_content_type='text/markdown',
       author="Grafcube",
       license="BSD-3-Clause License",
       url="https://github.com/Grafcube/libacbf",
       packages=find_packages(include=["libacbf"]),
-      setup_requires=["pytest-runner"],
+      setup_requires=["pytest-runner", "setuptools-git-versioning"],
       tests_require=["pytest"],
       test_suite="tests",
-      download_url="",  # TODO: After docs
+      download_url="",  # TODO: After PyPI
+      documentation_url="https://libacbf.readthedocs.io/en/stable/index.html",
       keywords=[
           "python",
           "library",
