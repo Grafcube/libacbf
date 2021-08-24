@@ -23,10 +23,11 @@ setup(name="libacbf",
       license="BSD-3-Clause License",
       url="https://github.com/Grafcube/libacbf",
       packages=find_packages(include=["libacbf"]),
+      include_package_data=True,
       setup_requires=["pytest-runner", "setuptools-git-versioning"],
       tests_require=["pytest"],
       test_suite="tests",
-      download_url="",  # TODO: After PyPI
+      download_url="https://pypi.org/project/libacbf/",
       keywords=[
           "python",
           "library",

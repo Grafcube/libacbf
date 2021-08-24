@@ -12,8 +12,6 @@ pip install libacbf
 
 See [Installation and Dependencies](https://libacbf.readthedocs.io/en/stable/install.html) for moreinformation.
 
-[PyPI Link]().
-
 ### Documentation
 
 Read the documentation here.
