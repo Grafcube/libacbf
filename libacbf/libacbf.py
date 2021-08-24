@@ -27,7 +27,7 @@ def _validate_acbf(tree, ns: str):
     """Validate XML tree with XSD.
     """
     version = re.split(r'/', ns)[-1]
-    xsd_path = f"libacbf/schema/acbf-{version}.xsd"
+    xsd_path = Path(__file__).parent / Path(f"schema/acbf-{version}.xsd")
 
     with open(xsd_path, encoding="utf-8") as file:
         acbf_root = etree.fromstring(bytes(file.read(), encoding="utf-8"))
