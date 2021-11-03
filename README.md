@@ -10,7 +10,7 @@ XML Specifications here: https://acbf.fandom.com/wiki/Advanced_Comic_Book_Format
 pip install libacbf
 ```
 
-See [Installation and Dependencies](https://libacbf.readthedocs.io/en/stable/install.html) for moreinformation.
+See [Installation and Dependencies](https://libacbf.readthedocs.io/en/stable/install.html) for more information.
 
 ### Documentation
 

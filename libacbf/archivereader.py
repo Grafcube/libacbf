@@ -301,8 +301,7 @@ class ArchiveReader:
         if isinstance(target, str):
             target = Path(target)
 
-        if isinstance(target, Path):
-            target = (self._arc_path / target).resolve(True)
+        target = (self._arc_path / target).resolve(True)
 
         if not target.resolve().is_relative_to(self._arc_path.resolve()):
             raise ValueError("`target` does not resolve to a file inside the archive.")
@@ -326,8 +325,7 @@ class ArchiveReader:
         """
         self.archive.close()
 
-        if self._arc_path is not None:
-
+        if self.mode != 'r':
             if self.type == ArchiveTypes.Zip:
                 with ZipFile(self._source, 'w') as arc:
                     for i in self.list_files():
@@ -343,6 +341,7 @@ class ArchiveReader:
                     for i in self.list_files():
                         arc.add(self._arc_path / i, i)
 
+        if self._extract is not None:
             self._extract.cleanup()
 
     def __enter__(self):
@@ -350,7 +349,8 @@ class ArchiveReader:
 
     def __exit__(self, exception_type, exception_value, traceback):
         if exception_type is not None:
+            if self._extract is not None:
+                self._extract.cleanup()
             self.archive.close()
-            self._extract.cleanup()
         else:
             self.close()
