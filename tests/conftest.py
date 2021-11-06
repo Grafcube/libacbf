@@ -1,6 +1,7 @@
 import os
 import pytest
 from pathlib import Path
+from zipfile import ZipFile, ZIP_DEFLATED
 
 
 def pytest_runtest_logreport(report):
@@ -12,6 +13,13 @@ def pytest_runtest_logreport(report):
 def results():
     res = Path("tests/results")
     os.makedirs(res, exist_ok=True)
+
+    with ZipFile("tests/results/Doctorow, Cory - Craphound - NoACBF.cbz", 'w', ZIP_DEFLATED, compresslevel=9) as zip:
+        for file in Path("tests/samples").rglob('*'):
+            if file.is_file():
+                file = file.relative_to(Path("tests/samples"))
+                zip.write(file, file.name)
+
     return res
 
 
