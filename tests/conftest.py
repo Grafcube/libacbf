@@ -11,14 +11,14 @@ def pytest_runtest_logreport(report):
 
 @pytest.fixture(scope="session")
 def results():
-    res = Path("tests/results")
+    res = Path(__file__).parent / "results"
     os.makedirs(res, exist_ok=True)
 
-    with ZipFile("tests/results/Doctorow, Cory - Craphound - NoACBF.cbz", 'w', ZIP_DEFLATED, compresslevel=9) as zip:
-        for file in Path("tests/samples").rglob('*'):
-            if file.is_file():
-                file = file.relative_to(Path("tests/samples"))
-                zip.write(file, file.name)
+    with ZipFile(res / "test_create.fail.cbz", 'w', ZIP_DEFLATED, compresslevel=9) as zip:
+        for file in (res.parent / "samples").rglob('*'):
+            if file.is_file() and not file.suffix == ".acbf":
+                name = file.relative_to(res.parent / "samples")
+                zip.write(file, name)
 
     return res
 
@@ -59,15 +59,8 @@ def results_edit(results):
 
 
 @pytest.fixture(scope="session")
-def results_edit_create(results_edit):
-    res = results_edit / "test_create"
-    os.makedirs(res, exist_ok=True)
-    return res
-
-
-@pytest.fixture(scope="session")
-def results_edit_convert(results_edit):
-    res = results_edit / "test_convert"
+def results_edit_convert(results):
+    res = results / "test_convert"
     os.makedirs(res, exist_ok=True)
     return res
 
