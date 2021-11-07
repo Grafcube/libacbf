@@ -1,3 +1,38 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:d4401322b84b7938cdb6c92d7b2a340ff2544f009d04d0b6a76aa19698345365
-size 959
+text-area {
+  font-family: "fantasquesansmono-regular.otf", "Dejavu Sans", Arial, Sans;
+  font-style: normal;
+  font-stretch: condensed
+}
+
+text-area[type=code] {
+  font-family: "FreeMonoBold.otf", "Dejavu Sans Mono", "Courier New", Mono, Sans;
+  font-style: normal;
+}
+
+text-area[type=sign] {
+  font-family: "caveatbrush-regular.ttf", "Dejavu Sans Mono", "Courier New", Mono, Sans;
+  font-style: normal;
+}
+
+text-area[type=heading] {
+  font-family: "caveatbrush-regular.ttf", "Dejavu Sans Mono", "Courier New", Mono, Sans;
+  font-style: normal;
+}
+
+text-area[type=formal] {
+  font-family: "LiberationSans-Regular.ttf", "Dejavu Sans", Arial, Sans;
+  font-style: normal;
+  font-stretch: condensed
+}
+
+emphasis {
+  font-family: "fantasquesansmono-bolditalic.otf", "Dejavu Sans", Arial, Sans;
+  font-style: oblique;
+  font-weight: bold;
+}
+
+strong {
+  font-family: "fantasquesansmono-bold.otf", "Dejavu Sans", Arial, Sans;
+  font-style: normal;
+  font-weight: bold;
+}
