@@ -701,7 +701,7 @@ class ACBFBook:
 
         return root.getroottree()
 
-    def create_placeholders(self):
+    def _create_placeholders(self):
         """Creates the minimum required values for the book to follow the schema. This means creating an empty page if
         there are no pages.
         """

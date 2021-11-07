@@ -35,7 +35,7 @@ def test_authors(results_edit_documentinfo):
 
         book.document_info.authors.remove(rem)
 
-        book.create_placeholders()
+        book._create_placeholders()
 
 
 def test_creation_date(results_edit_documentinfo):
@@ -43,7 +43,7 @@ def test_creation_date(results_edit_documentinfo):
         book.book_info.book_title['_'] = "Test Creation Date"
         book.document_info.set_date("3rd Jan, 2021")
 
-        book.create_placeholders()
+        book._create_placeholders()
 
 
 def test_creation_date_excl(results_edit_documentinfo):
@@ -51,7 +51,7 @@ def test_creation_date_excl(results_edit_documentinfo):
         book.book_info.book_title['_'] = "Test Creation Date No ISO"
         book.document_info.set_date("4th Jan, 2021", include_date=False)
 
-        book.create_placeholders()
+        book._create_placeholders()
 
 
 def test_source(results_edit_documentinfo):
@@ -59,7 +59,7 @@ def test_source(results_edit_documentinfo):
         book.book_info.book_title['_'] = "Test Source"
         book.document_info.source = "This is a source.\nThis is another line."
 
-        book.create_placeholders()
+        book._create_placeholders()
 
 
 def test_id(results_edit_documentinfo):
@@ -67,7 +67,7 @@ def test_id(results_edit_documentinfo):
         book.book_info.book_title['_'] = "Test ID"
         book.document_info.document_id = "123456"
 
-        book.create_placeholders()
+        book._create_placeholders()
 
 
 def test_version(results_edit_documentinfo):
@@ -75,7 +75,7 @@ def test_version(results_edit_documentinfo):
         book.book_info.book_title['_'] = "Test Version"
         book.document_info.document_version = "1.0"
 
-        book.create_placeholders()
+        book._create_placeholders()
 
 
 def test_history(results_edit_documentinfo):
@@ -90,4 +90,4 @@ def test_history(results_edit_documentinfo):
 
         book.document_info.document_history.pop(2)
 
-        book.create_placeholders()
+        book._create_placeholders()

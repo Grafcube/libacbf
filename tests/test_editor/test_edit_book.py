@@ -13,7 +13,7 @@ def test_references(results_edit):
                  "<strikethrough>formatting</strikethrough>!\n"
                  "Here's <sub>some</sub> more <sup>formatting</sup>."
             }
-        book.create_placeholders()
+        book._create_placeholders()
 
 
 @pytest.mark.parametrize("ext, type", (("cbz", "Zip"), ("cb7", "SevenZip"), ("cbt", "Tar")))
@@ -38,7 +38,7 @@ def test_data(ext, type, results_edit_data):
         book.data.remove_data("REMOVE_ME.jpg")
         book.data.remove_data("REMOVE_ME2.jpg", embed=True)
 
-        book.create_placeholders()
+        book._create_placeholders()
 
 
 def test_styles(results_edit):
@@ -54,4 +54,4 @@ def test_styles(results_edit):
         book.styles.remove_style("styles/REMOVE_ME.css")
         book.styles.remove_style("REMOVE_ME.css", embedded=True)
 
-        book.create_placeholders()
+        book._create_placeholders()

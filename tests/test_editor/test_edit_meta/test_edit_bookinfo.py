@@ -35,7 +35,7 @@ def test_authors(results_edit_bookinfo):
 
         book.book_info.authors.remove(rem)
 
-        book.create_placeholders()
+        book._create_placeholders()
 
 
 def test_titles(results_edit_bookinfo):
@@ -45,7 +45,7 @@ def test_titles(results_edit_bookinfo):
         book.book_info.book_title["kn"] = "ಹೆಸರು ಪರಿಕ್ಷೆ"
         book.book_info.book_title.pop('_')
 
-        book.create_placeholders()
+        book._create_placeholders()
 
 
 def test_genres(results_edit_bookinfo):
@@ -64,7 +64,7 @@ def test_genres(results_edit_bookinfo):
         with pytest.raises(ValueError, match="`match` must be an integer from 0 to 100."):
             book.book_info.edit_genre("other", 101)
 
-        book.create_placeholders()
+        book._create_placeholders()
 
 
 def test_annotations(results_edit_bookinfo):
@@ -76,7 +76,7 @@ def test_annotations(results_edit_bookinfo):
         book.book_info.annotations["kn"] = "ಇದು ಈ ಪುಸ್ತಕದ ವಿವರಣೆ.\nಇದು ಎರಡನೇ ಸಾಲು."
         book.book_info.annotations.pop('_')
 
-        book.create_placeholders()
+        book._create_placeholders()
 
 
 # --- Optional ---
@@ -95,7 +95,7 @@ def test_languagelayers(results_edit_bookinfo):
         en.show = True
         kn.show = True
 
-        book.create_placeholders()
+        book._create_placeholders()
 
 
 def test_characters(results_edit_bookinfo):
@@ -105,7 +105,7 @@ def test_characters(results_edit_bookinfo):
         book.book_info.characters.extend(["Testing", "REMOVE_ME", "Another", "And Another"])
         book.book_info.characters.remove("REMOVE_ME")
 
-        book.create_placeholders()
+        book._create_placeholders()
 
 
 def test_keywords(results_edit_bookinfo):
@@ -117,7 +117,7 @@ def test_keywords(results_edit_bookinfo):
         book.book_info.keywords["kn"] = {"ಪುಸ್ತಕ", "ಹೆಸರು", "ಕಾಮಿಕ್ ಪುಸ್ತಕ", "ಹೆಸರು"}
         book.book_info.keywords.pop('_')
 
-        book.create_placeholders()
+        book._create_placeholders()
 
 
 def test_series(results_edit_bookinfo):
@@ -131,7 +131,7 @@ def test_series(results_edit_bookinfo):
         book.book_info.series["Even More Comics"].volume = None
         book.book_info.series.pop("No Comics")
 
-        book.create_placeholders()
+        book._create_placeholders()
 
 
 def test_rating(results_edit_bookinfo):
@@ -144,7 +144,7 @@ def test_rating(results_edit_bookinfo):
         book.book_info.content_rating["REMOVE_ME"] = '0'
         book.book_info.content_rating.pop("REMOVE_ME")
 
-        book.create_placeholders()
+        book._create_placeholders()
 
 
 def test_dbref(results_edit_bookinfo):
@@ -163,4 +163,4 @@ def test_dbref(results_edit_bookinfo):
 
         book.book_info.database_ref.remove(ns)
 
-        book.create_placeholders()
+        book._create_placeholders()
