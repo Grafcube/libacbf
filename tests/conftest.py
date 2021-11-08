@@ -10,16 +10,42 @@ def pytest_runtest_logreport(report):
 
 
 @pytest.fixture(scope="session")
+def samples():
+    return Path(__file__).parent / "samples"
+
+
+@pytest.fixture(scope="session")
 def results():
     res = Path(__file__).parent / "results"
     os.makedirs(res, exist_ok=True)
 
-    with ZipFile(res / "test_create.fail.cbz", 'w', ZIP_DEFLATED, compresslevel=9) as zip:
+    with ZipFile(res / "fail.cbz", 'w', ZIP_DEFLATED, compresslevel=9) as zip:
         for file in (res.parent / "samples").rglob('*'):
             if file.is_file() and not file.suffix == ".acbf":
                 name = file.relative_to(res.parent / "samples")
                 zip.write(file, name)
 
+    return res
+
+
+@pytest.fixture(scope="session")
+def results_create(results):
+    res = results / "test_create"
+    os.makedirs(res, exist_ok=True)
+    return res
+
+
+@pytest.fixture(scope="session")
+def results_convert(results):
+    res = results / "test_convert"
+    os.makedirs(res, exist_ok=True)
+    return res
+
+
+@pytest.fixture(scope="session")
+def results_book(results):
+    res = results / "test_book"
+    os.makedirs(res, exist_ok=True)
     return res
 
 
@@ -32,70 +58,28 @@ def results_body(results):
 
 @pytest.fixture(scope="session")
 def results_bookinfo(results):
-    res = results / "test_metadata/book_info"
+    res = results / "book_info"
     os.makedirs(res, exist_ok=True)
     return res
 
 
 @pytest.fixture(scope="session")
 def results_publishinfo(results):
-    res = results / "test_metadata/publish_info"
+    res = results / "publish_info"
     os.makedirs(res, exist_ok=True)
     return res
 
 
 @pytest.fixture(scope="session")
 def results_documentinfo(results):
-    res = results / "test_metadata/document_info"
+    res = results / "document_info"
     os.makedirs(res, exist_ok=True)
     return res
 
 
 @pytest.fixture(scope="session")
-def results_edit(results):
-    res = results / "test_edit"
-    os.makedirs(res, exist_ok=True)
-    return res
-
-
-@pytest.fixture(scope="session")
-def results_edit_convert(results):
-    res = results / "test_convert"
-    os.makedirs(res, exist_ok=True)
-    return res
-
-
-@pytest.fixture(scope="session")
-def results_edit_body(results_edit):
-    res = results_edit / "test_body"
-    os.makedirs(res, exist_ok=True)
-    return res
-
-
-@pytest.fixture(scope="session")
-def results_edit_data(results_edit):
-    res = results_edit / "test_data"
-    os.makedirs(res, exist_ok=True)
-    return res
-
-
-@pytest.fixture(scope="session")
-def results_edit_bookinfo(results_edit):
-    res = results_edit / "test_meta/test_bookinfo"
-    os.makedirs(res, exist_ok=True)
-    return res
-
-
-@pytest.fixture(scope="session")
-def results_edit_publishinfo(results_edit):
-    res = results_edit / "test_meta/test_publishinfo"
-    os.makedirs(res, exist_ok=True)
-    return res
-
-
-@pytest.fixture(scope="session")
-def results_edit_documentinfo(results_edit):
-    res = results_edit / "test_meta/test_documentinfo"
+def results_data(results):
+    res = results / "test_data"
     os.makedirs(res, exist_ok=True)
     return res
 

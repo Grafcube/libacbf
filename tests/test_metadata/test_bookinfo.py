@@ -2,8 +2,8 @@ import pytest
 from libacbf import ACBFBook
 
 
-def test_authors(results_edit_bookinfo):
-    with ACBFBook(results_edit_bookinfo / "edit_authors.acbf", 'w', archive_type=None) as book:
+def test_authors(results_bookinfo):
+    with ACBFBook(results_bookinfo / "edit_authors.acbf", 'w', archive_type=None) as book:
         book.book_info.book_title['_'] = "Test Edit Authors"
 
         book.book_info.add_author("Test")
@@ -38,8 +38,8 @@ def test_authors(results_edit_bookinfo):
         book._create_placeholders()
 
 
-def test_titles(results_edit_bookinfo):
-    with ACBFBook(results_edit_bookinfo / "edit_titles.acbf", 'w', archive_type=None) as book:
+def test_titles(results_bookinfo):
+    with ACBFBook(results_bookinfo / "edit_titles.acbf", 'w', archive_type=None) as book:
         book.book_info.book_title['_'] = "Test Edit Titles"
         book.book_info.book_title["en"] = "Test Edit Titles"
         book.book_info.book_title["kn"] = "ಹೆಸರು ಪರಿಕ್ಷೆ"
@@ -48,8 +48,8 @@ def test_titles(results_edit_bookinfo):
         book._create_placeholders()
 
 
-def test_genres(results_edit_bookinfo):
-    with ACBFBook(results_edit_bookinfo / "edit_genres.acbf", 'w', archive_type=None) as book:
+def test_genres(results_bookinfo):
+    with ACBFBook(results_bookinfo / "edit_genres.acbf", 'w', archive_type=None) as book:
         book.book_info.book_title['_'] = "Test Edit Genres"
 
         book.book_info.edit_genre("other")
@@ -67,8 +67,8 @@ def test_genres(results_edit_bookinfo):
         book._create_placeholders()
 
 
-def test_annotations(results_edit_bookinfo):
-    with ACBFBook(results_edit_bookinfo / "edit_annotations.acbf", 'w', archive_type=None) as book:
+def test_annotations(results_bookinfo):
+    with ACBFBook(results_bookinfo / "edit_annotations.acbf", 'w', archive_type=None) as book:
         book.book_info.book_title['_'] = "Test Edit Annotations"
 
         book.book_info.annotations['_'] = "This is an annotation."
@@ -81,8 +81,8 @@ def test_annotations(results_edit_bookinfo):
 
 # --- Optional ---
 
-def test_languagelayers(results_edit_bookinfo):
-    with ACBFBook(results_edit_bookinfo / "edit_languages.acbf", 'w', archive_type=None) as book:
+def test_languagelayers(results_bookinfo):
+    with ACBFBook(results_bookinfo / "edit_languages.acbf", 'w', archive_type=None) as book:
         book.book_info.book_title['_'] = "Test Edit Languages"
 
         book.book_info.add_language("en", False)
@@ -98,8 +98,8 @@ def test_languagelayers(results_edit_bookinfo):
         book._create_placeholders()
 
 
-def test_characters(results_edit_bookinfo):
-    with ACBFBook(results_edit_bookinfo / "edit_characters.acbf", 'w', archive_type=None) as book:
+def test_characters(results_bookinfo):
+    with ACBFBook(results_bookinfo / "edit_characters.acbf", 'w', archive_type=None) as book:
         book.book_info.book_title['_'] = "Test Edit Characters"
 
         book.book_info.characters.extend(["Testing", "REMOVE_ME", "Another", "And Another"])
@@ -108,8 +108,8 @@ def test_characters(results_edit_bookinfo):
         book._create_placeholders()
 
 
-def test_keywords(results_edit_bookinfo):
-    with ACBFBook(results_edit_bookinfo / "edit_keywords.acbf", 'w', archive_type=None) as book:
+def test_keywords(results_bookinfo):
+    with ACBFBook(results_bookinfo / "edit_keywords.acbf", 'w', archive_type=None) as book:
         book.book_info.book_title['_'] = "Test Edit Keywords"
 
         book.book_info.keywords['_'] = {"ebook", "tag", "comic book", "tag"}
@@ -120,8 +120,8 @@ def test_keywords(results_edit_bookinfo):
         book._create_placeholders()
 
 
-def test_series(results_edit_bookinfo):
-    with ACBFBook(results_edit_bookinfo / "edit_series.acbf", 'w', archive_type=None) as book:
+def test_series(results_bookinfo):
+    with ACBFBook(results_bookinfo / "edit_series.acbf", 'w', archive_type=None) as book:
         book.book_info.book_title['_'] = "Test Edit Series"
 
         book.book_info.add_series("Some Comics", 2)
@@ -134,8 +134,8 @@ def test_series(results_edit_bookinfo):
         book._create_placeholders()
 
 
-def test_rating(results_edit_bookinfo):
-    with ACBFBook(results_edit_bookinfo / "edit_rating.acbf", 'w', archive_type=None) as book:
+def test_rating(results_bookinfo):
+    with ACBFBook(results_bookinfo / "edit_rating.acbf", 'w', archive_type=None) as book:
         book.book_info.book_title['_'] = "Test Edit Content Rating"
 
         book.book_info.content_rating["Age Rating"] = "16+"
@@ -147,8 +147,8 @@ def test_rating(results_edit_bookinfo):
         book._create_placeholders()
 
 
-def test_dbref(results_edit_bookinfo):
-    with ACBFBook(results_edit_bookinfo / "edit_dbref.acbf", 'w', archive_type=None) as book:
+def test_dbref(results_bookinfo):
+    with ACBFBook(results_bookinfo / "edit_dbref.acbf", 'w', archive_type=None) as book:
         book.book_info.book_title['_'] = "Test Edit Database Reference"
 
         book.book_info.add_dbref("ComicSite", "123456")

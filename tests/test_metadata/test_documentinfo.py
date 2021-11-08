@@ -2,8 +2,8 @@ import pytest
 from libacbf import ACBFBook
 
 
-def test_authors(results_edit_documentinfo):
-    with ACBFBook(results_edit_documentinfo / "edit_authors.acbf", 'w', archive_type=None) as book:
+def test_authors(results_documentinfo):
+    with ACBFBook(results_documentinfo / "edit_authors.acbf", 'w', archive_type=None) as book:
         book.book_info.book_title['_'] = "Test Edit Authors"
 
         book.document_info.add_author("Test")
@@ -38,48 +38,48 @@ def test_authors(results_edit_documentinfo):
         book._create_placeholders()
 
 
-def test_creation_date(results_edit_documentinfo):
-    with ACBFBook(results_edit_documentinfo / "test_creation_date.acbf", 'w', archive_type=None) as book:
+def test_creation_date(results_documentinfo):
+    with ACBFBook(results_documentinfo / "test_creation_date.acbf", 'w', archive_type=None) as book:
         book.book_info.book_title['_'] = "Test Creation Date"
         book.document_info.set_date("3rd Jan, 2021")
 
         book._create_placeholders()
 
 
-def test_creation_date_excl(results_edit_documentinfo):
-    with ACBFBook(results_edit_documentinfo / "test_creation_date_excl.acbf", 'w', archive_type=None) as book:
+def test_creation_date_excl(results_documentinfo):
+    with ACBFBook(results_documentinfo / "test_creation_date_excl.acbf", 'w', archive_type=None) as book:
         book.book_info.book_title['_'] = "Test Creation Date No ISO"
         book.document_info.set_date("4th Jan, 2021", include_date=False)
 
         book._create_placeholders()
 
 
-def test_source(results_edit_documentinfo):
-    with ACBFBook(results_edit_documentinfo / "test_source.acbf", 'w', archive_type=None) as book:
+def test_source(results_documentinfo):
+    with ACBFBook(results_documentinfo / "test_source.acbf", 'w', archive_type=None) as book:
         book.book_info.book_title['_'] = "Test Source"
         book.document_info.source = "This is a source.\nThis is another line."
 
         book._create_placeholders()
 
 
-def test_id(results_edit_documentinfo):
-    with ACBFBook(results_edit_documentinfo / "test_id.acbf", 'w', archive_type=None) as book:
+def test_id(results_documentinfo):
+    with ACBFBook(results_documentinfo / "test_id.acbf", 'w', archive_type=None) as book:
         book.book_info.book_title['_'] = "Test ID"
         book.document_info.document_id = "123456"
 
         book._create_placeholders()
 
 
-def test_version(results_edit_documentinfo):
-    with ACBFBook(results_edit_documentinfo / "test_version.acbf", 'w', archive_type=None) as book:
+def test_version(results_documentinfo):
+    with ACBFBook(results_documentinfo / "test_version.acbf", 'w', archive_type=None) as book:
         book.book_info.book_title['_'] = "Test Version"
         book.document_info.document_version = "1.0"
 
         book._create_placeholders()
 
 
-def test_history(results_edit_documentinfo):
-    with ACBFBook(results_edit_documentinfo / "test_history.acbf", 'w', archive_type=None) as book:
+def test_history(results_documentinfo):
+    with ACBFBook(results_documentinfo / "test_history.acbf", 'w', archive_type=None) as book:
         book.book_info.book_title['_'] = "Test History"
 
         book.document_info.document_history.append("v1.0.0: Created history")
