@@ -178,10 +178,6 @@ def _get_root_template(nsmap: Dict):
 def get_book_template(ns: str = None) -> str:
     """Get the bare minimum XML required to create an ACBF book.
 
-    Warnings
-    --------
-    Some properties will already exist and have default values. See (INSERT LINK HERE) for more details.
-
     Returns
     -------
     str
